@@ -30,6 +30,7 @@ export const useVaultOperations = () => {
       console.log(`Depositing ${amountSol} SOL to vault ${vaultPda}...`);
 
       const tx = await (program.methods
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         .deposit(amountLamports) as any)
         .accounts({
           copier: publicKey,
@@ -93,6 +94,7 @@ export const useVaultOperations = () => {
       console.log(`Withdrawing ${amountSol} SOL from copier vault ${vaultPda}...`);
 
       const tx = await (program.methods
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         .withdraw(amountLamports) as any)
         .accounts({
           copier: publicKey,
@@ -129,6 +131,7 @@ export const useVaultOperations = () => {
       console.log(`Depositing ${amountSol} SOL into master vault ${masterVaultPda.toBase58()}...`);
 
       const tx = await (program.methods
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         .depositMaster(amountLamports) as any)
         .accounts({
           master: publicKey,
@@ -165,6 +168,7 @@ export const useVaultOperations = () => {
       console.log(`Withdrawing ${amountSol} SOL from master vault capital ${masterVaultPda.toBase58()}...`);
 
       const tx = await (program.methods
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         .withdrawMaster(amountLamports) as any)
         .accounts({
           master: publicKey,
@@ -201,6 +205,7 @@ export const useVaultOperations = () => {
       console.log(`Claiming ${amountSol} SOL in fees from master vault ${masterVaultPda.toBase58()}...`);
 
       const tx = await (program.methods
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         .claimFees(amountLamports) as any)
         .accounts({
           master: publicKey,
@@ -286,6 +291,7 @@ export const useVaultOperations = () => {
       };
 
       const tx = await (program.methods
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         .callTrade(tradeParams) as any)
         .accounts({
           master: publicKey,
@@ -317,6 +323,7 @@ export const useVaultOperations = () => {
     try {
       const [tierConfigPda] = PublicKey.findProgramAddressSync([Buffer.from('tier_config')], program.programId);
       const tx = await (program.methods
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         .initializeTierConfig(publicKey) as any)
         .accounts({
           authority: publicKey,
@@ -353,6 +360,7 @@ export const useVaultOperations = () => {
           1, // min_stop_loss_pct (1%)
           new BN(0.001 * LAMPORTS_PER_SOL), // min_vault_deposit_lamports
           publicKey // admin
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         ) as any)
         .accounts({
           authority: publicKey,
@@ -386,6 +394,7 @@ export const useVaultOperations = () => {
           1, // min_stop_loss_pct
           new BN(0.001 * LAMPORTS_PER_SOL), // min_vault_deposit_lamports
           publicKey // new admin
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         ) as any)
         .accounts({
           authority: publicKey,

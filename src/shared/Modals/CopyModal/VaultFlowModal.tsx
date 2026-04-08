@@ -29,7 +29,7 @@ const VaultFlowModal = () => {
     takeProfitTriggerBps: '',
     stopLossTriggerBps: '',
     depositAmount: '',
-    vaultPda: '',
+    vaultPda: ''
   })
 
   return (
@@ -115,7 +115,14 @@ const VaultFlowModal = () => {
                       exit='exit'
                       transition={{ duration: 0.3 }}
                     >
-                      <StepOne onNext={() => setVaultStep(2)} form={form} setForm={setForm as any} />
+                      // eslint-disable-next-line
+                      @typescript-eslint/no-explicit-any
+                      <StepOne
+                        onNext={() => setVaultStep(2)}
+                        form={form}
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                        setForm={setForm as any}
+                      />
                     </motion.div>
                   )}
 
@@ -132,6 +139,7 @@ const VaultFlowModal = () => {
                         onBack={() => setVaultStep(1)}
                         onNext={() => setVaultStep(3)}
                         form={form}
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
                         setForm={setForm as any}
                       />
                     </motion.div>
@@ -150,6 +158,7 @@ const VaultFlowModal = () => {
                         onBack={() => setVaultStep(2)}
                         onNext={() => setVaultStep(4)}
                         form={form}
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
                         setForm={setForm as any}
                       />
                     </motion.div>

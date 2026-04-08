@@ -57,6 +57,7 @@ export const useMasterVault = () => {
             50, // volume_fee_percent
             1000, // take_profit_trigger_bps (must be > 0)
             1000, // take_profit_sell_bps (must be > 0)
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           ) as any)
           .accounts({
             master: publicKey,
@@ -138,6 +139,7 @@ export const useMasterVault = () => {
           1000, // atomic_threshold
           10, // slot_grace_window
           1, // protocol_version
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         ) as any)
         .accounts({
           authority: publicKey,

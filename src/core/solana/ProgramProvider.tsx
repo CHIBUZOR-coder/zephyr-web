@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { useConnection, useWallet } from '@solana/wallet-adapter-react';
 import { Program, AnchorProvider} from '@coral-xyz/anchor';
-import type {Idl } from '@coral-xyz/anchor';
+
 import { PublicKey, Transaction, VersionedTransaction } from '@solana/web3.js';
 import idl from '../../idl/zephyr.json';
 import type { Zephyr } from '../../idl/zephyr';
@@ -37,6 +37,7 @@ export const ProgramProvider: React.FC<{ children: React.ReactNode }> = ({ child
   }, [connection, wallet]);
 
   return (
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     <ProgramContext.Provider value={{ program: program as any }}>
       {children}
     </ProgramContext.Provider>

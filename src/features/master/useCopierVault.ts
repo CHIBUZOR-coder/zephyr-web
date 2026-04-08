@@ -99,6 +99,7 @@ export const useCopierVault = () => {
           params.stopLossTriggerBps,
           params.stopLossSellBps,
           params.dailyLossLimitBps
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         ) as any)
         .accounts({
           copier: publicKey,

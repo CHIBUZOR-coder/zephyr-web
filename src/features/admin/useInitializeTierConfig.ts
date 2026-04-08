@@ -46,6 +46,7 @@ export const useInitializeTierConfig = () => {
 
       // 2. Send initialization transaction
       const tx = await (program.methods
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         .initializeTierConfig(admin) as any)
         .accounts({
           authority: publicKey,

@@ -1,34 +1,34 @@
-import { useLeaderboard } from './useLeaderboard'
-import { useGeneralContext } from '../../Context/GeneralContext'
-import type { Trader as ContextTrader } from '../dashboard/dashboardComponents/sidenavPages/Leaderboard/leaderboar.types'
-import type { Trader } from './traders.types'
+// import { useLeaderboard } from './useLeaderboard'
+// import { useGeneralContext } from '../../Context/GeneralContext'
+// import type { Trader as ContextTrader } from '../dashboard/dashboardComponents/sidenavPages/Leaderboard/leaderboar.types'
+// import type { Trader } from './traders.types'
 
 
 
-  const handleCopy = (trader: Trader) => {
-    // Map home Trader to Context Trader
-    const contextTrader: ContextTrader = {
-      id: trader.id,
-      rank: trader.id,
-      name: trader.name,
-      image: `https://api.dicebear.com/7.x/avataaars/svg?seed=${trader.walletAddress}`,
-      tag: 'Pro',
-      tiers: 'Institutional',
-      type: 'PRO',
-      pnl: `${trader.roi7d}%`,
-      aum: trader.aum,
-      winRate: `${trader.winRate}%`,
-      drawdown: trader.risk,
-      trades: 0,
-      copiers: 0,
-      rio: trader.roi7d,
-      follows: 0,
-      sol: '0',
-      address: trader.walletAddress,
-      vaultAddress: trader.vaultPda,
-    }
-    openVaultFlow(1, contextTrader)
-  }
+//   const handleCopy = (trader: Trader) => {
+//     // Map home Trader to Context Trader
+//     const contextTrader: ContextTrader = {
+//       id: trader.id,
+//       rank: trader.id,
+//       name: trader.name,
+//       image: `https://api.dicebear.com/7.x/avataaars/svg?seed=${trader.walletAddress}`,
+//       tag: 'Pro',
+//       tiers: 'Institutional',
+//       type: 'PRO',
+//       pnl: `${trader.roi7d}%`,
+//       aum: trader.aum,
+//       winRate: `${trader.winRate}%`,
+//       drawdown: trader.risk,
+//       trades: 0,
+//       copiers: 0,
+//       rio: trader.roi7d,
+//       follows: 0,
+//       sol: '0',
+//       address: trader.walletAddress,
+//       vaultAddress: trader.vaultPda,
+//     }
+//     openVaultFlow(1, contextTrader)
+//   }
 
 // export default function TopTradersTable () {
 //   const { traders, loading, error } = useLeaderboard()
