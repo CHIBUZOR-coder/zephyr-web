@@ -1,0 +1,22 @@
+export function useAuthLogin () {
+  const setAuth = useAuthStore(s => s.setAuth)
+
+  return useMutation({
+    mutationFn: async (payload: AuthLoginPayload) => {
+      // 🔴 MOCK BACKEND RESPONSE
+      await new Promise(r => setTimeout(r, 500))
+
+      const mockUser: AuthUser = {
+        id: 'mock-user-id',
+        walletAddress: payload.publicKey,
+        role: 'user'
+      }
+
+      return { user: mockUser }
+    },
+
+    onSuccess: data => {
+      setAuth(data.user)
+    }
+  })
+}

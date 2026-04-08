@@ -1,0 +1,149 @@
+/* Import Inter from Google Fonts */
+@import url("https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,100;0,400;0,700;1,400;1,700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@100;200;300;400;500;600;700;800&display=swap");
+
+/* Tailwind directives */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  font-family: "Inter", sans-serif;
+}
+.herochild {
+  @apply w-full  lg:w-1/2;
+}
+.smallcircl {
+  @apply h-[15px] w-[15px] p-4 rounded-full text-[9.35px] flex justify-center items-center text-white font-[600] absolute border-l-black border-l-2;
+}
+
+.num {
+  @apply text-[29px] font-[900] text-center w-full;
+}
+.label {
+  @apply text-[11px] text-[#577884] font-jetbrains font-[700] uppercase tracking-[1.169px];
+}
+
+/* Container2 */
+.box {
+  @apply flex flex-col gap-4 bg-[#0C1517]  border-[1px] border-[#FFFFFF1A] rounded-md p-[30px];
+}
+
+.boximg {
+  @apply bg-center bg-cover h-full w-full;
+}
+
+.boximgcon {
+  @apply bg-boximage p-[6px] w-[33px] h-[33px] rounded-md;
+}
+.numero {
+  @apply h-2 w-2 p-2 rounded-full text-[#00A991] bg-[#334155] flex justify-center items-center text-[11px] font-[900];
+}
+
+.boxtext {
+  @apply text-white font-[700] text-[18px];
+}
+.boxtextcon {
+  @apply flex  items-center gap-4;
+}
+
+.boxinfo {
+  @apply text-[#94A3B8] text-[15px] font-[400];
+}
+
+@keyframes spin-reverse {
+  to {
+    transform: rotate(-360deg);
+  }
+}
+
+.animate-spin-reverse {
+  animation: spin-reverse 1s linear infinite;
+}
+
+.imgcircle {
+  @apply bg-center bg-cover h-full w-full;
+}
+
+.imgcirclecon {
+  @apply bg-boximage p-[6px] w-[40px] h-[40px] rounded-full;
+}
+
+.trust {
+  @apply w-[80%];
+}
+
+.side {
+  border-right: 1px solid #23483b;
+}
+
+/* WebKit Browsers */
+.side::-webkit-scrollbar {
+  width: 4px; /* thin scrollbar */
+}
+
+.side::-webkit-scrollbar-track {
+  background: #102221; /* match sidebar background */
+  border-radius: 10px;
+}
+
+.side::-webkit-scrollbar-thumb {
+  background-color: rgba(16, 185, 129, 0.2); /* bg-teal-500/20 */
+  border-radius: 10px;
+  border: 1px solid #102221; /* subtle border */
+}
+
+.side::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(16, 185, 129, 0.3); /* slightly stronger on hover */
+}
+
+/* Firefox */
+.side {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(16, 185, 129, 0.2) #102221;
+}
+
+.row {
+  @apply bg-[#00000033];
+}
+
+.thh {
+  @apply px-4 py-2 text-left;
+}
+
+.pdd {
+  @apply p-2;
+}
+.trader {
+  @apply flex items-center gap-2;
+}
+.leftinfo {
+  @apply w-[40%] md:w-[30%] lg:w-auto  flex flex-col;
+}
+
+.dd {
+  @apply text-[10px] font-[600] leading-[15px] tracking-[0.25px] uppercase  text-[#6B7280];
+}
+
+.numm {
+  @apply leading-[20px] text-[13px] text-center;
+}
+
+.opt {
+  @apply placeholder:text-[#B0E4DD40] placeholder:text-[14px] placeholder:font-[500];
+}
+
+.btns {
+  @apply text-[14px] font-[900] leading-[20px] tracking-[1.4px] text-white uppercase justify-center;
+}
+@media (max-width: 400px) {
+  .smm {
+    font-size: 10px;
+  }
+}
+@media (max-width: 362px) {
+  .call_trade {
+    font-size: 4px;
+    font-weight: 700;
+  }
+}

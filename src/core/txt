@@ -1,0 +1,199 @@
+import { useEffect, useState } from 'react'
+import Layout from '../../shared/Layout/Layout'
+
+// Components
+import Badges from './dashboardComponents/Badges/Badges'
+import Leaderboard from './dashboardComponents/Leaderboard/Leaderboard'
+import SocialFeed from './dashboardComponents/SocialFeed/SocialFeed'
+import PortfolioOverview from './dashboardComponents/PortfolioOverview/PortfolioOverview'
+
+// Auth & Wallet
+import { useAuthReady, useAuthStore } from '../auth/auth.store'
+import { useWallet } from '@solana/wallet-adapter-react'
+import { useWalletMismatch } from '../../core/hooks/useWalletMismatch'
+
+// Shared
+import StateScreen from '../../shared/components/StateScreen'
+import RequireWallet from '../../shared/components/RequireWallet'
+
+// Types
+import type { UserProfile } from '../users/user.types'
+
+const API_BASE = 'https://0e14cca7cfb4.ngrok-free.app'
+
+export default function DashboardPage () {
+  const authReady = useAuthReady()
+  const { user, authenticated, accessToken } = useAuthStore()
+
+  const { publicKey, connected } = useWallet()
+  const mismatch = useWalletMismatch()
+
+  const walletAddress = publicKey?.toBase58()
+
+  const [profile, setProfile] = useState<UserProfile | null>(null)
+  const [loadingProfile, setLoadingProfile] = useState(false)
+  const [profileError, setProfileError] = useState<string | null>(null)
+
+  // 🔐 Fetch user profile from /auth/me
+  useEffect(() => {
+    if (!authReady) return
+    if (!accessToken) return
+    if (profile) return // prevent refetch
+
+    let cancelled = false
+
+    const fetchMe = async () => {
+      try {
+        
+        setLoadingProfile(true)
+        setProfileError(null)
+
+        const res = await fetch(`${API_BASE}/api/auth/me`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${accessToken}`,
+            'ngrok-skip-browser-warning': 'true'
+          }
+        })
+
+        const contentType = res.headers.get('content-type')
+
+        if (!res.ok) {
+          const text = await res.text()
+          throw new Error(text || 'Failed to fetch user')
+        }
+
+        if (!contentType?.includes('application/json')) {
+          const text = await res.text()
+          throw new Error(`Expected JSON, got: ${text.slice(0, 200)}`)
+        }
+
+        const data = await res.json()
+
+        if (!cancelled) {
+          setProfile(data.user)
+        }
+      } catch (err) {
+        console.error('❌ /api/auth/me failed:', err)
+        if (!cancelled) {
+          setProfileError('Failed to load profile details')
+        }
+      } finally {
+        if (!cancelled) {
+          setLoadingProfile(false)
+        }
+      }
+    }
+
+    fetchMe()
+
+    return () => {
+      cancelled = true
+    }
+  }, [authReady, accessToken, profile])
+
+  // ---------- Guards ----------
+  if (!authReady) {
+    return (
+      <StateScreen
+        title='Restoring session…'
+        description='Please wait a moment'
+      />
+    )
+  }
+
+  if (!accessToken) {
+    return (
+      <StateScreen
+        title='Not authenticated'
+        description='Please sign in again.'
+        tone='error'
+      />
+    )
+  }
+
+  if (mismatch) {
+    return (
+      <StateScreen
+        title='Wallet mismatch detected'
+        description='Please reconnect the wallet you signed in with.'
+        tone='error'
+      />
+    )
+  }
+
+  // ---------- UI ----------
+  return (
+    <Layout>
+      <RequireWallet>
+        <div className='min-h-screen bg-slate-950 text-white p-6 space-y-10'>
+          {/* Header */}
+          <div className='flex items-center gap-4'>
+            {profile?.avatar && (
+              <img
+                src={profile.avatar}
+                alt={profile.displayName}
+                className='w-12 h-12 rounded-full border border-slate-700'
+              />
+            )}
+            <div>
+              <h1 className='text-3xl font-bold'>Dashboard</h1>
+              <p className='text-slate-400 mt-1'>
+                {authenticated
+                  ? `Welcome back${
+                      profile?.displayName ? `, ${profile.displayName}` : ''
+                    }`
+                  : 'Connect & sign in to view your dashboard'}
+              </p>
+            </div>
+          </div>
+
+          {/* Profile feedback */}
+          {loadingProfile && (
+            <p className='text-sm text-slate-500'>Loading profile…</p>
+          )}
+          {profileError && (
+            <p className='text-sm text-red-400'>{profileError}</p>
+          )}
+
+          {/* Portfolio */}
+          {connected && authenticated && <PortfolioOverview />}
+
+          {/* Cards */}
+          <div className='grid grid-cols-1 md:grid-cols-3 gap-6'>
+            {/* Account */}
+            <div className='bg-slate-900 border border-slate-800 rounded-2xl p-6'>
+              <h2 className='text-lg font-semibold mb-2'>Account</h2>
+              <p>
+                Status: {authenticated ? 'Authenticated' : 'Not authenticated'}
+              </p>
+              <p>Role: {user?.role ?? '—'}</p>
+              <p className='break-all'>User ID: {user?.id ?? '—'}</p>
+            </div>
+
+            {/* Wallet */}
+            <div className='bg-slate-900 border border-slate-800 rounded-2xl p-6'>
+              <h2 className='text-lg font-semibold mb-2'>Wallet</h2>
+              <p>Connected: {connected ? 'Yes' : 'No'}</p>
+              <p className='break-all'>Address: {walletAddress ?? '—'}</p>
+            </div>
+
+            {/* Placeholder */}
+            <div className='bg-slate-900 border border-slate-800 rounded-2xl p-6'>
+              <h2 className='text-lg font-semibold mb-2'>Coming Soon</h2>
+              <p className='text-slate-400'>Vaults, copy trading, analytics.</p>
+            </div>
+          </div>
+
+          {/* Feed */}
+          <div className='grid grid-cols-1 lg:grid-cols-2 gap-10'>
+            <Badges />
+            <Leaderboard />
+            <SocialFeed />
+          </div>
+        </div>
+      </RequireWallet>
+    </Layout>
+  )
+}

@@ -1,0 +1,2006 @@
+offset-x: 0
+offset-y: 0
+blur-radius: 25px
+spread-radius: 0 (default)
+color: rgba(0,169,145,0.4)
+
+
+src/
+├── core/
+│   ├── store/
+│   │   ├── useAppStore.ts
+│   │   └── auth.store.ts
+│   │
+│   ├── query/
+│   │   ├── reactQuery.ts          # React Query client
+│   │   └── authClient.ts          # Auth API wrapper
+│   │
+│   ├── config/
+│   │   ├── solanaWallet.ts
+│   │   └── WalletProviders.tsx
+│   │
+│   └── hooks/
+│       ├── useRestoreAuth.ts
+│       └── useWalletAuthSync.ts
+│
+├── features/
+│   ├── auth/
+│   │   ├── auth.types.ts
+│   │   ├── useAuthLogin.ts
+│   │   ├── useAuthSession.ts
+│   │   ├── auth.guard.tsx
+│   │   └── SignInPage.tsx        # optional, may not be used
+│   │
+│   ├── users/                     # <-- NEW
+│   │   ├── user.types.ts          # UserProfile type
+│   │   └── useUserProfile.ts      # GET /api/users/:wallet
+│   │
+│   ├── wallet/
+│   │   ├── WalletPage.tsx
+│   │   ├── WalletButton.tsx
+│   │   ├── wallet.store.ts
+│   │   └── wallet.types.ts
+│   │
+│   ├── dashboard/
+│   │   ├── DashboardPage.tsx
+│   │   ├── dashboard.store.ts
+│   │   ├── dashboard.types.ts
+│   │   └── components/
+│   │       ├── PortfolioOverview.tsx
+│   │       ├── Badges/
+│   │       ├── Leaderboard/
+│   │       └── SocialFeed/
+│   │
+│   ├── trader/
+│   │   ├── TraderProfilePage.tsx
+│   │   ├── trader.store.ts
+│   │   └── trader.types.ts
+│   │
+│   └── vault/
+│       ├── VaultPage.tsx
+│       ├── vault.store.ts
+│       └── vault.types.ts
+│
+├── shared/
+│   ├── components/
+│   │   ├── Navbar.tsx
+│   │   ├── RequireWallet.tsx
+│   │   ├── StateScreen.tsx
+│   │   ├── Loader.tsx
+│   │   └── ErrorBoundary.tsx
+│   │
+│   └── hooks/
+│       ├── useDebounce.ts
+│       └── usePagination.ts
+│
+├── utils/                        # <-- NEW
+│   └── encoding.ts                # uint8ArrayToBase64 helper
+│
+├── App.tsx
+└── main.tsx
+
+
+src/
+├── core/
+│   ├── store/
+│   │   ├── useAppStore.ts
+│   │   └── auth.store.ts              # accessToken, user, authenticated
+│   │
+│   ├── api/
+│   │   ├── http.ts                    # fetch wrapper (auth headers, JSON guard)
+│   │   └── auth.api.ts                # auth/verify, auth/me
+│   │
+│   ├── config/
+│   │   ├── solanaWallet.ts
+│   │   └── WalletProviders.tsx
+│   │
+│   └── hooks/
+│       ├── useRestoreAuth.ts          # restores auth on reload
+│       ├── useWalletAuthSync.ts       # wallet ↔ auth binding
+│       └── useWalletMismatch.ts
+│
+├── features/
+│   ├── auth/
+│   │   ├── auth.types.ts              # AuthUser, VerifyPayload, etc.
+│   │   ├── useAuthLogin.ts            # wallet → challenge → verify
+│   │   ├── useAuthSession.ts          # optional session helpers
+│   │   └── auth.guard.tsx
+│   │
+│   ├── users/
+│   │   └── user.types.ts              # UserProfile
+│   │
+│   ├── wallet/
+│   │   ├── WalletPage.tsx
+│   │   ├── WalletButton.tsx
+│   │   ├── wallet.store.ts
+│   │   └── wallet.types.ts
+│   │
+│   ├── dashboard/
+│   │   ├── DashboardPage.tsx          # 🔥 owns /auth/me fetch
+│   │   ├── dashboard.store.ts
+│   │   ├── dashboard.types.ts
+│   │   └── dashboardComponents/
+│   │       ├── PortfolioOverview/
+│   │       │   └── PortfolioOverview.tsx
+│   │       ├── Badges/
+│   │       │   └── Badges.tsx
+│   │       ├── Leaderboard/
+│   │       │   └── Leaderboard.tsx
+│   │       └── SocialFeed/
+│   │           └── SocialFeed.tsx
+│   │
+│   ├── trader/
+│   │   ├── TraderProfilePage.tsx
+│   │   ├── trader.store.ts
+│   │   └── trader.types.ts
+│   │
+│   └── vault/
+│       ├── VaultPage.tsx
+│       ├── vault.store.ts
+│       └── vault.types.ts
+│
+├── shared/
+│   ├── Layout/
+│   │   └── Layout.tsx
+│   │
+│   ├── components/
+│   │   ├── Navbar.tsx
+│   │   ├── RequireWallet.tsx
+│   │   ├── StateScreen.tsx
+│   │   ├── Loader.tsx
+│   │   └── ErrorBoundary.tsx
+│   │
+│   └── hooks/
+│       ├── useDebounce.ts
+│       └── usePagination.ts
+│
+├── utils/
+│   └── encoding.ts                   # uint8ArrayToBase64
+│
+├── App.tsx
+└── main.tsx
+
+
+how wallet is used and connected
+┌─────────────────────┐
+│  solanaWallet.ts    │
+│                     │
+│  export const network │───┐
+│  export const endpoint│──┼──► used in WalletProviders.tsx
+│  export const wallets │──┘
+└─────────────────────┘
+            │
+            │ import
+            ▼
+┌───────────────────────────────┐
+│  WalletProviders.tsx          │
+│                               │
+│  <ConnectionProvider endpoint={endpoint}> │
+│  <WalletProvider wallets={wallets} ...> │
+│  <WalletModalProvider>        │
+│      {children}               │
+│  </WalletModalProvider>       │
+│  </WalletProvider>            │
+│  </ConnectionProvider>        │
+└───────────────────────────────┘
+            │
+            │ Wraps the React app
+            ▼
+┌───────────────────────────────┐
+│          App.tsx              │
+│                               │
+│ <WalletProviders>             │
+│    <YourAppComponents />      │
+│ </WalletProviders>            │
+└───────────────────────────────┘
+            │
+            ▼
+┌───────────────────────────────┐
+│  YourAppComponents can use:   │
+│  - useWallet() hook           │
+│  - access Phantom, Solflare   │
+│  - auto-detected Backpack     │
+└───────────────────────────────┘
+
+
+
+
+Wagmi
+
+Step 1: Extraction (External → Store)
+┌────────────────────────────────────────────────────────────────────┐
+│                              USER                                  │
+└────────────────────────────────────────────────────────────────────┘
+                                   |
+                                   | clicks
+                                   v
+┌────────────────────────────────────────────────────────────────────┐
+│                         UI (WalletPage)                             │
+│                                                                    │
+│  <button onClick={() => setAddress('DemoWalletAddress123')}>        │
+│                                                                    │
+└────────────────────────────────────────────────────────────────────┘
+                                   |
+                                   | calls
+                                   v
+┌────────────────────────────────────────────────────────────────────┐
+│                    Zustand Action (setAddress)                      │
+│                                                                    │
+│  setAddress('DemoWalletAddress123')                                 │
+│                                                                    │
+└────────────────────────────────────────────────────────────────────┘
+                                   |
+                                   | updates
+                                   v
+┌────────────────────────────────────────────────────────────────────┐
+│                     Zustand Store (wallet.store)                   │
+│                                                                    │
+│  state.address:                                                     │
+│    null  ─────────────▶  "DemoWalletAddress123"                    │
+│                                                                    │
+│  (persist middleware writes to localStorage)                       │
+└────────────────────────────────────────────────────────────────────┘
+                                   |
+                                   | notifies subscribers
+                                   v
+┌────────────────────────────────────────────────────────────────────┐
+│                    React Subscription Layer                         │
+│                                                                    │
+│  const { address } = useWalletStore()                               │
+│                                                                    │
+│  Zustand signals: "state changed"                                   │
+└────────────────────────────────────────────────────────────────────┘
+                                   |
+                                   | triggers
+                                   v
+┌────────────────────────────────────────────────────────────────────┐
+│                     React Re-render (WalletPage)                   │
+│                                                                    │
+│  address === "DemoWalletAddress123"                                 │
+│                                                                    │
+│  useWalletBalance(address ?? undefined)                             │
+└────────────────────────────────────────────────────────────────────┘
+                                   |
+                                   | passes new param
+                                   v
+┌────────────────────────────────────────────────────────────────────┐
+│                   React Query Hook (useWalletBalance)              │
+│                                                                    │
+│  queryKey: ['walletBalance', address]                              │
+│                                                                    │
+│  enabled: !!address   →   true                                     │
+└────────────────────────────────────────────────────────────────────┘
+                                   |
+                                   | React Query internal logic
+                                   v
+┌────────────────────────────────────────────────────────────────────┐
+│                    React Query Engine (TanStack)                   │
+│                                                                    │
+│  1. Check cache for ['walletBalance', address]                     │
+│  2. If cache miss or stale → run queryFn                           │
+│                                                                    │
+└────────────────────────────────────────────────────────────────────┘
+                                   |
+                                   | executes
+                                   v
+┌────────────────────────────────────────────────────────────────────┐
+│                   Fetch Function (queryFn)                          │
+│                                                                    │
+│  fetchWalletBalance(address)                                        │
+└────────────────────────────────────────────────────────────────────┘
+                                   |
+                                   | HTTP / RPC request
+                                   v
+┌────────────────────────────────────────────────────────────────────┐
+│                         BACKEND / RPC                               │
+│                                                                    │
+│  Returns wallet balance                                             │
+└────────────────────────────────────────────────────────────────────┘
+                                   |
+                                   | response
+                                   v
+┌────────────────────────────────────────────────────────────────────┐
+│                    React Query Cache Updated                        │
+│                                                                    │
+│  data stored under ['walletBalance', address]                      │
+│  isLoading: false                                                   │
+└────────────────────────────────────────────────────────────────────┘
+                                   |
+                                   | triggers
+                                   v
+┌────────────────────────────────────────────────────────────────────┐
+│                    Final React Re-render                            │
+│                                                                    │
+│  {isLoading && <p>Loading...</p>} ❌                                │
+│  {data && <p>Balance: {data.balance} SOL</p>} ✅                   │
+└────────────────────────────────────────────────────────────────────┘
+
+
+
+
+1️⃣ WalletProviders.tsx (Infrastructure Layer)
+
+File involved
+
+WalletProviders.tsx
+
+<ConnectionProvider endpoint={endpoint}>
+  <WalletProvider wallets={wallets} autoConnect>
+    <WalletModalProvider>
+      {children}
+    </WalletModalProvider>
+  </WalletProvider>
+</ConnectionProvider>
+
+
+
+
+
+
+
+
+
+
+🔁 THE FULL WALLET FLOW — IN REAL EXECUTION ORDER
+
+This is exactly what happens when your app runs, from main.tsx to wallet balance.
+
+🧩 0️⃣ App Bootstraps (main.tsx)
+
+File involved
+
+main.tsx
+
+
+What happens
+
+React app mounts
+
+Providers wrap your app:
+
+QueryClientProvider
+
+RouterProvider
+
+Somewhere above routes (or inside App), you wrapped with:
+
+<WalletProviders>
+  <App />
+</WalletProviders>
+
+
+👉 This is critical:
+Without WalletProviders, nothing wallet-related works.
+
+🧩 1️⃣ WalletProviders.tsx (Infrastructure Layer)
+
+File involved
+
+WalletProviders.tsx
+
+<ConnectionProvider endpoint={endpoint}>
+  <WalletProvider wallets={wallets} autoConnect>
+    <WalletModalProvider>
+      {children}
+    </WalletModalProvider>
+  </WalletProvider>
+</ConnectionProvider>
+
+What each part does
+1. ConnectionProvider
+
+Creates a Solana RPC connection
+
+Uses:
+
+endpoint = https://api.devnet.solana.com
+
+2. WalletProvider
+
+Detects installed wallets:
+
+Phantom
+
+Solflare
+
+Reads/writes:
+
+localStorage.walletName
+
+
+Exposes wallet state via useWallet()
+
+3. WalletModalProvider
+
+Enables <WalletMultiButton />
+
+Handles wallet UI (dropdowns, modals)
+
+⚠️ At this point:
+
+No wallet is connected yet
+
+No Zustand involved yet
+
+🧩 2️⃣ Navbar (WalletMultiButton)
+
+File involved
+
+Navbar.tsx (or Layout)
+
+<WalletMultiButton />
+
+What happens when user clicks
+
+Modal opens
+
+User selects wallet (e.g. Phantom)
+
+Wallet Adapter:
+
+Saves "walletName": "Phantom"
+
+Attempts connection
+
+If successful:
+
+connected = true
+
+publicKey is populated
+
+📌 This state lives inside Wallet Adapter, NOT your store yet.
+
+🧩 3️⃣ Wallet Adapter State (External System)
+
+Accessible anywhere via:
+
+const { connected, publicKey } = useWallet()
+
+
+At this moment:
+
+Wallet Adapter knows:
+
+Which wallet is selected
+
+Whether it’s connected
+
+What the public key is
+
+But ❗ your app state still doesn’t know
+
+🧩 4️⃣ Synchronization Layer (CRITICAL STEP)
+
+This is the bridge between worlds.
+
+📍 Usually lives in:
+
+Navbar
+
+App.tsx
+
+WalletSync.tsx (optional)
+
+useEffect(() => {
+  if (connected && publicKey) {
+    setWallet(publicKey.toBase58(), true)
+  } else {
+    resetWallet()
+  }
+}, [connected, publicKey])
+
+What this does
+
+Extracts wallet data from adapter
+
+Writes it into Zustand
+
+Makes wallet state app-wide and persistent
+
+This is Step 1 in your original diagram, but now done properly.
+
+🧩 5️⃣ Zustand Store (Application State)
+
+File
+
+wallet.store.ts
+
+{
+  publicKey: "2Qnx...Bk7o",
+  connected: true
+}
+
+What happens now
+
+Zustand updates state
+
+Persist middleware writes to:
+
+localStorage.wallet-storage
+
+
+Any subscribed component re-renders
+
+Zustand is now the single source of truth for your app
+
+🧩 6️⃣ WalletPage.tsx (Read-only Consumer)
+
+File
+
+WalletPage.tsx
+
+const { connected } = useWallet()
+const { publicKey } = useWalletStore()
+
+Logic
+
+If not connected → show instruction
+
+If connected:
+
+Display address
+
+Fetch balance
+
+WalletPage does not connect wallets
+✔ Correct architecture
+
+🧩 7️⃣ React Query kicks in (Data Fetch Layer)
+useWalletBalance(publicKey ?? undefined)
+
+React Query flow
+
+enabled: !!publicKey
+
+Generates cache key:
+
+['walletBalance', publicKey]
+
+
+Calls fetch function
+
+Stores result in cache
+
+Triggers re-render
+
+🧩 8️⃣ UI Updates Automatically
+{isLoading && <p>Loading...</p>}
+{data && <p>Balance: {data.balance} SOL</p>}
+
+
+No manual state handling
+No side effects
+Pure declarative UI
+
+🧠 COMPLETE UPDATED DIAGRAM (DAY 5 ACCURATE)
+┌────────────────────────────────────────────────────┐
+│                     USER                           │
+└────────────────────────────────────────────────────┘
+                     │
+                     │ clicks
+                     ▼
+┌────────────────────────────────────────────────────┐
+│              WalletMultiButton (Navbar)             │
+└────────────────────────────────────────────────────┘
+                     │
+                     │ opens modal
+                     ▼
+┌────────────────────────────────────────────────────┐
+│      Solana Wallet Adapter (Phantom / Solflare)     │
+│                                                    │
+│  - Detects wallet                                  │
+│  - Saves walletName in localStorage                │
+│  - Sets connected + publicKey                      │
+└────────────────────────────────────────────────────┘
+                     │
+                     │ exposes
+                     ▼
+┌────────────────────────────────────────────────────┐
+│            useWallet() hook (Adapter API)           │
+│                                                    │
+│  { connected, publicKey }                           │
+└────────────────────────────────────────────────────┘
+                     │
+                     │ sync (useEffect)
+                     ▼
+┌────────────────────────────────────────────────────┐
+│              Zustand Store (wallet.store)           │
+│                                                    │
+│  publicKey: null → "2Qnx...Bk7o"                    │
+│  connected: false → true                            │
+│                                                    │
+│  (persist → localStorage)                           │
+└────────────────────────────────────────────────────┘
+                     │
+                     │ notify subscribers
+                     ▼
+┌────────────────────────────────────────────────────┐
+│                  WalletPage.tsx                    │
+│                                                    │
+│  Reads publicKey from Zustand                      │
+│  Guards access if not connected                    │
+└────────────────────────────────────────────────────┘
+                     │
+                     │ triggers
+                     ▼
+┌────────────────────────────────────────────────────┐
+│           React Query (useWalletBalance)            │
+│                                                    │
+│  Key: ['walletBalance', publicKey]                 │
+│  enabled: true                                     │
+└────────────────────────────────────────────────────┘
+                     │
+                     │ fetch
+                     ▼
+┌────────────────────────────────────────────────────┐
+│                Solana RPC / Backend                 │
+└────────────────────────────────────────────────────┘
+                     │
+                     │ response
+                     ▼
+┌────────────────────────────────────────────────────┐
+│          React Query Cache → UI Re-render           │
+│                                                    │
+│  Balance displayed                                 │
+└────────────────────────────────────────────────────┘
+
+✅ FINAL CONFIRMATION
+
+✔ Your architecture is clean
+✔ Your separation of concerns is professional
+✔ Your mental model is now correct
+✔ This is real dApp architecture, not tutorial junk
+
+Next logical steps (Day 6+ ideas)
+
+Route guards (/dashboard requires wallet)
+
+Replace fake balance with real RPC call
+
+Wallet change event handling
+
+Global wallet status banner
+
+If you want, tell me:
+👉 “Next, let’s harden this for production”
+or
+👉 “Let’s fetch real SOL balance”
+
+You’re doing great.
+
+
+
+
+
+//Standard web3 Aouth
+User
+ ↓
+Wallet Adapter (Phantom / Solflare)
+ ↓
+publicKey available
+ ↓
+Frontend requests challenge (nonce)
+ ↓
+Backend returns message
+ ↓
+Wallet signs message
+ ↓
+Signature sent to backend
+ ↓
+Backend verifies signature
+ ↓
+Session / JWT created
+ ↓
+Frontend stores session
+
+
+
+✅ FINAL AUTH FLOW (Day 5 vs Day 6 — Corrected)
+USER
+ │
+ ▼
+Clicks "Connect Wallet"
+ │
+ ▼
+┌─────────────────────────────────────────┐
+│ Wallet Adapter (External SDK)            │
+│ Phantom / Solflare / Backpack            │
+│                                         │
+│ wallet.connect()                         │
+│ ❌ React Query NOT used                  │
+└───────────────┬─────────────────────────┘
+                │
+                ▼
+┌─────────────────────────────────────────┐
+│ Wallet Connected                         │
+│ publicKey available                      │
+│ connected = true                         │
+└───────────────┬─────────────────────────┘
+                │
+                ▼
+┌═════════════════════════════════════════┐
+║   ZUSTAND — WALLET STORE                ║   ← DAY 5
+║   (Source of truth for wallet state)    ║
+║   publicKey                             ║
+║   connected                             ║
+└═════════════════════════════════════════┘
+                │
+                ▼
+┌─────────────────────────────────────────┐
+│ UI renders                              │
+│ Address / Connect state                 │
+│ "Sign In" button visible                │
+└─────────────────────────────────────────┘
+
+══════════════ USER CONNECTED (NOT AUTHENTICATED) ══════════════
+
+
+USER clicks "Sign In"
+ │
+ ▼
+┌─────────────────────────────────────────┐
+│ wallet.signMessage()                    │
+│ User approves signature                 │
+│                                         │
+│ ❌ React Query NOT used                  │
+└───────────────┬─────────────────────────┘
+                │
+                ▼
+┌═════════════════════════════════════════┐
+║   REACT QUERY (MUTATION)                ║   ← DAY 6
+║   POST /auth/login                      ║
+║   send publicKey + signature + message  ║
+║   ✅ React Query REQUIRED               ║
+└───────────────┬─────────────────────────┘
+                │
+                ▼
+┌─────────────────────────────────────────┐
+│ Backend                                 │
+│ Verify signature                        │
+│ Create / find user                      │
+│ Create session (JWT / cookie)           │
+└───────────────┬─────────────────────────┘
+                │
+                ▼
+┌═════════════════════════════════════════┐
+║   ZUSTAND — AUTH STORE                  ║   ← DAY 6
+║   authenticated = true                  ║
+║   userId / role                         ║
+└═════════════════════════════════════════┘
+                │
+                ▼
+┌═════════════════════════════════════════┐
+║   REACT QUERY (QUERIES)                 ║   ← DAY 6 (MANDATORY)
+║   Backend data fetching                 ║
+║   Profile                               ║
+║   Portfolio                             ║
+║   Wallet balance                        ║
+║   Vaults                                ║
+║   enabled: authenticated === true       ║
+└───────────────┬─────────────────────────┘
+                │
+                ▼
+┌─────────────────────────────────────────┐
+│ Backend APIs                            │
+│ Auth-protected resources               │
+└─────────────────────────────────────────┘
+                │
+                ▼
+┌─────────────────────────────────────────┐
+│ UI renders authenticated dashboard      │
+│ Portfolio / Vaults / User pages         │
+└─────────────────────────────────────────┘
+
+
+
+//updated for day 6
+USER
+ │
+ ▼
+Clicks "Connect Wallet"
+ │
+ ▼
+┌─────────────────────────────────────────┐
+│ Wallet Adapter (External SDK)            │
+│ Phantom / Solflare / Backpack            │
+│ wallet.connect()                         │
+└───────────────┬─────────────────────────┘
+                │
+                ▼
+┌═════════════════════════════════════════┐
+║ ZUSTAND — WALLET STORE                  ║   ← DAY 5
+║ publicKey                               ║
+║ connected                               ║
+└───────────────┬─────────────────────────┘
+                │
+                ▼
+┌─────────────────────────────────────────┐
+│ UI shows address + "Sign In" button     │
+└─────────────────────────────────────────┘
+
+════════════ CONNECTED (NOT AUTHENTICATED) ════════════
+
+USER clicks "Sign In"
+ │
+ ▼
+┌─────────────────────────────────────────┐
+│ wallet.signMessage()                    │
+│ User approves signature                 │
+│ (ownership proof)                       │
+└───────────────┬─────────────────────────┘
+                │
+                ▼
+┌═════════════════════════════════════════┐
+║ REACT QUERY — MUTATION                  ║   ← DAY 6
+║ useAuthLogin                            ║
+║ POST /auth/login                       ║
+║ (via authClient.ts)                    ║
+└───────────────┬─────────────────────────┘
+                │
+                ▼
+┌─────────────────────────────────────────┐
+│ Backend                                 │
+│ Verify signature                        │
+│ Create / find user                     │
+│ Create session (cookie / JWT)           │
+└───────────────┬─────────────────────────┘
+                │
+                ▼
+┌═════════════════════════════════════════┐
+║ ZUSTAND — AUTH STORE                   ║   ← DAY 6
+║ authenticated = true                   ║
+║ user { id, role, walletAddress }       ║
+└───────────────┬─────────────────────────┘
+                │
+                ▼
+┌═════════════════════════════════════════┐
+║ REACT QUERY — QUERIES                  ║   ← DAY 6+
+║ useAuthSession                         ║
+║ useProfile                             ║
+║ usePortfolio                           ║
+║ enabled: authenticated === true        ║
+└───────────────┬─────────────────────────┘
+                │
+                ▼
+┌─────────────────────────────────────────┐
+│ Auth-protected Backend APIs             │
+└─────────────────────────────────────────┘
+                │
+                ▼
+┌─────────────────────────────────────────┐
+│ Authenticated UI / Dashboard            │
+└─────────────────────────────────────────┘
+
+
+
+App mounts
+ ↓
+useAuthSession()
+ ↓
+React Query fetches /auth/session
+ ↓
+data arrives
+ ↓
+useEffect syncs → Zustand auth store
+ ↓
+UI updates
+
+USER
+ │
+ ▼
+Clicks "Connect Wallet" (Navbar)
+ │
+ ▼
+┌─────────────────────────────────────────┐
+│ Wallet Adapter (External SDK)            │
+│ Phantom / Solflare / Backpack            │
+│ wallet.connect()                         │
+│ ❌ Only connects wallet, no auth         │
+└───────────────┬─────────────────────────┘
+                │
+                ▼
+┌═════════════════════════════════════════┐
+║ ZUSTAND — WALLET STORE                  ║   ← DAY 5
+║ publicKey                               ║
+║ connected                               ║
+└───────────────┬─────────────────────────┘
+                │
+                ▼
+┌─────────────────────────────────────────┐
+│ UI shows: Address + "Sign In" button     │
+└─────────────────────────────────────────┘
+
+════════════ CONNECTED (NOT AUTHENTICATED) ════════════
+
+USER clicks "Sign In" (SignInPage)
+ │
+ ▼
+┌─────────────────────────────────────────┐
+│ wallet.signMessage()                    │
+│ Second modal: "Sign message"            │
+│ User approves OR rejects                 │
+│ ✅ Approval proves wallet ownership      │
+│ ❌ Rejection → no authentication        │
+└───────────────┬─────────────────────────┘
+                │
+                ▼
+┌═════════════════════════════════════════┐
+║ REACT QUERY — MUTATION                  ║   ← DAY 6
+║ useAuthLogin                            ║
+║ POST /auth/login                         │
+│ (mock or real backend via authClient)   │
+└───────────────┬─────────────────────────┘
+                │
+                ▼
+┌─────────────────────────────────────────┐
+│ Backend                                 │
+│ Verify signature                        │
+│ Create / find user                        │
+│ Create session (cookie / JWT)           │
+└───────────────┬─────────────────────────┘
+                │
+                ▼
+┌═════════════════════════════════════════┐
+║ ZUSTAND — AUTH STORE                     ║   ← DAY 6
+║ authenticated = true                     │
+║ user = { id, role, walletAddress }       │
+└───────────────┬─────────────────────────┘
+                │
+                ▼
+┌═════════════════════════════════════════┐
+║ REACT QUERY — QUERIES                   ║   ← DAY 6+
+║ useAuthSession                          │
+║ useProfile                              │
+║ usePortfolio                             │
+║ enabled: authenticated === true          │
+└───────────────┬─────────────────────────┘
+                │
+                ▼
+┌─────────────────────────────────────────┐
+│ Auth-protected Backend APIs             │
+└───────────────┬─────────────────────────┘
+                │
+                ▼
+┌─────────────────────────────────────────┐
+│ Authenticated UI / Dashboard            │
+└─────────────────────────────────────────┘
+
+///updatedAPP LOAD / PAGE REFRESH
+│
+▼
+┌─────────────────────────────────────────┐
+│ App.tsx mounts                          │
+│ - useAuthSession()                     │
+│ - useWalletAuthSync()   🆕             │
+└───────────────┬─────────────────────────┘
+                │
+                ▼
+┌═════════════════════════════════════════┐
+║ ZUSTAND — AUTH STORE (persist)          ║
+║ Reads from localStorage:                ║
+║ auth-storage                            ║
+║                                         ║
+║ CASE A: stored auth exists              ║
+║ → authenticated = true                  ║
+║ → user restored                         ║
+║                                         ║
+║ CASE B: no stored auth                  ║
+║ → authenticated = false                 ║
+║ → user = null                           ║
+└───────────────┬─────────────────────────┘
+                │
+                ▼
+┌═════════════════════════════════════════┐
+║ WALLET ADAPTER                          ║
+║ - tries autoConnect                    ║
+║ - restores last wallet if allowed       ║
+║                                         ║
+║ connected = true | false                ║
+║ publicKey = value | null                ║
+└───────────────┬─────────────────────────┘
+                │
+                ▼
+┌═════════════════════════════════════════┐
+║ useWalletAuthSync (THE BRIDGE) 🧠       ║
+║                                         ║
+║ IF connected && publicKey               ║
+║ AND authenticated === false             ║
+║                                         ║
+║ → setAuth({                              ║
+║     id: 'mock-user-id',                 ║
+║     walletAddress,                      ║
+║     role: 'user'                        ║
+║   })                                    ║
+║                                         ║
+║ (Mock backend auto-auth)                ║
+└───────────────┬─────────────────────────┘
+                │
+                ▼
+┌─────────────────────────────────────────┐
+│ AUTH STATE IS NOW RESTORED               │
+│ even after reload                       │
+└─────────────────────────────────────────┘
+
+
+//updated app flow
+
+
+INITIAL APP LOAD / PAGE REFRESH
+App mounts
+ ↓
+useAuthSession()
+ ↓
+React Query fetches GET /auth/session
+ ↓
+CASE A: 200 OK (session exists)
+ ↓
+data arrives { user, walletAddress }
+ ↓
+useEffect syncs → Zustand auth store
+ ↓
+authenticated = true
+user set
+hydrated = true
+ ↓
+UI updates (authenticated)
+
+CASE B: 401 Unauthorized (no session)
+ ↓
+useAuthSession error
+ ↓
+authenticated = false
+user = null
+hydrated = true
+ ↓
+Public UI only
+
+
+✅ Backend session decides auth
+❌ Zustand does NOT invent auth
+❌ Wallet does NOT auto-auth
+
+🔹 WALLET CONNECTION (STILL NOT AUTH)
+USER
+ │
+ ▼
+Clicks "Connect Wallet" (Navbar)
+ │
+ ▼
+┌─────────────────────────────────────────┐
+│ Wallet Adapter (External SDK)            │
+│ Phantom / Solflare / Backpack            │
+│ wallet.connect()                         │
+│ ❌ Only connects wallet, no auth         │
+└───────────────┬─────────────────────────┘
+                │
+                ▼
+┌═════════════════════════════════════════┐
+║ ZUSTAND — WALLET STORE                  ║   ← DAY 5
+║ publicKey                               ║
+║ connected                               ║
+└───────────────┬─────────────────────────┘
+                │
+                ▼
+┌─────────────────────────────────────────┐
+│ UI shows: Address + "Sign In" button     │
+└─────────────────────────────────────────┘
+
+════════════ CONNECTED (NOT AUTHENTICATED) ════════════
+
+🔹 SIGN IN FLOW (AUTH BEGINS HERE)
+USER clicks "Sign In" (SignInPage)
+ │
+ ▼
+┌─────────────────────────────────────────┐
+│ wallet.signMessage()                    │
+│ Second modal: "Sign message"            │
+│ User approves OR rejects                │
+│ ✅ Approval proves wallet ownership     │
+│ ❌ Rejection → no authentication        │
+└───────────────┬─────────────────────────┘
+                │
+                ▼
+┌═════════════════════════════════════════┐
+║ REACT QUERY — MUTATION                  ║   ← DAY 6
+║ useAuthLogin                            ║
+║ POST /auth/login                       ║
+│ (REAL backend via authClient)           │
+└───────────────┬─────────────────────────┘
+                │
+                ▼
+┌─────────────────────────────────────────┐
+│ Backend                                 │
+│ - verify signature                      │
+│ - find / create user                   │
+│ - create session (cookie / JWT)         │
+└───────────────┬─────────────────────────┘
+                │
+                ▼
+┌═════════════════════════════════════════┐
+║ ZUSTAND — AUTH STORE                    ║   ← DAY 6
+║ authenticated = true                   ║
+║ user = { id, role, walletAddress }     ║
+║ hydrated = true                        ║
+└───────────────┬─────────────────────────┘
+
+🔹 POST-AUTH DATA FLOW
+authenticated === true
+ ↓
+┌═════════════════════════════════════════┐
+║ REACT QUERY — QUERIES                   ║   ← DAY 6+
+║ useAuthSession                          ║
+║ useProfile                              ║
+║ usePortfolio                           ║
+║ enabled: authenticated === true        ║
+└───────────────┬─────────────────────────┘
+                │
+                ▼
+┌─────────────────────────────────────────┐
+│ Auth-protected Backend APIs             │
+└───────────────┬─────────────────────────┘
+                │
+                ▼
+┌─────────────────────────────────────────┐
+│ Authenticated UI / Dashboard            │
+└─────────────────────────────────────────┘
+
+🔹 WALLET MISMATCH (DASHBOARD-LEVEL CHECK)
+Dashboard renders
+ ↓
+wallet.publicKey !== user.walletAddress
+ ↓
+┌─────────────────────────────────────────┐
+│ StateScreen                             │
+│ "Wallet mismatch detected"              │
+│ "Reconnect the wallet you signed in with"│
+└─────────────────────────────────────────┘
+
+
+✅ This is why RequireWallet does NOT handle auth
+✅ This logic belongs in Dashboard (or AuthGuard + Dashboard)
+
+🚫 REMOVED IN DAY 10 (IMPORTANT)
+❌ useWalletAuthSync
+❌ Auto-auth on wallet connect
+❌ Auth restoration from localStorage alone
+❌ Wallet == Auth assumption
+
+🧠 FINAL MENTAL MODEL (LOCK THIS IN)
+Wallet connection ≠ Authentication
+Authentication ≠ UI persistence
+Backend session = source of truth
+Zustand = cache
+React Query = server sync
+
+
+
+APP LOAD / USER ACTION
+│
+│
+│  (A) App starts OR user clicks "Connect Wallet"
+│
+▼
+┌───────────────────────────────────────────────┐
+│ App.tsx mounts                                │
+│                                               │
+│ - WalletProviders (Solana SDK)                │
+│ - React Query Provider                        │
+│ - Zustand stores created                     │
+│ - useRestoreAuth()                            │
+│ - useAutoSignIn()   ✅                        │
+└───────────────────────────────────────────────┘
+│
+│
+│  (B) Restore AUTH from localStorage
+│
+▼
+┌───────────────────────────────────────────────┐
+│ useRestoreAuth                                │
+│                                               │
+│ Reads: localStorage("auth-storage")           │
+│                                               │
+│ CASE 1: user exists                           │
+│   → authenticated = true                      │
+│                                               │
+│ CASE 2: nothing stored                        │
+│   → authenticated = false                     │
+│                                               │
+│ hydrated = true                               │
+└───────────────────────────────────────────────┘
+│
+│
+│  (C) Wallet Adapter runs (autoConnect OR user click)
+│
+▼
+┌───────────────────────────────────────────────┐
+│ Wallet Adapter (External SDK)                 │
+│                                               │
+│ wallet.connect()                              │
+│                                               │
+│ RESULT:                                       │
+│ - connected = true                            │
+│ - publicKey = "DemoWalletAddress123"          │
+└───────────────────────────────────────────────┘
+│
+│
+│  (D) Wallet state becomes available to React
+│
+▼
+┌───────────────────────────────────────────────┐
+│ useWallet() / wallet context updates          │
+│                                               │
+│ publicKey now exists                          │
+│ connected === true                            │
+└───────────────────────────────────────────────┘
+│
+│
+│  (E) React re-renders components
+│
+▼
+┌───────────────────────────────────────────────┐
+│ Components re-render                          │
+│                                               │
+│ Navbar                                       │
+│ WalletPage                                   │
+│ Dashboard (if allowed)                        │
+└───────────────────────────────────────────────┘
+│
+│
+│  (F) useAutoSignIn EFFECT RUNS (IMPORTANT)
+│
+▼
+┌───────────────────────────────────────────────┐
+│ useAutoSignIn useEffect                       │
+│                                               │
+│ CHECKS (in order):                            │
+│                                               │
+│ 1. hydrated === true        ✅                │
+│ 2. connected === true       ✅                │
+│ 3. publicKey exists         ✅                │
+│ 4. authenticated === false  ✅                │
+│ 5. loginMutation.isPending  ❌                │
+│ 6. attemptedRef === false   ✅                │
+│                                               │
+│ All checks pass → CONTINUE                    │
+└───────────────────────────────────────────────┘
+│
+│
+│  (G) Wallet signs message
+│
+▼
+┌───────────────────────────────────────────────┐
+│ wallet.signMessage()                          │
+│                                               │
+│ Message: "Sign in to Zephyr"                  │
+│                                               │
+│ User approves signature                      │
+└───────────────────────────────────────────────┘
+│
+│
+│  (H) useAuthLogin is TRIGGERED
+│
+▼
+┌───────────────────────────────────────────────┐
+│ loginMutation.mutate(payload)                 │
+│                                               │
+│ payload = {                                  │
+│   publicKey,                                 │
+│   signature,                                 │
+│   message                                   │
+│ }                                            │
+│                                               │
+│ ⚠️ This is the FIRST auth call                │
+└───────────────────────────────────────────────┘
+│
+│
+│  (I) useAuthLogin mutationFn runs
+│
+▼
+┌───────────────────────────────────────────────┐
+│ useAuthLogin → mutationFn                     │
+│                                               │
+│ (Days 1–9 mock backend)                       │
+│                                               │
+│ - fake delay                                 │
+│ - create mock user                           │
+└───────────────────────────────────────────────┘
+│
+│
+│  (J) Auth store is updated
+│
+▼
+┌───────────────────────────────────────────────┐
+│ onSuccess()                                  │
+│                                               │
+│ setAuth(user)                                │
+│                                               │
+│ Zustand auth.store updates:                  │
+│ - authenticated = true                       │
+│ - user = { id, walletAddress, role }         │
+│                                               │
+│ persisted to localStorage                    │
+└───────────────────────────────────────────────┘
+│
+│
+│  (K) React re-renders AGAIN
+│
+▼
+┌───────────────────────────────────────────────┐
+│ Authenticated UI unlocks                     │
+│                                               │
+│ - Navbar shows signed-in state                │
+│ - Dashboard allowed                           │
+│ - Auth queries can run                        │
+└───────────────────────────────────────────────┘
+│
+│
+│  (L) Data queries run (wallet + auth)
+│
+▼
+┌───────────────────────────────────────────────┐
+│ React re-renders after authentication         │
+│                                               │
+│ - Navbar updates                              │
+│ - AuthGuard allows Dashboard                 │
+│ - DashboardPage renders                      │
+│                                               │
+│ (Future: React Query data hooks go here)     │
+└───────────────────────────────────────────────┘
+
+│
+│
+│  (M) Final UI state
+│
+▼
+┌───────────────────────────────────────────────┐
+│ Fully authenticated dashboard                │
+│                                               │
+│ Wallet + User + Data in sync                  │
+└───────────────────────────────────────────────┘
+
+
+///Written model
+🔁 APP START → WALLET → AUTO SIGN-IN
+Exact file tree + execution order
+🟢 0️⃣ Entry point (React bootstraps)
+📁 src/main.tsx
+
+Runs first. Always.
+
+createRoot(...).render(
+  <App />
+);
+
+
+What happens:
+
+React starts
+
+<App /> is mounted
+
+➡️ Nothing auth or wallet-related yet
+
+🟢 1️⃣ App orchestration layer
+📁 src/App.tsx
+
+This is the MOST IMPORTANT file in the entire app
+
+Runs once on app load, then again on refresh.
+
+<WalletProviders>
+  <QueryClientProvider>
+    <Router />
+  </QueryClientProvider>
+</WalletProviders>
+
+Hooks that run here (ORDER MATTERS):
+Order	Hook	File
+1	useRestoreAuth()	core/hooks/useRestoreAuth.ts
+2	useAutoSignIn()	features/auth/useAutoSignIn.ts
+3	(later) useAuthSession()	⏸️ disabled
+
+➡️ This is where the whole flow starts
+
+🟢 2️⃣ Wallet SDK becomes active
+📁 src/core/config/WalletProviders.tsx
+<ConnectionProvider>
+  <WalletProvider autoConnect wallets={wallets}>
+    <WalletModalProvider>
+      {children}
+    </WalletModalProvider>
+  </WalletProvider>
+</ConnectionProvider>
+
+What runs here:
+
+Solana Wallet Adapter initializes
+
+Reads last-used wallet
+
+If allowed → autoConnect happens
+
+📌 You do NOT control this step
+
+🟢 3️⃣ Auth restoration (localStorage → Zustand)
+📁 src/core/hooks/useRestoreAuth.ts
+
+Runs immediately when App mounts
+
+const stored = localStorage.getItem("auth-storage");
+
+Outcomes:
+Case	Result
+Stored user exists	authenticated = true
+No stored user	authenticated = false
+
+Always sets:
+
+hydrated = true
+
+
+➡️ This unlocks auth-dependent logic
+
+🟢 4️⃣ Wallet connects (auto OR user click)
+📍 Triggered by:
+
+autoConnect in WalletProvider OR
+
+Clicking <WalletMultiButton /> in:
+
+📁 src/shared/components/Navbar.tsx
+<WalletMultiButton />
+
+Result:
+connected = true
+publicKey = PublicKey(...)
+
+
+➡️ Wallet state becomes available globally
+
+🟢 5️⃣ Wallet state is exposed to React
+📍 Anywhere that calls:
+const { connected, publicKey, signMessage } = useWallet();
+
+
+Common places:
+
+Navbar.tsx
+
+DashboardPage.tsx
+
+useAutoSignIn.ts
+
+➡️ React re-renders when wallet state changes
+
+🟢 6️⃣ AUTO SIGN-IN TRIGGERS (critical step)
+📁 features/auth/useAutoSignIn.ts
+
+This hook reacts — it does NOT initiate anything.
+
+Runs when ALL are true:
+hydrated === true
+connected === true
+publicKey exists
+authenticated === false
+
+What it does:
+
+Calls wallet.signMessage()
+
+Gets signature
+
+Calls loginMutation.mutate(payload)
+
+📌 This is where auth begins
+
+🟢 7️⃣ Login mutation runs
+📁 features/auth/useAuthLogin.ts
+
+Triggered ONLY by:
+
+loginMutation.mutate(payload)
+
+mutationFn runs:
+Days	Behavior
+Days 1–9	mock backend
+Day 10+	real Rust backend
+
+Returns:
+
+{ user }
+
+🟢 8️⃣ Auth store updates (source of truth in frontend)
+📁 core/store/auth.store.ts
+setAuth(user)
+
+
+Updates:
+
+authenticated = true
+user = { id, walletAddress, role }
+
+
+Persisted to:
+
+localStorage("auth-storage")
+
+
+➡️ This unlocks protected UI
+
+🟢 9️⃣ UI unlocks + data queries run
+📁 features/dashboard/DashboardPage.tsx
+
+Now allowed because:
+
+authenticated === true
+hydrated === true
+
+React Query hooks now enabled:
+
+useWalletBalance(publicKey)
+
+useProfile()
+
+usePortfolio()
+
+➡️ Backend + wallet data flow together
+
+🧠 FINAL ONE-SCREEN MENTAL MODEL
+main.tsx
+  ↓
+App.tsx
+  ├─ useRestoreAuth()
+  ├─ WalletProvider (SDK runs)
+  ├─ useAutoSignIn()
+        ↓ reacts to wallet
+        ↓ signs message
+        ↓ mutate()
+  ├─ useAuthLogin()
+        ↓ setAuth()
+  └─ Dashboard unlocked
+
+🚨 THE MOST IMPORTANT REALIZATION
+
+There is NO “connect wallet” file
+Wallet connection is owned by the SDK
+Your code only REACTS to its state
+
+If you want next, I can:
+
+Show this as a single ASCII timeline
+
+Explain exactly what to delete on Day 10
+
+Or map this to a real Rust backend request flow
+
+You’re very close — this is senior-level understanding already 💪
+
+
+
+
+┌──────────────────────────────────────────────────────────┐
+│ main.tsx                                                  │
+│ React boots                                               │
+└───────────────┬──────────────────────────────────────────┘
+                │
+                ▼
+┌──────────────────────────────────────────────────────────┐
+│ App.tsx mounts                                            │
+│                                                          │
+│ Providers:                                               │
+│ - WalletProviders (Solana SDK)                            │
+│ - ReactQueryProvider                                     │
+│                                                          │
+│ Hooks (TOP → DOWN):                                      │
+│ - useRestoreAuth()                                       │
+│ - useAutoSignIn()                                        │
+└───────────────┬──────────────────────────────────────────┘
+                │
+                ▼
+┌──────────────────────────────────────────────────────────┐
+│ useRestoreAuth.ts                                        │
+│                                                          │
+│ Reads localStorage("auth-storage")                        │
+│                                                          │
+│ CASE A: user exists → authenticated = true               │
+│ CASE B: no user     → authenticated = false              │
+│                                                          │
+│ hydrated = true                                          │
+└───────────────┬──────────────────────────────────────────┘
+                │
+                ▼
+┌──────────────────────────────────────────────────────────┐
+│ WalletProviders.tsx (External SDK)                        │
+│                                                          │
+│ - autoConnect OR user clicks WalletMultiButton           │
+│ - Phantom / Solflare / Backpack                          │
+│                                                          │
+│ RESULT:                                                  │
+│ connected = true                                         │
+│ publicKey = PubKey                                       │
+└───────────────┬──────────────────────────────────────────┘
+                │
+                ▼
+┌──────────────────────────────────────────────────────────┐
+│ useWallet() context updates                              │
+│                                                          │
+│ Any component using useWallet() re-renders               │
+│ Navbar / Dashboard / Hooks                               │
+└───────────────┬──────────────────────────────────────────┘
+                │
+                ▼
+┌──────────────────────────────────────────────────────────┐
+│ useAutoSignIn.ts (REACTION, NOT INITIATION)              │
+│                                                          │
+│ CHECKS:                                                  │
+│ hydrated === true        ✅                               │
+│ connected === true       ✅                               │
+│ publicKey exists         ✅                               │
+│ authenticated === false  ✅                               │
+│ isPending === false      ✅                               │
+│ attemptedRef === false   ✅                               │
+│                                                          │
+│ → ALL PASS                                               │
+└───────────────┬──────────────────────────────────────────┘
+                │
+                ▼
+┌──────────────────────────────────────────────────────────┐
+│ wallet.signMessage()                                     │
+│                                                          │
+│ "Sign in to Zephyr"                                      │
+│ User approves                                            │
+│                                                          │
+│ signature created                                       │
+└───────────────┬──────────────────────────────────────────┘
+                │
+                ▼
+┌──────────────────────────────────────────────────────────┐
+│ useAuthLogin.ts                                         │
+│                                                          │
+│ loginMutation.mutate({                                  │
+│   publicKey,                                             │
+│   signature,                                             │
+│   message                                                │
+│ })                                                       │
+│                                                          │
+│ FIRST AUTH EVENT                                         │
+└───────────────┬──────────────────────────────────────────┘
+                │
+                ▼
+┌──────────────────────────────────────────────────────────┐
+│ mutationFn                                               │
+│                                                          │
+│ Days 1–9: mock backend                                   │
+│ Day 10+: Rust backend                                    │
+│                                                          │
+│ returns { user }                                         │
+└───────────────┬──────────────────────────────────────────┘
+                │
+                ▼
+┌──────────────────────────────────────────────────────────┐
+│ auth.store.ts (Zustand)                                  │
+│                                                          │
+│ setAuth(user)                                            │
+│                                                          │
+│ authenticated = true                                    │
+│ user = { id, walletAddress, role }                       │
+│                                                          │
+│ persisted to localStorage                                │
+└───────────────┬──────────────────────────────────────────┘
+                │
+                ▼
+┌──────────────────────────────────────────────────────────┐
+│ React re-renders                                         │
+│                                                          │
+│ - Navbar shows signed-in                                 │
+│ - AuthGuard passes                                      │
+│ - Dashboard unlocks                                     │
+└───────────────┬──────────────────────────────────────────┘
+                │
+                ▼
+┌──────────────────────────────────────────────────────────┐
+│ React Query DATA HOOKS                                   │
+│                                                          │
+│ enabled: authenticated === true                          │
+│                                                          │
+│ useWalletBalance(publicKey)                              │
+│ useProfile()                                             │
+│ usePortfolio()                                          │
+└───────────────┬──────────────────────────────────────────┘
+                │
+                ▼
+┌──────────────────────────────────────────────────────────┐
+│ FINAL STATE                                              │
+│                                                          │
+│ Wallet ✔                                                 │
+│ Auth ✔                                                   │
+│ Data ✔                                                   │
+│ Dashboard ✔                                              │
+└──────────────────────────────────────────────────────────┘
+
+
+
+User opens app
+     |
+     v
+1️⃣ Consent: "Sign in to Zephyr"
+     - Frontend encodes consent message
+     - Calls wallet.signMessage(consentMessage)
+     - Wallet may show **UI modal** for approval
+     |
+     v
+2️⃣ Request Nonce from Backend
+     - POST /api/auth/nonce { walletAddress }
+     - Backend returns:
+         {
+           message: "nonce-message-for-signing",
+           nonce: "random-nonce"
+         }
+     - **No UI triggered**
+     |
+     v
+3️⃣ Sign Nonce Programmatically
+     - Frontend encodes nonceMessage
+     - Calls wallet.signMessage(nonceMessage)
+     - Wallet signs in background → returns signatureBytes
+     - **No UI modal here**
+     |
+     v
+4️⃣ Verify Signature
+     - POST /api/auth/verify
+       Body: { walletAddress, signature, message: nonceMessage }
+     - Backend validates signature using wallet public key
+     - Returns:
+         {
+           success: true,
+           token: "JWT-token",
+           user: { ...user-info }
+         }
+     - **No UI modal**
+     |
+     v
+5️⃣ Store JWT & User Info
+     - Frontend stores JWT in memory / localStorage
+     - Sets user in app state
+     - App can now make authenticated API requests
+     |
+     v
+6️⃣ Future API Requests
+     - Include JWT in Authorization header
+     - No signing needed unless session expires
+
+
+
+
+
+// useRestoreAuth.ts
+export function useRestoreAuth() {
+  const { connected, publicKey } = useWallet()
+  const { user, authenticated, hydrated, accessToken, setAuth } = useAuthStore()
+
+  useEffect(() => {
+    // ─────────────────────────────────────────────
+    // GUARD CLAUSES (early returns)
+    // ─────────────────────────────────────────────
+    
+    if (!hydrated) return
+    // Wait for Zustand to load from localStorage
+
+    if (!connected || !publicKey) return
+    // Wallet must be connected
+
+    if (authenticated) return
+    // Already authenticated, nothing to do
+
+    if (!user || !accessToken) return
+    // No stored session to restore
+
+    // ─────────────────────────────────────────────
+    // RESTORE SESSION
+    // ─────────────────────────────────────────────
+    
+    if (user.walletAddress === publicKey.toBase58()) {
+      console.log("Restoring auth session")
+      setAuth(user, accessToken)
+    }
+  }, [hydrated, connected, publicKey, authenticated, user, accessToken, setAuth])
+}
+```
+
+**Scenario: User refreshes page**
+```
+Page refreshes
+  ↓
+App.tsx renders
+  ↓
+useRestoreAuth() runs
+  ↓
+Check conditions:
+  ├─ hydrated? → YES (Zustand loaded localStorage)
+  ├─ connected? → YES (Solana wallet auto-reconnects)
+  ├─ authenticated? → NO (React state reset on refresh)
+  ├─ user exists? → YES (from localStorage)
+  ├─ accessToken exists? → YES (from localStorage)
+  └─ walletAddress matches? → YES
+  ↓
+Call setAuth(user, accessToken)
+  ↓
+authenticated = true
+  ↓
+User stays logged in ✓
+
+
+
+
+    <div className=' w-full lg:w-[60%] flex flex-col  cent'>
+            {/* Market overview */}
+            <section
+              className='w-fulla
+'
+            >
+              <div className='flex justify-between items-center'>
+                <p className='font-[700] text-white'>Market overview</p>
+                <p className='text-[#00A991] text-[10.5px]'>View All Markets</p>
+              </div>
+              <div className='grid grid-cols-1  lg:grid-cols-3 gap-4 mt-4  '>
+                {['SOL/USD', 'Network Volume', 'Trending Token'].map(
+                  (title, i) => (
+                    <div
+                      key={i}
+                      className='bg-[#0f1a18]  border-[1px] border-[#23483B] rounded-md p-4 flex flex-col gap-2'
+                    >
+                      <span className='text-xs text-gray-400'>{title}</span>
+                      <span className='text-xl font-semibold'>
+                        {i === 0 && '$142.50'}
+                        {i === 1 && '$4.21B'}
+                        {i === 2 && '$BONK'}
+                      </span>
+                      <span className='text-xs text-green-400'>+12.4% 24h</span>
+                    </div>
+                  )
+                )}
+              </div>
+            </section>
+
+            {/* Content grid */}
+            <section className=' w-full mt-10 '>
+              {/* Traders */}
+              <div className='w-full'>
+                <h3 className='font-semibold'>Top Traders Leaderboard</h3>
+
+                <div className='flex flex-col gap-8 mt-4 '>
+                  <Swiper
+                    modules={[Navigation, Autoplay]}
+                    loop
+                    speed={1400}
+                    navigation={{
+                      prevEl: '.swiper-prev',
+                      nextEl: '.swiper-next'
+                    }}
+                    autoplay={{
+                      delay: 3000,
+                      disableOnInteraction: false
+                    }}
+                    spaceBetween={16}
+                    slidesPerView={1}
+                    breakpoints={{
+                      640: { slidesPerView: 2 },
+                      1024: { slidesPerView: 3 }
+                    }}
+                    className='w-full relative px-3'
+                  >
+                    <button
+                      className='flex justify-center items-center swiper-prev   bg-swipnav
+ border-[1.5px] border-[#23483B] z-30 rounded-full absolute top-1/2 left-5'
+                    >
+                      <MdKeyboardArrowLeft className='h-6 w-6 ' />
+                    </button>
+
+                    <button className='flex justify-center items-center swiper-next  bg-swipnav  border-[1.5px] border-[#23483B] z-30 rounded-full absolute top-1/2 right-5'>
+                      <MdKeyboardArrowRight className='h-6 w-6 ' />
+                    </button>
+                    {leaders.map((item, i) => (
+                      <SwiperSlide
+                        key={i}
+                        className='rounded-xl flex flex-col items-center gap-3 overflow-hidden  border-[#23483B] border-[1px] w-[100%]'
+                      >
+                        <div
+                          className='h-80 lg:h-44 m  w-full  flex flex-col justify-end p-4 bg-center bg-cover relative'
+                          style={{
+                            backgroundImage: `url(${item.imag})`
+                          }}
+                        >
+                          <div className='absolute top-0 left-0 w-full h-full bg-gradient-to-tr from-lead to-transparent'></div>
+                          <div className='relative z-10'>
+                            <span className='text-sm font-medium text-[12px]'>
+                              @{item.name}
+                            </span>
+                            <p className='text-[10px] font-[900] text-[#22C55E]'>
+                              ROI: {item.rio}%
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className='bg-[#0f1a18] w-full p-4'>
+                          {/* <span className='text-xs text-gray-400'>
+                            Win rate: {item.winRate}%
+                          </span> */}
+                          <div className='flex gap-6 lg:gap-2   '>
+                            <div className='flex flex-col gap-3  w-[50%]'>
+                              <p className='text-[#B0E4DD] text-[9px] font-[400]'>
+                                Win Rate: 78%
+                              </p>
+                              <button className='bg-teal-500  px-3 py-2 rounded text-xs text-white border  border-transparent hover:border-teal-500 hover:text-teal-500 hover:bg-transparent transition ease-in-out duration-500 cursor-pointer'>
+                                Copy
+                              </button>
+                            </div>
+                            <div className='flex flex-col gap-3  w-[50%]'>
+                              <p className='text-[#B0E4DD] text-[9px] font-[400] text-end'>
+                                Followers: {item.follows}
+                                {item.follows < 500 ? 'K' : ''}
+                              </p>
+                              <button className='border border-teal-500 text-teal-400 px-3 py-2 rounded text-xs hover:bg-teal-500 transition ease-in-out duration-500 cursor-pointer hover:text-white'>
+                                Follow
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      </SwiperSlide>
+                    ))}
+                  </Swiper>
+
+                  <div className='bg-[#0f1a18]  rounded-xl w-full py-4 mt-6 md:mt-auto '>
+                    <h4 className='text-[15px]  font-[700] px-4'>
+                      Hot Performers
+                    </h4>
+                    <div
+                      className=' mt-4 h-[295px] overflow-y-auto scrollbar-hide
+ '
+                    >
+                      {/* scrollbar-hide */}
+
+                      {leaders.map((item, i) => (
+                        <div
+                          key={i}
+                          className='flex justify-between text-sm  border-[#23483B] border-t-[1px] p-4'
+                        >
+                          <div className='flex justify-between gap-4 '>
+                            <div
+                              className='bg-center bg-cover h-10 w-10 rounded-md'
+                              style={{
+                                backgroundImage: `url(${item.imag})`
+                              }}
+                            ></div>
+                            <div>
+                              <span className='text-[10.5px] font-[700]'>
+                                @{item.name}
+                              </span>
+                              <p className='text-[#B0E4DD] text-[9px] font-[400]'>
+                                7d ROI: +{item.rio}%
+                              </p>
+                            </div>
+                          </div>
+                          <div className=' flex justify-between gap-3 items-center'>
+                            <div>
+                              <p className='text-[9px] text-[#B0E4DD] font-[400]'>
+                                AUM
+                              </p>
+                              <p className='text-[10.5px] text-white font-[700]'>
+                                {item.sol} SOL
+                              </p>
+                            </div>
+                            <button className='border border-[#0098834D] text-teal-400 px-3 py-2 rounded text-xs hover:bg-teal-500 transition ease-in-out duration-500 cursor-pointer hover:text-white'>
+                              Copy
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
+          </div>
+
+
+text-[#00A991]

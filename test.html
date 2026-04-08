@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Zephyr Auth Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+
+        button {
+            background: #512da8;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 16px;
+            cursor: pointer;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+
+        button:hover {
+            background: #673ab7;
+        }
+
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .status {
+            margin: 20px 0;
+            padding: 15px;
+            border-radius: 8px;
+            background: #f5f5f5;
+        }
+
+        .success {
+            background: #c8e6c9;
+            color: #2e7d32;
+        }
+
+        .error {
+            background: #ffcdd2;
+            color: #c62828;
+        }
+
+        pre {
+            background: #f5f5f5;
+            padding: 15px;
+            border-radius: 8px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>🔐 Zephyr Wallet Authentication Test</h1>
+
+    <div id="status" class="status">
+        <p>Status: Not connected</p>
+    </div>
+
+    <button id="connectBtn" onclick="connect()">Connect Wallet</button>
+    <button id="authBtn" onclick="authenticate()" disabled>Sign & Authenticate</button>
+
+    <div id="result"></div>
+
+    <script>
+        const API_URL = 'https://da0f423465dd.ngrok-free.app/api/auth'; // Replace with your backend URL
+        let walletAddress = null;
+
+        async function connect() {
+            const statusDiv = document.getElementById('status');
+            const authBtn = document.getElementById('authBtn');
+
+            try {
+
+
+                const testResp = await fetch(`${API_URL}/health`, {
+                    method: 'GET',
+                    headers: { 'Content-Type': 'application/json' },
+                    // body: JSON.stringify({ walletAddress })
+                });
+
+
+                const data = await testResp.json()
+                console.log("data:", data);
+
+                // Check if Phantom is installed
+                if (!window.solana || !window.solana.isPhantom) {
+                    alert('Please install Phantom wallet: https://phantom.app/');
+                    return;
+                }
+
+                // Connect to wallet
+                const resp = await window.solana.connect();
+                walletAddress = resp.publicKey.toString();
+
+                statusDiv.className = 'status success';
+                statusDiv.innerHTML = `<p>✅ Connected: ${walletAddress}</p>`;
+                authBtn.disabled = false;
+
+            } catch (err) {
+                statusDiv.className = 'status error';
+                statusDiv.innerHTML = `<p>❌ Error: ${err.message}</p>`;
+            }
+        }
+
+        async function authenticate() {
+            const resultDiv = document.getElementById('result');
+            const statusDiv = document.getElementById('status');
+
+            try {
+                statusDiv.innerHTML = '<p>⏳ Step 1: Getting nonce...</p>';
+
+                // Step 1: Get nonce from backend
+                const nonceResp = await fetch(`${API_URL}/nonce`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ walletAddress })
+                });
+
+                console.log("nounce:", nonceResp);
+
+                const { message, nonce } = await nonceResp.json();
+
+                statusDiv.innerHTML = '<p>⏳ Step 2: Signing message with wallet...</p>';
+
+                // Step 2: Sign message with Phantom
+                const encodedMessage = new TextEncoder().encode(message);
+                const signedMessage = await window.solana.signMessage(encodedMessage, 'utf8');
+
+                statusDiv.innerHTML = '<p>⏳ Step 3: Verifying signature...</p>';
+
+                // Step 3: Verify signature with backend
+                const verifyResp = await fetch(`${API_URL}/verify`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        walletAddress,
+                        signature: Array.from(signedMessage.signature), // Convert Uint8Array to array
+                        message
+                    })
+                });
+                console.log("verify:", verifyResp);
+                const result = await verifyResp.json();
+
+                if (result.success) {
+                    statusDiv.className = 'status success';
+                    statusDiv.innerHTML = '<p>✅ Authentication successful!</p>';
+
+                    resultDiv.innerHTML = `
+                        <h3>Authentication Result:</h3>
+                        <pre>${JSON.stringify(result, null, 2)}</pre>
+                        <p><strong>JWT Token:</strong></p>
+                        <pre>${result.token}</pre>
+                        <p>Save this token for authenticated requests!</p>
+                    `;
+                } else {
+                    throw new Error(result.error || 'Authentication failed');
+                }
+
+            } catch (err) {
+                statusDiv.className = 'status error';
+                statusDiv.innerHTML = `<p>❌ Error: ${err.message}</p>`;
+            }
+        }
+    </script>
+</body>
+
+</html>
