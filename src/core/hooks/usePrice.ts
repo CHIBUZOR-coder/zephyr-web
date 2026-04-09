@@ -14,8 +14,11 @@ export function useSolPrice() {
       const response = await authFetch<{ success: boolean; data: SolPriceData }>(
         "/api/market/price/sol"
       );
+      if (!response.success) throw new Error("Failed to fetch price");
       return response.data;
     },
-    refetchInterval: 60000, // Refresh every 60s
+    staleTime: 30000, // 30s
+    refetchInterval: 60000,
+    refetchIntervalInBackground: true,
   });
 }

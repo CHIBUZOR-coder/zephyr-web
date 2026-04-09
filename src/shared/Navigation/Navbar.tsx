@@ -12,6 +12,7 @@ import { WalletMenu } from '../../features/dashboard/WalletMenu'
 import { useGeneralContext } from '../../Context/GeneralContext'
 import { useTradingModeStore } from '../../features/dashboard/useTradingModeStore'
 import { useWalletBalance } from '../../features/wallet/useWalletQuery'
+import { useSolPrice } from '../../core/hooks/usePrice'
 
 const Navbar = () => {
   const [walletMenuOpen, setWalletMenuOpen] = useState(false)
@@ -28,8 +29,11 @@ const Navbar = () => {
   // const { authenticated, hydrated } = useAuthStore() // get auth state
 
   const [copied, setCopied] = useState(false)
+  const [showUsdc, setShowUsdc] = useState(false)
   const { data: balanceData } = useWalletBalance(publicKey?.toBase58())
   const balance = balanceData?.balance ?? null
+  const { data: solPriceData } = useSolPrice()
+  const solPrice = solPriceData?.price ?? 0
 
   useEffect(() => {
     if (!publicKey) return
@@ -71,15 +75,20 @@ const Navbar = () => {
             <div className='flex items-center gap-5'>
               <div className={` flex items-center gap-5`}>
                 {connected && balance !== null && (
-                  <p className='text-sm bg-[#0f1a18] px-3 py-1 rounded-lg border-[1px] border-[#0A3F46]  flex items-center gap-2 text-white'>
+                  <button
+                    onClick={() => setShowUsdc(!showUsdc)}
+                    className='text-sm bg-[#0f1a18] px-3 py-1 rounded-lg border-[1px] border-[#0A3F46] flex items-center gap-2 text-white cursor-pointer hover:opacity-80 transition-opacity'
+                  >
                     <span
                       style={{
-                        backgroundImage: `url("/images/solana.png")`
+                        backgroundImage: `url("/images/${showUsdc ? 'usdc.svg' : 'solana.svg'}")`
                       }}
-                      className='inline-block bg-enter  bg-cover h-[16px] w-[16px]'
+                      className='inline-block bg-enter bg-cover h-[16px] w-[16px]'
                     ></span>
-                    {balance.toFixed(2)} SOL
-                  </p>
+                    {showUsdc
+                      ? `${(balance * solPrice).toFixed(2)} USDC`
+                      : `${balance.toFixed(2)} SOL`}
+                  </button>
                 )}
 
                 {connected && (
@@ -248,15 +257,20 @@ const Navbar = () => {
                 /> */}
               </div>
               {connected && balance !== null && (
-                <p className='inline-flex text-[8px] bg-[#0f1a18] px-2 py-2 rounded-lg border-[1px] border-[#0A3F46] items-center gap-1 text-white'>
+                <button
+                  onClick={() => setShowUsdc(!showUsdc)}
+                  className='inline-flex text-[8px] bg-[#0f1a18] px-2 py-2 rounded-lg border-[1px] border-[#0A3F46] items-center gap-1 text-white cursor-pointer hover:opacity-80 transition-opacity'
+                >
                   <span
                     style={{
-                      backgroundImage: `url("/images/solana.png")`
+                      backgroundImage: `url("/images/${showUsdc ? 'usdc.svg' : 'solana.svg'}")`
                     }}
-                    className='inline-block bg-enter  bg-cover h-[14px] w-[14px] md:h-[16px] md:w-[16px]'
+                    className='inline-block bg-enter bg-cover h-[14px] w-[14px] md:h-[16px] md:w-[16px]'
                   ></span>
-                  {balance.toFixed(2)} SOL
-                </p>
+                  {showUsdc
+                    ? `${(balance * solPrice).toFixed(2)} USDC`
+                    : `${balance.toFixed(2)} SOL`}
+                </button>
               )}
 
               {!connected ? (

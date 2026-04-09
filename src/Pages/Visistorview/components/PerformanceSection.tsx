@@ -13,15 +13,50 @@ type InfoProps = {
 
 type Range = '30D' | '90D' | 'ALL'
 
+type ChartPoint = {
+  time: string
+  value: number
+}
+
 export default function PerformanceSection ({
   trader
 }: PerformanceSectionProps) {
   const chartRef = useRef<HTMLDivElement | null>(null)
   const tooltipRef = useRef<HTMLDivElement | null>(null)
   const [range, setRange] = useState<Range>('30D')
+  const [chartData, setChartData] = useState<ChartPoint[]>([])
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    if (!chartRef.current) return
+    const controller = new AbortController()
+
+    async function fetchPerformance () {
+      setIsLoading(true)
+      setError(null)
+      try {
+        const res = await fetch(
+          `/api/traders/${trader.id}/performance?range=${range}`,
+          { signal: controller.signal }
+        )
+        if (!res.ok) throw new Error('Failed to fetch performance data')
+        const data: ChartPoint[] = await res.json()
+        setChartData(data)
+      } catch (err) {
+        if ((err as Error).name !== 'AbortError') {
+          setError('No network connection. Please check your internet.')
+        }
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchPerformance()
+    return () => controller.abort()
+  }, [trader.id, range])
+
+  useEffect(() => {
+    if (!chartRef.current || chartData.length === 0) return
 
     const chart = createChart(chartRef.current, {
       layout: {
@@ -46,31 +81,10 @@ export default function PerformanceSection ({
       lineWidth: 3
     })
 
-    // Generate mock data
-    const generateData = (points: number) => {
-      let value = 100
-      return Array.from({ length: points }, (_, i) => {
-        value += Math.random() * 10 - 5
-        return {
-          time: `2024-01-${String(i + 1).padStart(2, '0')}`,
-          value: Math.max(50, value)
-        }
-      })
-    }
-
-    const dataMap = {
-      '30D': generateData(30),
-      '90D': generateData(90),
-      ALL: generateData(180)
-    }
-
-    const data = dataMap[range]
-
-    // Animate chart
     let i = 0
     const interval = setInterval(() => {
-      if (i < data.length) {
-        series.update(data[i])
+      if (i < chartData.length) {
+        series.update(chartData[i])
         i++
       } else {
         clearInterval(interval)
@@ -79,7 +93,6 @@ export default function PerformanceSection ({
 
     chart.timeScale().fitContent()
 
-    // Tooltip (SAFE VERSION)
     chart.subscribeCrosshairMove(param => {
       if (!tooltipRef.current) return
 
@@ -89,20 +102,14 @@ export default function PerformanceSection ({
       }
 
       const priceData = param.seriesData.get(series)
-
-      // ✅ FIX: handle undefined
       if (!priceData) {
         tooltipRef.current.style.display = 'none'
         return
       }
 
-      // ✅ FIX: safe type narrowing
       let price: number | undefined
-      if ('value' in priceData) {
-        price = priceData.value
-      }
+      if ('value' in priceData) price = priceData.value
 
-      // ✅ FIX: ensure valid number
       if (price === undefined) {
         tooltipRef.current.style.display = 'none'
         return
@@ -111,7 +118,6 @@ export default function PerformanceSection ({
       tooltipRef.current.style.display = 'block'
       tooltipRef.current.style.left = param.point.x + 10 + 'px'
       tooltipRef.current.style.top = param.point.y + 'px'
-
       tooltipRef.current.innerHTML = `
         <div style="font-size:12px;">
           <strong>$${price.toFixed(2)}</strong>
@@ -119,13 +125,9 @@ export default function PerformanceSection ({
       `
     })
 
-    // Resize handler
     const handleResize = () => {
-      chart.applyOptions({
-        width: chartRef.current?.clientWidth || 0
-      })
+      chart.applyOptions({ width: chartRef.current?.clientWidth || 0 })
     }
-
     window.addEventListener('resize', handleResize)
 
     return () => {
@@ -133,7 +135,7 @@ export default function PerformanceSection ({
       window.removeEventListener('resize', handleResize)
       chart.remove()
     }
-  }, [range])
+  }, [chartData])
 
   return (
     <div className='bg-gradient-to-b from-[#0a2a2a] to-[#051919] rounded-2xl p-6 border border-white/5'>
@@ -161,6 +163,40 @@ export default function PerformanceSection ({
       {/* Chart */}
       <div className='relative h-56 w-full rounded-xl border border-white/5 overflow-hidden bg-[#061c1c] p-2'>
         <div ref={chartRef} className='w-full h-full' />
+
+        {/* Loading overlay */}
+        {isLoading && (
+          <div className='absolute inset-0 flex flex-col gap-3 items-center justify-center bg-[#061c1c]/80 backdrop-blur-sm rounded-xl z-10'>
+            <div className='w-6 h-6 rounded-full border-2 border-teal-500 border-t-transparent animate-spin' />
+            <span className='text-xs text-gray-400'>
+              Loading performance data...
+            </span>
+          </div>
+        )}
+
+        {/* Error state */}
+        {!isLoading && error && (
+          <div className='absolute inset-0 flex flex-col gap-2 items-center justify-center z-10'>
+            <span className='text-2xl'>📡</span>
+            <span className='text-xs text-red-400'>{error}</span>
+            <button
+              onClick={() => setRange(r => r)}
+              className='mt-1 text-xs text-teal-400 underline'
+            >
+              Retry
+            </button>
+          </div>
+        )}
+
+        {/* Empty state */}
+        {!isLoading && !error && chartData.length === 0 && (
+          <div className='absolute inset-0 flex flex-col gap-2 items-center justify-center z-10'>
+            <span className='text-2xl'>📭</span>
+            <span className='text-xs text-gray-400'>
+              No performance data available for this period.
+            </span>
+          </div>
+        )}
 
         {/* Tooltip */}
         <div

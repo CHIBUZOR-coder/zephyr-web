@@ -115,8 +115,7 @@ const VaultFlowModal = () => {
                       exit='exit'
                       transition={{ duration: 0.3 }}
                     >
-                      // eslint-disable-next-line
-                      @typescript-eslint/no-explicit-any
+                
                       <StepOne
                         onNext={() => setVaultStep(2)}
                         form={form}

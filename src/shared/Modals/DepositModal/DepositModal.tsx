@@ -6,7 +6,8 @@ import { useVaultOperations } from '../../../features/master/useVaultOperations'
 import { useUserVaults } from '../../../features/master/useUserVaults'
 import { useWallet } from '@solana/wallet-adapter-react'
 import { useWalletBalance } from '../../../features/wallet/useWalletQuery'
-import { useFeeEstimation, useSolPrice } from '../../../features/wallet/useFeeEstimation'
+import { useFeeEstimation } from '../../../features/wallet/useFeeEstimation'
+import { useSolPrice } from '../../../core/hooks/usePrice'
 
 type Props = {
   open: boolean
@@ -300,7 +301,7 @@ export const DepositModal = ({ open, onClose }: Props) => {
                   <span className='flex justify-between text-[10px] font-[900] leading-[15px] tracking-[1px] text-[#B0E4DD33]'>
                     Network Fee
                   </span>
-                  <span className='text-white'>~{networkFee.toFixed(6)} SOL (~${(networkFee * solPrice).toFixed(4)})</span>
+                  <span className='text-white'>~{networkFee.toFixed(6)} SOL (~${(networkFee * (typeof solPrice === 'number' ? solPrice : 80)).toFixed(4)})</span>
                 </div>
               </div>
 

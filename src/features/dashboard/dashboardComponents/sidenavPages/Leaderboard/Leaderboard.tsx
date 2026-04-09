@@ -278,7 +278,7 @@ const Leaderboard: React.FC = () => {
 
                       <td className='pdd trader'>
                         <Link
-                          to={`/profile/${trader.address}`}
+                          to={`/profile/${trader.vaultAddress}`}
                           className='bg-center bg-cover h-[32px] w-[32px] rounded-full relative'
                           style={{ backgroundImage: `url(${trader.image})` }}
                         >
@@ -287,9 +287,12 @@ const Leaderboard: React.FC = () => {
                           </span>
                         </Link>
                         <div>
-                          <p className='font-[900] text-[14px]'>
+                          <Link
+                            to={`/profile/${trader.vaultAddress}`}
+                            className='font-[900] text-[14px]'
+                          >
                             {trader.name}
-                          </p>
+                          </Link>
                           <span
                             className={`text-[8px] uppercase rounded-md font-medium ${tag?.text} ${tag?.bg} border-[1.1px] ${tag?.border} p-[4px]`}
                           >

@@ -21,7 +21,14 @@ type SortDir = 'asc' | 'desc'
 const DashboardView = () => {
   const { openVaultFlow } = useGeneralContext()
   const { leaders, loading, error } = useDashboardLeaderboard()
-  const { solPrice, solChange, networkVolume, volumeChange, trendingToken, trendingChange } = useMarketStats()
+  const {
+    solPrice,
+    solChange,
+    networkVolume,
+    volumeChange,
+    trendingToken,
+    trendingChange
+  } = useMarketStats()
 
   const formatVolume = (val?: number) => {
     if (val === undefined || val === 0) return '$0.00'
@@ -202,45 +209,51 @@ const DashboardView = () => {
           </div>
           <div className='grid grid-cols-1 lg:grid-cols-3 gap-4 mt-4'>
             {['SOL/USD', 'Network Volume', 'Trending Token'].map((title, i) => {
-              const changeValue = i === 0 ? solChange : i === 1 ? volumeChange : trendingChange;
+              const changeValue =
+                i === 0 ? solChange : i === 1 ? volumeChange : trendingChange
               return (
                 <div
                   key={i}
                   className='bg-[#0f1a18] border-[1px] border-[#23483B] rounded-md p-4 flex flex-col gap-2'
                 >
                   <span className='text-xs text-[#B0E4DD]'>{title}</span>
-                <div className='h-8 overflow-hidden relative'>
-                  <AnimatePresence mode='wait'>
-                    <motion.span
-                      key={i === 2 ? trendingToken : 'static'}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -10 }}
-                      transition={{ duration: 0.3 }}
-                      className='text-xl font-semibold text-white absolute inset-0'
-                    >
-                      {i === 0 && (solPrice ? `$${solPrice.toFixed(2)}` : 'Loading...')}
-                      {i === 1 && formatVolume(networkVolume)}
-                      {i === 2 && trendingToken}
-                    </motion.span>
-                  </AnimatePresence>
-                </div>
+                  <div className='h-8 overflow-hidden relative'>
+                    <AnimatePresence mode='wait'>
+                      <motion.span
+                        key={i === 2 ? trendingToken : 'static'}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                        transition={{ duration: 0.3 }}
+                        className='text-xl font-semibold text-white absolute inset-0'
+                      >
+                        {i === 0 &&
+                          (solPrice ? `$${solPrice.toFixed(2)}` : 'Loading...')}
+                        {i === 1 && formatVolume(networkVolume)}
+                        {i === 2 && trendingToken}
+                      </motion.span>
+                    </AnimatePresence>
+                  </div>
 
-                <div className='h-4 overflow-hidden relative'>
-                  <AnimatePresence mode='wait'>
-                    <motion.span
-                      key={i === 2 ? trendingToken : 'static-change'}
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
-                      className={`text-xs absolute inset-0 ${changeValue >= 0 ? 'text-green-400' : 'text-red-400'}`}
-                    >
-                      {changeValue >= 0 ? '+' : ''}{changeValue.toFixed(1)}% <span className='text-white ml-1'>24h</span>
-                    </motion.span>
-                  </AnimatePresence>
+                  <div className='h-4 overflow-hidden relative'>
+                    <AnimatePresence mode='wait'>
+                      <motion.span
+                        key={i === 2 ? trendingToken : 'static-change'}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className={`text-xs absolute inset-0 ${
+                          changeValue >= 0 ? 'text-green-400' : 'text-red-400'
+                        }`}
+                      >
+                        {changeValue >= 0 ? '+' : ''}
+                        {changeValue.toFixed(1)}%{' '}
+                        <span className='text-white ml-1'>24h</span>
+                      </motion.span>
+                    </AnimatePresence>
+                  </div>
                 </div>
-                </div>
-              );
+              )
             })}
           </div>
         </section>
@@ -285,56 +298,54 @@ const DashboardView = () => {
                   <div className='flex items-center justify-center h-44 text-gray-500 text-xs'>
                     No traders
                   </div>
-                ) : (
-                  leaders.map((item, i) => (
-                    <SwiperSlide
-                      key={i}
-                      className='rounded-xl flex flex-col items-center gap-3 overflow-hidden border-[#23483B] border-[1px] w-[100%]'
-                    >
-                      <div
-                        className='h-80 lg:h-44 w-full flex flex-col justify-end p-4 bg-center bg-cover relative'
-                        style={{ backgroundImage: `url(${item.image})` }}
+                  ) : (
+                    leaders.map((item, i) => (
+                      <SwiperSlide
+                        key={i}
+                        className='rounded-xl flex flex-col items-center gap-3 overflow-hidden border-[#23483B] border-[1px] w-[100%]'
                       >
-                        <div className='absolute top-0 left-0 w-full h-full bg-gradient-to-tr from-lead to-transparent'></div>
-                        <div className='relative z-10'>
-                          <Link
-                            to={`/profile/${item.address}`}
-                            className='text-sm font-medium text-[12px] text-white'
-                          >
-                            @{item.name}
-                          </Link>
-                          <p className='text-[10px] font-[900] text-[#22C55E]'>
-                            ROI: {item.rio}%
-                          </p>
-                        </div>
-                      </div>
-                      <div className='bg-[#0f1a18] w-full p-4'>
-                        <div className='flex gap-6 lg:gap-2'>
-                          <div className='flex flex-col gap-3 w-[50%]'>
-                            <p className='text-[#B0E4DD] text-[9px] font-[400]'>
-                              Win Rate: {item.winRate}
+                        <Link
+                          to={`/profile/${item.vaultAddress}`}
+                          className='h-80 lg:h-44 w-full flex flex-col justify-end p-4 bg-center bg-cover relative cursor-pointer hover:opacity-90 transition-opacity'
+                          style={{ backgroundImage: `url(${item.image})` }}
+                        >
+                          <div className='absolute top-0 left-0 w-full h-full bg-gradient-to-tr from-lead to-transparent'></div>
+                          <div className='relative z-10'>
+                            <span className='text-sm font-medium text-[12px] text-white'>
+                              @{item.name}
+                            </span>
+                            <p className='text-[10px] font-[900] text-[#22C55E]'>
+                              ROI: {item.rio}%
                             </p>
-                            <button
-                              onClick={() => openVaultFlow(1, item)}
-                              className='bg-teal-500 px-3 py-2 rounded text-xs text-white border border-transparent hover:border-teal-500 hover:text-teal-500 hover:bg-transparent transition ease-in-out duration-500 cursor-pointer'
-                            >
-                              Copy
-                            </button>
                           </div>
-                          <div className='flex flex-col gap-3 w-[50%]'>
-                            <p className='text-[#B0E4DD] text-[9px] font-[400] text-end'>
-                              Followers: {item.follows}
-                              {item.follows < 500 ? 'K' : ''}
-                            </p>
-                            <button className='border border-teal-500 text-teal-400 px-3 py-2 rounded text-xs hover:bg-teal-500 transition ease-in-out duration-500 cursor-pointer hover:text-white'>
-                              Follow
-                            </button>
+                        </Link>
+                        <div className='bg-[#0f1a18] w-full p-4'>
+                          <div className='flex gap-6 lg:gap-2'>
+                            <div className='flex flex-col gap-3 w-[50%]'>
+                              <p className='text-[#B0E4DD] text-[9px] font-[400]'>
+                                Win Rate: {item.winRate}
+                              </p>
+                              <button
+                                onClick={() => openVaultFlow(1, item)}
+                                className='bg-teal-500 px-3 py-2 rounded text-xs text-white border border-transparent hover:border-teal-500 hover:text-teal-500 hover:bg-transparent transition ease-in-out duration-500 cursor-pointer'
+                              >
+                                Copy
+                              </button>
+                            </div>
+                            <div className='flex flex-col gap-3 w-[50%]'>
+                              <p className='text-[#B0E4DD] text-[9px] font-[400] text-end'>
+                                Followers: {item.follows}
+                                {item.follows < 500 ? 'K' : ''}
+                              </p>
+                              <button className='border border-teal-500 text-teal-400 px-3 py-2 rounded text-xs hover:bg-teal-500 transition ease-in-out duration-500 cursor-pointer hover:text-white'>
+                                Follow
+                              </button>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    </SwiperSlide>
-                  ))
-                )}
+                      </SwiperSlide>
+                    ))
+                  )}
               </Swiper>
 
               {/* Hot Performers */}
@@ -362,14 +373,18 @@ const DashboardView = () => {
                         className='flex justify-between text-sm border-[#23483B] border-t-[1px] p-4'
                       >
                         <div className='flex justify-between gap-4'>
-                          <div
+                          <Link
+                            to={`/profile/${item?.vaultAddress}`}
                             className='bg-center bg-cover h-10 w-10 rounded-md'
                             style={{ backgroundImage: `url(${item.image})` }}
-                          ></div>
+                          ></Link>
                           <div>
-                            <span className='text-[10.5px] font-[700] text-white'>
+                            <Link
+                              to={`/profile/${item?.vaultAddress}`}
+                              className='text-[10.5px] font-[700] text-white'
+                            >
                               @{item.name}
-                            </span>
+                            </Link>
                             <p className='text-[#B0E4DD] text-[9px] font-[400]'>
                               30d ROI: {item.pnl}
                             </p>
@@ -548,11 +563,9 @@ const DashboardView = () => {
             <div className=' bg-[#0f1a18] rounded-xl'>
               <div className=' p-4 flex flex-col mt-4 gap-8'>
                 {socials.map((item, i) => {
-                  if (item.action.toLocaleLowerCase().includes('swapped')) {
-                    console.log('img:', item.img)
-
-                    return (
-                      <div key={i} className='flex justify-between '>
+                    if (item.action.toLocaleLowerCase().includes('swapped')) {
+                      return (
+                        <div key={i} className='flex justify-between '>
                         <div className='flex justify-center items-center h-[28px] w-[28px] border-[1px] border-[#112968] rounded-full'>
                           <span
                             style={{

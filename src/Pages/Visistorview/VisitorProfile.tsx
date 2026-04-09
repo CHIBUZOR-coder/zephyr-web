@@ -19,8 +19,8 @@ export default function VisitorProfile () {
   if (loading) return <ProfileSkeleton />
   if (error) return <div className='text-red-500'>Failed to load profile</div>
 
-  // address from URL is a string ("1", "2" etc), so we parse it to match
-  const trader = leaders.find(t => t.address === address )
+  // Find trader by vaultAddress (passed in URL)
+  const trader = leaders.find(t => t.vaultAddress === address)
 
   if (!trader) return <div className='text-white'>Trader not found</div>
 

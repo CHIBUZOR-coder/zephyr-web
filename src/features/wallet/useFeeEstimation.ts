@@ -1,7 +1,6 @@
 import { useConnection } from "@solana/wallet-adapter-react";
 import { useQuery } from "@tanstack/react-query";
-import { LAMPORTS_PER_SOL, PublicKey, Transaction } from "@solana/web3.js";
-import { authFetch } from "../../core/query/authClient";
+import { LAMPORTS_PER_SOL, PublicKey, Transaction, SystemProgram } from "@solana/web3.js";
 
 /**
  * Hook to estimate the network fee for a standard SOL transfer.
@@ -18,10 +17,16 @@ export function useFeeEstimation() {
         
         // Create a dummy transaction message to estimate fee
         const dummyPayer = new PublicKey("11111111111111111111111111111111");
-        const tx = new Transaction({
-          recentBlockhash: blockhash,
-          feePayer: dummyPayer,
-        });
+        const tx = new Transaction().add(
+          SystemProgram.transfer({
+            fromPubkey: dummyPayer,
+            toPubkey: dummyPayer,
+            lamports: 0,
+          })
+        );
+        
+        tx.recentBlockhash = blockhash;
+        tx.feePayer = dummyPayer;
 
         const feeResponse = await connection.getFeeForMessage(tx.compileMessage());
         
@@ -37,25 +42,5 @@ export function useFeeEstimation() {
     },
     // Refresh every minute
     refetchInterval: 60000,
-  });
-}
-
-/**
- * Hook to fetch current SOL price in USD from our backend.
- * Our backend polls CoinGecko every 60s and caches in Redis to avoid rate limits.
- */
-export function useSolPrice() {
-  return useQuery({
-    queryKey: ["sol-price"],
-    queryFn: async () => {
-      try {
-        const response = await authFetch<{ success: boolean; data: { price: number } }>("/api/market/price/sol");
-        return response.data.price;
-      } catch (err) {
-        console.warn("Failed to fetch SOL price from backend", err);
-        return 79; // Fallback price
-      }
-    },
-    refetchInterval: 60000, // Refresh every 60s
   });
 }

@@ -8,15 +8,16 @@ import CopierMode from './CopierMode'
 import { useGeneralContext } from '../../../../../Context/GeneralContext'
 import { useUserVaults } from '../../../../master/useUserVaults'
 import { useSolPrice } from '../../../../../core/hooks/usePrice'
+import { VaultActivity } from './VaultActivity'
 
-// ─── Helpers 
+// ─── Helpers
 
-function formatAddress(address: string) {
+function formatAddress (address: string) {
   if (!address) return 'N/A'
   return `${address.slice(0, 4)}...${address.slice(-4)}`
 }
 
-function formatRelativeDate(dateString: string) {
+function formatRelativeDate (dateString: string) {
   if (!dateString) return 'N/A'
   const date = new Date(dateString)
   const now = new Date()
@@ -28,11 +29,21 @@ function formatRelativeDate(dateString: string) {
   return `${Math.floor(diffInSeconds / 86400)}D AGO`
 }
 
-// ─── Add Strategy Modal 
+// ─── Add Strategy Modal
 
 interface AddModalProps {
   onClose: () => void
   onAdd: (s: Strategy) => void
+}
+export interface VaultActivityItem {
+  id: string
+  type: string
+  time: string
+  token: string
+  amount: string
+  status: 'success'
+  tx: string
+  signature: string
 }
 
 function AddStrategyModal ({ onClose, onAdd }: AddModalProps) {
@@ -157,7 +168,7 @@ export default function Portfolio () {
   const { connected, publicKey } = useWallet()
   const { setWalletModal } = useGeneralContext()
   const { masterMode } = useTradingModeStore()
-  
+
   const { masterVault, copierVaults, isLoading, refetchAll } = useUserVaults()
   const { data: solPrice } = useSolPrice()
   const [activeTab, setActiveTab] = useState<'vaults' | 'activity'>('vaults')
@@ -180,7 +191,7 @@ export default function Portfolio () {
   // Force refetch when wallet connects/disconnects
   useEffect(() => {
     const currentWalletState = publicKey?.toBase58() || 'disconnected'
-    
+
     if (lastWalletState.current !== currentWalletState) {
       lastWalletState.current = currentWalletState
       if (connected && publicKey) {
@@ -192,33 +203,35 @@ export default function Portfolio () {
   // Periodic refetch every 30 seconds to ensure data stays fresh
   useEffect(() => {
     if (!connected) return
-    
+
     const interval = setInterval(() => {
       refetchAll()
     }, 30000)
-    
+
     return () => clearInterval(interval)
   }, [connected, refetchAll])
   // Map MasterVault to PinnedVault format
   const pinnedVaults: PinnedVault[] = useMemo(() => {
     if (!masterVault) return []
-    return [{
-      id: masterVault.id,
-      name: 'MY MASTER VAULT',
-      walletSnippet: formatAddress(masterVault.vaultPda),
-      fullAddress: masterVault.vaultPda,
-      connectedCopiers: masterVault._count?.copierVaults || 0, 
-      lastExecution: formatRelativeDate(masterVault.updatedAt),
-      totalBalanceSol: masterVault.balance || 0,
-      totalBalanceUsd: (masterVault.balance || 0) * currentPrice, 
-      activePositions: 0,
-      stopLoss: null,
-      takeProfit: null,
-      availableFeesSol: parseFloat(masterVault.totalFeesEarned) / 1e9,
-      historicalClaimedSol: 0,
-      currentPosition: undefined,
-      tier: `TIER ${masterVault.currentTier}`
-    }]
+    return [
+      {
+        id: masterVault.id,
+        name: 'MY MASTER VAULT',
+        walletSnippet: formatAddress(masterVault.vaultPda),
+        fullAddress: masterVault.vaultPda,
+        connectedCopiers: masterVault._count?.copierVaults || 0,
+        lastExecution: formatRelativeDate(masterVault.updatedAt),
+        totalBalanceSol: masterVault.balance || 0,
+        totalBalanceUsd: (masterVault.balance || 0) * currentPrice,
+        activePositions: 0,
+        stopLoss: null,
+        takeProfit: null,
+        availableFeesSol: parseFloat(masterVault.totalFeesEarned) / 1e9,
+        historicalClaimedSol: 0,
+        currentPosition: undefined,
+        tier: `TIER ${masterVault.currentTier}`
+      }
+    ]
   }, [masterVault, currentPrice])
 
   // Map CopierVaults to Strategy format
@@ -239,8 +252,10 @@ export default function Portfolio () {
     }))
   }, [copierVaults, currentPrice])
 
-  const totalBalance = strategies.reduce((s, v) => s + v.balanceUsd, 0) + (pinnedVaults[0]?.totalBalanceUsd || 0)
-  const total24hChange = 0 
+  const totalBalance =
+    strategies.reduce((s, v) => s + v.balanceUsd, 0) +
+    (pinnedVaults[0]?.totalBalanceUsd || 0)
+  const total24hChange = 0
   const changePositive = total24hChange >= 0
 
   const stats = [
@@ -271,17 +286,17 @@ export default function Portfolio () {
     {
       tittle: 'Total AUM',
       icon: '/images/totalAum.svg',
-      value: 0, 
+      value: 0,
       type: 'compactCurrency'
     }
   ]
 
-  // const activities = [] 
+  // const activities = []
 
   if (isLoading && connected) {
     return (
-      <div className="flex items-center justify-center h-full min-h-[400px] text-[#00ffa3] font-mono uppercase tracking-[0.2em]">
-        <div className="animate-pulse">Fetching Real-time Vault Data...</div>
+      <div className='flex items-center justify-center h-full min-h-[400px] text-[#00ffa3] font-mono uppercase tracking-[0.2em]'>
+        <div className='animate-pulse'>Fetching Real-time Vault Data...</div>
       </div>
     )
   }
@@ -346,7 +361,9 @@ export default function Portfolio () {
                     {item.type === 'compactCurrency'
                       ? fmtCompactCurrency(item.value)
                       : item.type === 'currency'
-                      ? item.tittle === 'Claimable Fees' ? `◎ ${item.value.toFixed(4)}` : fmt(item.value)
+                      ? item.tittle === 'Claimable Fees'
+                        ? `◎ ${item.value.toFixed(4)}`
+                        : fmt(item.value)
                       : item.value}
                   </span>
                 )}
@@ -435,11 +452,11 @@ export default function Portfolio () {
             )}
           </>
         ) : (
-          <div className="text-center py-20 text-[#273634] font-bold uppercase tracking-widest">
-            Activity History Coming Soon
-          </div>
+          <VaultActivity
+            vaultAddress={masterMode ? masterVault?.vaultPda : copierVaults?.[0]?.vaultPda ?? null}
+          />
         )}
-        
+
         <div className='flex justify-center gap-3 items-center flex-col md:flex-row mt-10'>
           <div
             className='h-[14px] w-[14px] bg-center bg-cover shrink-0'

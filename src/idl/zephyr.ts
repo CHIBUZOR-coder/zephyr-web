@@ -3617,6 +3617,19 @@ export type Zephyr = {
         166,
         190
       ]
+    },
+    {
+      "name": "withdrawalEvent",
+      "discriminator": [
+        161,
+        53,
+        185,
+        18,
+        98,
+        254,
+        54,
+        165
+      ]
     }
   ],
   "errors": [
@@ -6036,6 +6049,34 @@ export type Zephyr = {
           {
             "name": "admin",
             "type": "pubkey"
+          },
+          {
+            "name": "timestamp",
+            "type": "i64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "withdrawalEvent",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "vault",
+            "type": "pubkey"
+          },
+          {
+            "name": "withdrawer",
+            "type": "pubkey"
+          },
+          {
+            "name": "amount",
+            "type": "u64"
+          },
+          {
+            "name": "newBalance",
+            "type": "u64"
           },
           {
             "name": "timestamp",

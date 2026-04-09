@@ -1,11 +1,14 @@
 import { AnimatePresence, motion } from 'framer-motion'
-import { useState } from 'react'
-import { FiX, FiAlertTriangle } from 'react-icons/fi'
+import { useState, useEffect, useCallback } from 'react'
+import { FiX, FiAlertTriangle, FiInfo, FiRefreshCw } from 'react-icons/fi'
 import { useGeneralContext } from '../../../Context/GeneralContext'
 import { useVaultOperations } from '../../../features/master/useVaultOperations'
 import { useUserVaults } from '../../../features/master/useUserVaults'
 import { useWalletBalance } from '../../../features/wallet/useWalletQuery'
 import { useSolPrice } from '../../../core/hooks/usePrice'
+import { useAuthStore } from '../../../features/auth/auth.store'
+import { Connection, PublicKey, LAMPORTS_PER_SOL } from '@solana/web3.js'
+import { endpoint } from '../../../core/config/solanaWallet'
 
 type Props = {
   open: boolean
@@ -27,21 +30,61 @@ const NETWORK_FEE_SOL = 0.000005;
 
 export const WithdrawModal = ({ open, onClose }: Props) => {
   const { selectedVaultPda } = useGeneralContext()
-  const { withdrawFromCopierVault, withdrawFromMasterVault, error: opError } = useVaultOperations()
+  const { withdrawFromCopierVault, withdrawFromMasterVault } = useVaultOperations()
   const { refetchAll, copierVaults, masterVault } = useUserVaults()
   const { data: solPrice } = useSolPrice()
+  const { accessToken } = useAuthStore()
+  const [connection] = useState(() => new Connection(endpoint, 'confirmed'))
   
   const [amount, setAmount] = useState('')
-  const { data: balanceData } = useWalletBalance(selectedVaultPda ?? undefined)
+  const { data: balanceData, refetch: refetchBalance } = useWalletBalance(selectedVaultPda ?? undefined)
   const vaultBalance = balanceData?.balance ?? 0
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
   const [localError, setLocalError] = useState<string | null>(null)
+  const [onChainBalance, setOnChainBalance] = useState<number | null>(null)
+  const [balanceMismatch, setBalanceMismatch] = useState(false)
 
   const isCopier = copierVaults?.some(v => v.vaultPda === selectedVaultPda)
   const isMaster = masterVault?.vaultPda === selectedVaultPda
+  const isNotAuthenticated = !accessToken
 
   const feeUsd = solPrice ? (NETWORK_FEE_SOL * (solPrice.price ?? 79)).toFixed(4) : "0.00";
   const impactPct = amount ? ((parseFloat(amount) / (vaultBalance + parseFloat(amount))) * 100).toFixed(2) : "0.00";
+
+  const checkOnChainBalance = useCallback(async () => {
+    if (!selectedVaultPda) return 0
+    try {
+      const pubkey = new PublicKey(selectedVaultPda)
+      const lamports = await connection.getBalance(pubkey)
+      return lamports / LAMPORTS_PER_SOL
+    } catch {
+      return 0
+    }
+  }, [selectedVaultPda, connection])
+
+  useEffect(() => {
+    if (open && selectedVaultPda) {
+      checkOnChainBalance().then(balance => {
+        setOnChainBalance(balance)
+        setBalanceMismatch(Math.abs(balance - vaultBalance) > 0.001)
+      })
+    }
+  }, [open, selectedVaultPda, vaultBalance, checkOnChainBalance])
+
+  const handleSyncVault = async () => {
+    setStatus('loading')
+    setLocalError(null)
+    try {
+      await refetchBalance()
+      const freshBalance = await checkOnChainBalance()
+      setOnChainBalance(freshBalance)
+      setBalanceMismatch(Math.abs(freshBalance - vaultBalance) > 0.001)
+      setStatus('idle')
+    } catch (err) {
+      setLocalError('Failed to sync vault. Please try again.')
+      setStatus('error')
+    }
+  }
 
   const handleWithdraw = async () => {
     if (!selectedVaultPda) {
@@ -55,9 +98,17 @@ export const WithdrawModal = ({ open, onClose }: Props) => {
       return
     }
 
-    if (withdrawAmount > vaultBalance) {
-        setLocalError('Insufficient vault balance.')
-        return
+    const freshOnChain = await checkOnChainBalance()
+    setOnChainBalance(freshOnChain)
+
+    if (withdrawAmount > freshOnChain) {
+      setBalanceMismatch(true)
+      setLocalError(
+        `Insufficient on-chain balance. On-chain: ${freshOnChain.toFixed(4)} SOL, Requested: ${withdrawAmount.toFixed(4)} SOL. ` +
+        `This may happen if the vault was manually funded or if there\'s a sync issue. ` +
+        `Try syncing your vault or contact support.`
+      )
+      return
     }
 
     if (!isCopier && !isMaster) {
@@ -84,7 +135,46 @@ export const WithdrawModal = ({ open, onClose }: Props) => {
     } catch (err: unknown) {
       console.error('Withdraw flow failed:', err)
       setStatus('error')
-      setLocalError(err instanceof Error ? err.message : 'Transaction failed')
+      
+      const errorMsg = err instanceof Error ? err.message : 'Transaction failed'
+      const errorCode = extractErrorCode(errorMsg)
+      
+      switch (errorCode) {
+        case 'InsufficientBalance':
+        case '6017':
+          setLocalError(
+            'Insufficient on-chain balance for withdrawal.\n\n' +
+            'Possible causes:\n' +
+            '• Vault was manually funded outside the program\n' +
+            '• Balance sync issue between frontend and blockchain\n' +
+            '• Rent exemption requirement not met\n\n' +
+            'Action: Click "Sync Vault" below to refresh balance, or contact support if issue persists.'
+          )
+          break
+        case 'UnauthorizedMaster':
+          setLocalError('You are not the owner of this master vault.')
+          break
+        case 'Unauthorized':
+          setLocalError('Transaction unauthorized. Please reconnect your wallet and try again.')
+          break
+        case 'UserRejected':
+          setLocalError('Transaction was rejected in your wallet. No funds were withdrawn.')
+          break
+        case 'TokenInvalid':
+          setLocalError('Session expired. Please sign in again to continue.')
+          break
+        default:
+          if (errorMsg.includes('insufficient') || errorMsg.includes('balance')) {
+            setLocalError(
+              'Insufficient balance for this withdrawal.\n\n' +
+              'Your actual on-chain balance: ' + freshOnChain.toFixed(4) + ' SOL\n' +
+              'Requested amount: ' + withdrawAmount.toFixed(4) + ' SOL\n\n' +
+              'Tip: Click "Sync Vault" to verify your current balance.'
+            )
+          } else {
+            setLocalError('Transaction failed: ' + errorMsg)
+          }
+      }
     }
   }
 
@@ -123,6 +213,43 @@ export const WithdrawModal = ({ open, onClose }: Props) => {
                 </button>
               </div>
 
+              {isNotAuthenticated && (
+                <div className="bg-amber-900/20 border border-amber-500/50 p-3 rounded-lg flex items-start gap-2">
+                  <FiAlertTriangle className="text-amber-400 shrink-0 mt-0.5" size={14} />
+                  <div>
+                    <p className="text-[11px] text-amber-200 font-semibold">Session Expired</p>
+                    <p className="text-[10px] text-amber-300 mt-0.5">Please sign in again to sync your dashboard after the transaction.</p>
+                  </div>
+                </div>
+              )}
+
+              {balanceMismatch && onChainBalance !== null && (
+                <div className="bg-red-900/20 border border-red-500/50 p-3 rounded-lg flex items-start gap-2">
+                  <FiAlertTriangle className="text-red-400 shrink-0 mt-0.5" size={14} />
+                  <div className="flex-1">
+                    <p className="text-[11px] text-red-200 font-semibold">Balance Mismatch Detected</p>
+                    <p className="text-[10px] text-red-300 mt-0.5">
+                      On-chain: {onChainBalance.toFixed(4)} SOL | Dashboard: {vaultBalance.toFixed(4)} SOL
+                    </p>
+                    <button
+                      onClick={handleSyncVault}
+                      className="mt-2 text-[10px] text-red-200 underline flex items-center gap-1"
+                    >
+                      <FiRefreshCw size={10} /> Sync Vault
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {!isNotAuthenticated && !balanceMismatch && onChainBalance !== null && (
+                <div className="bg-green-900/20 border border-green-500/30 p-2 rounded-lg flex items-center gap-2">
+                  <FiInfo className="text-green-400 shrink-0" size={14} />
+                  <p className="text-[10px] text-green-300">
+                    On-chain balance verified: {onChainBalance.toFixed(4)} SOL
+                  </p>
+                </div>
+              )}
+
               {/* ASSET SELECT */}
               <div className='flex flex-col gap-2'>
                 <p className='text-[10px] text-[#B0E4DD4D] tracking-[1px] leading-[15px] uppercase font-[900]'>
@@ -140,11 +267,21 @@ export const WithdrawModal = ({ open, onClose }: Props) => {
 
               {/* AMOUNT */}
               <div className='flex flex-col gap-1'>
-                <div className='flex justify-between'>
+                <div className='flex justify-between items-center'>
                   <p className='text-[10px] text-[#B0E4DD4D] tracking-[1px] leading-[15px] uppercase font-[900]'>AMOUNT</p>
-                  <p className='text-[10px] text-[#B0E4DD4D] tracking-[1px] leading-[15px] uppercase font-[700]'>
-                    Available: {vaultBalance.toFixed(4)} SOL
-                  </p>
+                  <div className='flex items-center gap-2'>
+                    <p className='text-[10px] text-[#B0E4DD4D] tracking-[1px] leading-[15px] uppercase font-[700]'>
+                      On-chain: {onChainBalance?.toFixed(4) ?? '...'} SOL
+                    </p>
+                    <button
+                      onClick={handleSyncVault}
+                      disabled={status === 'loading'}
+                      className="text-[#6ef3d6] hover:text-[#8ff4e3] disabled:opacity-50"
+                      title="Sync vault balance"
+                    >
+                      <FiRefreshCw size={12} className={status === 'loading' ? 'animate-spin' : ''} />
+                    </button>
+                  </div>
                 </div>
 
                 <div className='bg-[#081a1a] border border-[#1c3535] rounded-lg px-3 py-3 flex items-center justify-between'>
@@ -156,18 +293,19 @@ export const WithdrawModal = ({ open, onClose }: Props) => {
                     className='bg-transparent outline-none text-white text-[14px] w-full placeholder:font-[900] placeholder:text-[20px] placeholder:text-[#FFFFFF0D]'
                   />
                   <button
-                    onClick={() => setAmount(vaultBalance.toString())}
-                    className='ml-3 text-[10px] px-2 py-1 rounded bg-[#09211f] text-[#6ef3d6] border-[1px] border-[#1f4d47] cursor-pointer'
+                    onClick={() => onChainBalance && setAmount(onChainBalance.toString())}
+                    disabled={onChainBalance === null}
+                    className='ml-3 text-[10px] px-2 py-1 rounded bg-[#09221f] text-[#6ef3d6] border-[1px] border-[#1f4d47] cursor-pointer disabled:opacity-50'
                   >
                     MAX
                   </button>
                 </div>
               </div>
 
-              {(localError || opError) && (
+              {localError && (
                 <div className="bg-red-900/20 border border-red-500/50 p-3 rounded-lg flex items-start gap-2">
                   <FiAlertTriangle className="text-red-500 shrink-0 mt-0.5" size={14} />
-                  <p className="text-[11px] text-red-200 leading-tight">{localError || opError}</p>
+                  <p className="text-[11px] text-red-200 leading-tight whitespace-pre-line">{localError}</p>
                 </div>
               )}
 
@@ -205,3 +343,9 @@ export const WithdrawModal = ({ open, onClose }: Props) => {
     </AnimatePresence>
   )
 }
+
+function extractErrorCode(errorMsg: string): string {
+  const match = errorMsg.match(/Error Code:\s*(\w+)/i) || errorMsg.match(/code:\s*['"]?(\w+)['"]?/i)
+  return match ? match[1] : errorMsg
+}
+

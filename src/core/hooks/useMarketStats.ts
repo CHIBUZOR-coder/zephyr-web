@@ -30,7 +30,10 @@ export function useAlphaSignals() {
       }>("/api/leaderboard/alpha-signals");
       return response.data;
     },
+    staleTime: 0,
+    gcTime: 5 * 60 * 1000,
     refetchInterval: 60000,
+    refetchIntervalInBackground: true,
   });
 }
 
@@ -44,7 +47,10 @@ export function useTrendingTokens() {
       }>("/api/market/trending");
       return response.data;
     },
+    staleTime: 0,
+    gcTime: 5 * 60 * 1000,
     refetchInterval: 300000, // 5 mins
+    refetchIntervalInBackground: true,
   });
 }
 
