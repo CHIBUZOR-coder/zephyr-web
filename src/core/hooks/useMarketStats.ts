@@ -10,6 +10,7 @@ export interface AlphaSignals {
   totalActiveMasters: number;
   totalActiveCopiers: number;
   protocolVolumeUsd30d: number;
+  protocolVolumeUsdAllTime: number;
 }
 
 export interface TrendingToken {
@@ -83,7 +84,9 @@ export function useMarketStats() {
   return {
     solPrice: solPriceData?.price,
     solChange: solPriceData?.change24h ?? 0,
+    solVolume: solPriceData?.volume24h,
     networkVolume: alphaSignals?.protocolVolumeUsd30d,
+    networkVolumeAllTime: alphaSignals?.protocolVolumeUsdAllTime,
     volumeChange: 0.8,
     trendingToken: activeToken?.symbol || "Loading...",
     trendingChange: activeToken?.change24h || 0,

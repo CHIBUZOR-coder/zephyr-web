@@ -80,7 +80,7 @@ export const WithdrawModal = ({ open, onClose }: Props) => {
       setOnChainBalance(freshBalance)
       setBalanceMismatch(Math.abs(freshBalance - vaultBalance) > 0.001)
       setStatus('idle')
-    } catch (err) {
+    } catch {
       setLocalError('Failed to sync vault. Please try again.')
       setStatus('error')
     }
@@ -105,7 +105,7 @@ export const WithdrawModal = ({ open, onClose }: Props) => {
       setBalanceMismatch(true)
       setLocalError(
         `Insufficient on-chain balance. On-chain: ${freshOnChain.toFixed(4)} SOL, Requested: ${withdrawAmount.toFixed(4)} SOL. ` +
-        `This may happen if the vault was manually funded or if there\'s a sync issue. ` +
+        `This may happen if the vault was manually funded or if there's a sync issue. ` +
         `Try syncing your vault or contact support.`
       )
       return

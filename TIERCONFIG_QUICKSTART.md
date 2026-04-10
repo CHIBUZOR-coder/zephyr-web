@@ -10,7 +10,7 @@ I've added TierConfig initialization support to zephyr-web with:
 
 ## ⚡ The Error You Had
 
-```
+```zsh
 [error]: Failed to fetch protocol TierConfig
   Account does not exist or has no data 8KDyhGb7bnfXLfipPLFvdpZCpSzWDscdqCyy1hfXaDbs
 ```
@@ -152,7 +152,7 @@ curl http://localhost:3000/api/tier/config
 ## 📁 Files to Integrate
 
 | File | Purpose | Where to Use |
-|------|---------|-------------|
+| ------ | --------- | ------------- |
 | `src/features/admin/useInitializeTierConfig.ts` | Hook logic | Import in components |
 | `src/shared/Modals/TierConfigInitModal/TierConfigInitModal.tsx` | UI component | Add to pages that need it |
 | `TIERCONFIG_SETUP.md` | Full documentation | Reference guide |
@@ -180,7 +180,7 @@ import { useInitializeTierConfig } from '@features/admin/useInitializeTierConfig
 One on-chain PDA with 5 tier levels:
 
 | Tier | Fee Split | Min Volume | Min AUM | Requirements |
-|------|-----------|-----------|---------|--------------|
+| ------ | ----------- | ----------- | --------- | -------------- |
 | **Tier 1** | 80/20 | $50k | - | Community level |
 | **Tier 2** | 85/15 | $300k | $50k | Rising trader |
 | **Tier 3** | 90/10 | $1M | $250k | Risk-adjusted positive |
@@ -202,7 +202,7 @@ One on-chain PDA with 5 tier levels:
 ## 🐛 Troubleshooting
 
 | Problem | Fix |
-|---------|-----|
+| --------- | ----- |
 | "Program or wallet not initialized" | Connect wallet first |
 | "Account already exists" | Already initialized; check `/api/tier/config` |
 | "Invalid admin address" | Use valid Solana address format |

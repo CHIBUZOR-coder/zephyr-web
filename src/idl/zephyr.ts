@@ -3307,6 +3307,19 @@ export type Zephyr = {
       ]
     },
     {
+      "name": "depositMasterEvent",
+      "discriminator": [
+        235,
+        251,
+        155,
+        146,
+        52,
+        248,
+        67,
+        199
+      ]
+    },
+    {
       "name": "emergencyWithdrawEvent",
       "discriminator": [
         177,
@@ -4266,6 +4279,34 @@ export type Zephyr = {
           },
           {
             "name": "newBalance",
+            "type": "u64"
+          },
+          {
+            "name": "timestamp",
+            "type": "i64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "depositMasterEvent",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "vault",
+            "type": "pubkey"
+          },
+          {
+            "name": "master",
+            "type": "pubkey"
+          },
+          {
+            "name": "amount",
+            "type": "u64"
+          },
+          {
+            "name": "newTotalDeposits",
             "type": "u64"
           },
           {

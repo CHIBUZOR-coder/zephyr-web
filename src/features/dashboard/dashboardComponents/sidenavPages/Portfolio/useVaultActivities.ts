@@ -4,6 +4,7 @@ import { authFetch } from "../../../../../core/query/authClient";
 export type VaultActivityType =
   | "VAULT_CREATED"
   | "DEPOSIT"
+  | "DEPOSIT_MASTER"
   | "WITHDRAWAL"
   | "TRADE_EXECUTED"
   | "STATUS_CHANGED";
@@ -91,6 +92,7 @@ function formatEventType(type: VaultActivityType): string {
   const typeMap: Record<VaultActivityType, string> = {
     VAULT_CREATED: "VAULT CREATED",
     DEPOSIT: "DEPOSIT",
+    DEPOSIT_MASTER: "DEPOSIT",
     WITHDRAWAL: "WITHDRAWAL",
     TRADE_EXECUTED: "TRADE",
     STATUS_CHANGED: "STATUS CHANGE",
@@ -104,10 +106,11 @@ function extractTokenAndAmount(
 ): { token: string; amount: string } {
   switch (type) {
     case "DEPOSIT":
+    case "DEPOSIT_MASTER":
     case "WITHDRAWAL": {
       const amount = data?.amount as string | undefined;
       const formattedAmount = amount ? formatAmount(amount) : "0";
-      const prefix = type === "DEPOSIT" ? "+" : "-";
+      const prefix = type === "WITHDRAWAL" ? "-" : "+";
       return { token: "SOL", amount: `${prefix}${formattedAmount}` };
     }
     case "TRADE_EXECUTED": {

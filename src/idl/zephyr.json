@@ -3301,6 +3301,19 @@
       ]
     },
     {
+      "name": "DepositMasterEvent",
+      "discriminator": [
+        235,
+        251,
+        155,
+        146,
+        52,
+        248,
+        67,
+        199
+      ]
+    },
+    {
       "name": "EmergencyWithdrawEvent",
       "discriminator": [
         177,
@@ -4260,6 +4273,34 @@
           },
           {
             "name": "new_balance",
+            "type": "u64"
+          },
+          {
+            "name": "timestamp",
+            "type": "i64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "DepositMasterEvent",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "vault",
+            "type": "pubkey"
+          },
+          {
+            "name": "master",
+            "type": "pubkey"
+          },
+          {
+            "name": "amount",
+            "type": "u64"
+          },
+          {
+            "name": "new_total_deposits",
             "type": "u64"
           },
           {

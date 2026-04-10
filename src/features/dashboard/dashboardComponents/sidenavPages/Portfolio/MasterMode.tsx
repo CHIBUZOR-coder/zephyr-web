@@ -18,11 +18,20 @@ interface MasterModeProps {
 const MasterMode = ({
   pinnedVaults,
   removeStrategy,
+  strategies,
   // solPrice,
   onViewVault
 }: MasterModeProps) => {
-  const { setDepositOpen, setWithdrawOpen, stopCopyConfirm, setSelectedVaultPda, openVaultFlow, setClaimFeesOpen } =
-    useGeneralContext()
+  const {
+    setDepositOpen,
+    setWithdrawOpen,
+    stopCopyConfirm,
+    setSelectedVaultPda,
+    openVaultFlow,
+    setOpenStopModal,
+    setClaimFeesOpen
+  } = useGeneralContext()
+
   const [id] = useState<string>('')
   const [copiedId, setCopiedId] = useState<string | null>(null)
 
@@ -53,11 +62,14 @@ const MasterMode = ({
       rank: 0,
       name: vault.name,
       // Pass the actual avatar URL from the vault or a fallback
-      image: vault.tier === 'TIER 3' ? '/images/master_avatar_v3.png' : '/images/badgechek.svg',
+      image:
+        vault.tier === 'TIER 3'
+          ? '/images/master_avatar_v3.png'
+          : '/images/badgechek.svg',
       tag: vault.tier,
       tiers: vault.tier,
       type: vault.tier,
-      pnl: 'N/A', 
+      pnl: 'N/A',
       aum: fmt(vault.totalBalanceUsd),
       winRate: 'N/A',
       drawdown: 'N/A',
@@ -106,7 +118,6 @@ const MasterMode = ({
           Locked Index
         </span>
       </div>
-
       {pinnedVaults.map((vault, i) => (
         <div
           key={i}
@@ -119,8 +130,12 @@ const MasterMode = ({
                 <div className='p-3 bg-[#0a1414] rounded-2xl flex justify-center items-center w-[60px] h-[60px]'>
                   {/* Dynamic Avatar */}
                   <img
-                    src={vault.tier === 'TIER 3' ? '/images/master_avatar_v3.png' : '/images/badgechek.svg'}
-                    alt="Master Vault"
+                    src={
+                      vault.tier === 'TIER 3'
+                        ? '/images/master_avatar_v3.png'
+                        : '/images/badgechek.svg'
+                    }
+                    alt='Master Vault'
                     className='w-[32px] h-[32px] rounded-full object-cover'
                   />
                 </div>
@@ -142,7 +157,10 @@ const MasterMode = ({
                               : '/images/copy.svg'
                           }")`
                         }}
-                        onClick={(e) => { e.stopPropagation(); handleCopy(vault.fullAddress) }}
+                        onClick={e => {
+                          e.stopPropagation()
+                          handleCopy(vault.fullAddress)
+                        }}
                       ></span>
                     </div>
                   </div>
@@ -180,19 +198,28 @@ const MasterMode = ({
 
                 <div className='flex items-center gap-3 w-full lg:w-auto'>
                   <button
-                    onClick={(e) => { e.stopPropagation(); handleViewVault(vault)}}
+                    onClick={e => {
+                      e.stopPropagation()
+                      handleViewVault(vault)
+                    }}
                     className='flex-1 lg:flex-none px-6 py-2.5 bg-[#0a1414] border border-[#1e3530] rounded-xl text-[#009883] text-[11px] font-[900] uppercase tracking-wider hover:border-[#009883]/40 transition flex items-center gap-2'
                   >
                     <span className='text-[14px]'>📊</span> Explore Performance
                   </button>
                   <button
-                    onClick={(e) => { e.stopPropagation(); handleOpenWithdraw(vault.fullAddress)}}
+                    onClick={e => {
+                      e.stopPropagation()
+                      handleOpenWithdraw(vault.fullAddress)
+                    }}
                     className='flex-1 lg:flex-none px-6 py-2.5 bg-[#0a1414] border border-[#1e3530] rounded-xl text-[#6b8c8a] text-[11px] font-[900] uppercase tracking-wider hover:border-[#009883]/40 transition'
                   >
                     Withdraw SOL
                   </button>
                   <button
-                    onClick={(e) => { e.stopPropagation(); handleOpenDeposit(vault.fullAddress)}}
+                    onClick={e => {
+                      e.stopPropagation()
+                      handleOpenDeposit(vault.fullAddress)
+                    }}
                     className='flex-1 lg:flex-none px-6 py-2.5 bg-[#009883] rounded-xl text-white text-[11px] font-[900] uppercase tracking-wider shadow-[0_0_20px_rgba(0,152,131,0.3)] hover:brightness-110 transition'
                   >
                     Deposit SOL
@@ -234,7 +261,9 @@ const MasterMode = ({
                     </p>
                   </>
                 ) : (
-                  <p className='text-[16px] text-white font-bold tracking-tight'>0</p>
+                  <p className='text-[16px] text-white font-bold tracking-tight'>
+                    0
+                  </p>
                 )}
               </div>
 
@@ -271,7 +300,7 @@ const MasterMode = ({
               </div>
             </div>
           </div>
-          
+
           <div className='flex justify-between items-center border rounded-xl p-5 bg-[#102221]'>
             <div>
               <p className='text-[#FE9A00] font-bold'>
@@ -282,8 +311,11 @@ const MasterMode = ({
               </p>
             </div>
 
-            <button 
-              onClick={(e) => { e.stopPropagation(); handleOpenClaimFees(vault.fullAddress)}}
+            <button
+              onClick={e => {
+                e.stopPropagation()
+                handleOpenClaimFees(vault.fullAddress)
+              }}
               className='bg-[#FE9A00] shadow-[0_6px_12px_rgba(254,154,0,0.6)] lg:px-8 md:px-5 py-3 px-3 rounded-xl hover:brightness-110 transition flex items-center gap-2'
             >
               <span className='text-black font-[900] tracking-[0.15em]'>
@@ -297,6 +329,192 @@ const MasterMode = ({
           </div>
         </div>
       ))}
+      <div className='mt-10'>
+        <div className='flex items-center gap-4'>
+          <span
+            className='h-[20px] w-[20px] bg-center bg-cover'
+            style={{ backgroundImage: `url("/images/thunder.svg")` }}
+          ></span>
+          <p className='text-white text-[10px] md:text-[14px] font-[900] uppercase leading-5 tracking-[4.2px]'>
+            Mirroring Vaults
+          </p>
+        </div>
+      </div>
+
+      <div className='flex flex-col gap-4 mt-5'>
+        {strategies.length === 0 ? (
+          <div className='p-10 bg-[#102221] rounded-xl border border-[#162030] text-center'>
+            <p className='text-[#546462] font-bold uppercase tracking-widest text-[10px]'>
+              No Active Copying Strategies
+            </p>
+            <p className='text-[#B0E4DD4D] text-xs mt-2'>
+              Browse the leaderboard to find top traders to copy.
+            </p>
+          </div>
+        ) : (
+          strategies.map(strategy => {
+            const pnlPos = strategy.unrealizedPnlUsd >= 0
+
+            return (
+              <div
+                key={strategy.id}
+                className='bg-[#102221] border border-[#162030] rounded-xl flex items-center justify-between overflow-hidden hover:border-[#1e3040] transition-colors p-4 cursor-pointer'
+                onClick={() => onViewVault?.(strategy.fullAddress)}
+              >
+                <div className='flex gap-6 lg:gap-0 items-center justify-between py-5 w-full flex-col md:flex-row flex-wrap lg:flex-nowrap'>
+                  <div className='flex items-center gap-2 min-w-[230px] md:min-w-[300px]'>
+                    <div className='rounded-lg bg-[#0a1414] p-2 flex justify-center items-center'>
+                      <img
+                        src={'/images/thunder.svg'}
+                        alt='Copy Vault'
+                        className='w-[32px] h-[32px] rounded-full object-cover'
+                      />
+                    </div>
+                    <div className='flex flex-col gap-4 '>
+                      <p className='text-[14px] md:text-[18px]  font-[900] leading-[28px] tracking-[-0.45px] text-white  m-0 whitespace-pre-line'>
+                        {strategy.name}
+                      </p>
+
+                      <div className='flex items-center gap-1 text-[10px] text-[#2e4050] tracking-[0.1em]'>
+                        <svg
+                          width='11'
+                          height='11'
+                          viewBox='0 0 24 24'
+                          fill='none'
+                          stroke='currentColor'
+                          strokeWidth='2'
+                        >
+                          <circle cx='12' cy='12' r='10' />
+                          <polyline points='12 6 12 12 16 14' />
+                        </svg>
+                        <span>LAST ACTIVITY: {strategy.lastActivityLabel}</span>
+                      </div>
+
+                      {strategy.masterVaultAddress && (
+                        <div className='flex items-center gap-1 text-[10px] text-[#2e4050] tracking-[0.1em]'>
+                          <span className='text-[#546462] font-bold'>
+                            MIRRORING MASTER:
+                          </span>
+                          <div className='flex items-center gap-1.5 ml-1'>
+                            <span className='text-[10px] text-[#7a9ab0]'>
+                              {strategy.masterVaultAddress.slice(0, 4)}...
+                              {strategy.masterVaultAddress.slice(-4)}
+                            </span>
+                            <span
+                              onClick={e => {
+                                e.stopPropagation()
+                                handleCopy(strategy.masterVaultAddress!)
+                              }}
+                              className='h-[10px] w-[10px] inline-block bg-center bg-cover cursor-pointer hover:opacity-80'
+                              style={{
+                                backgroundImage: `url("${
+                                  copiedId === strategy.masterVaultAddress
+                                    ? '/images/copycheck.svg'
+                                    : '/images/copy.svg'
+                                }")`
+                              }}
+                            ></span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                    <div className='flex items-center gap-1.5 text-[#4a6070]'>
+                      <div className=' bg-[#0a1414] border border-[#162030] px-2 py-0.5 rounded flex items-center gap-2 '>
+                        <span className='text-[10px] text-[#7a9ab0] tracking-wide'>
+                          {strategy.walletSnippet}
+                        </span>
+                        <span
+                          onClick={e => {
+                            e.stopPropagation()
+                            handleCopy(strategy.fullAddress)
+                          }}
+                          className='h-[10px] w-[10px] inline-block bg-center bg-cover cursor-pointer hover:opacity-80'
+                          style={{
+                            backgroundImage: `url("${
+                              copiedId === strategy.fullAddress
+                                ? '/images/copycheck.svg'
+                                : '/images/copy.svg'
+                            }")`
+                          }}
+                        ></span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className='flex items-start gap-10 '>
+                    <div className='flex flex-col gap-0.5'>
+                      <span className='text-[9px] text-[#546462] tracking-[0.18em] uppercase font-[900] mb-0.5'>
+                        BALANCE
+                      </span>
+                      <span className='md:text-[16px] text-[10px] font-[900] text-white tracking-wide'>
+                        {fmtSol(strategy.balanceSol)} SOL
+                      </span>
+                    </div>
+                    <div className='flex flex-col gap-0.5'>
+                      <span className='text-[9px] text-[#546462] tracking-[0.18em] uppercase font-[900] mb-0.5'>
+                        UNREALIZED PNL
+                      </span>
+                      <span
+                        className={`md:text-[16px] text-[10px] font-[900] tracking-wide ${
+                          pnlPos ? 'text-[#00c0a8]' : 'text-[#FA6938]'
+                        }`}
+                      >
+                        {pnlPos ? '+' : ''}
+                        {fmtSol(strategy.unrealizedPnlUsd)}
+                      </span>
+                    </div>
+                    <div className='flex flex-col gap-0.5'>
+                      <span className='text-[9px] text-[#546462] tracking-[0.18em] uppercase font-[900] mb-0.5'>
+                        RISK RULES
+                      </span>
+                      <span className='text-[16px] font-[900] text-white tracking-wide'>
+                        TP: {strategy.riskRules.tp}%
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className='flex items-center gap-2 '>
+                    <button
+                      onClick={e => {
+                        e.stopPropagation()
+                        handleOpenDeposit(strategy.fullAddress)
+                      }}
+                      className='border border-[#1f4d47] rounded-lg px-2 py-[5px] cursor-pointer hover:bg-[#1f4d47]/10 hover:border-[#1f4d47]/70 transition-colors bg-transparent flex items-center gap-1.5 text-[#009883] text-[10px] font-bold tracking-[0.1em]'
+                    >
+                      <span className='text-[8px] font-[900] tracking-[0.1em] text-[#009883]'>
+                        DEPOSIT
+                      </span>
+                    </button>
+                    <button
+                      onClick={e => {
+                        e.stopPropagation()
+                        handleOpenWithdraw(strategy.fullAddress)
+                      }}
+                      className='border border-[#1f4d47] rounded-lg px-2 py-[5px] cursor-pointer hover:bg-[#1f4d47]/10 hover:border-[#1f4d47]/70 transition-colors bg-transparent flex items-center gap-1.5 text-[#009883] text-[10px] font-bold tracking-[0.1em]'
+                    >
+                      <span className='text-[8px] font-[900] tracking-[0.1em] text-[#009883]'>
+                        WITHDRAW
+                      </span>
+                    </button>
+                    <button
+                      onClick={e => {
+                        e.stopPropagation()
+                        setCopiedId(strategy.id)
+                        setOpenStopModal(true)
+                      }}
+                      className='border bg-pad border-padborder rounded-lg px-2 py-[5px] cursor-pointer hover:bg-pad2 hover:border-padborde2 transition-colors flex items-center gap-1.5 tracking-[0.1em]'
+                    >
+                      <span className='text-[8px] font-[900] tracking-[0.1em] text-[#FA6938]'>
+                        STOP COPY
+                      </span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )
+          })
+        )}
+      </div>
     </div>
   )
 }

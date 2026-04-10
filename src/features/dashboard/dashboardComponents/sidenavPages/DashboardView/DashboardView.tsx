@@ -16,16 +16,20 @@ import { useDashboardLeaderboard } from '../Leaderboard/useLeaderboard'
 import { useMarketStats } from '../../../../../core/hooks/useMarketStats'
 
 type TimeRange = 'ALL' | '24H' | '7D' | '30D'
-type SortDir = 'asc' | 'desc'
 
 const DashboardView = () => {
   const { openVaultFlow } = useGeneralContext()
   const { leaders, loading, error } = useDashboardLeaderboard()
+  const [search, setSearch] = useState('')
+  const [range, setRange] = useState<TimeRange>('ALL')
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
+  const [showModal, setShowModal] = useState(false)
+  const [openIndex, setOpenIndex] = useState<number | null>(null)
   const {
     solPrice,
     solChange,
-    networkVolume,
-    volumeChange,
+    solVolume,
+    networkVolumeAllTime,
     trendingToken,
     trendingChange
   } = useMarketStats()
@@ -37,13 +41,18 @@ const DashboardView = () => {
     return `$${val.toLocaleString()}`
   }
 
-  const [search, setSearch] = useState('')
-  const [range, setRange] = useState<TimeRange>('ALL')
+  const getStatValue = (title: string, value?: number | string) => {
+    if (title === 'Trending Token') return value ?? '...'
+    if (title === 'SOL/USD') return typeof value === 'number' ? `$${value.toFixed(2)}` : '...'
+    return formatVolume(typeof value === 'number' ? value : undefined)
+  }
 
-  const [sortDir, setSortDir] = useState<SortDir>('desc')
-
-  const [showModal, setShowModal] = useState(false)
-  const [openIndex, setOpenIndex] = useState<number | null>(null)
+  const marketStats = [
+    { title: 'SOL/USD' as const, value: solPrice, change: solChange },
+    { title: 'Zephyr Protocol Volume' as const, value: networkVolumeAllTime, change: 0 },
+    { title: 'SOL Volume (24h)' as const, value: solVolume, change: solChange },
+    { title: 'Trending Token' as const, value: trendingToken, change: trendingChange },
+  ]
 
   const toggleRow = (index: number) => {
     setOpenIndex(prev => (prev === index ? null : index))
@@ -207,30 +216,26 @@ const DashboardView = () => {
             <p className='font-[700] text-white'>Market overview</p>
             <p className='text-white text-[10.5px]'>View All Markets</p>
           </div>
-          <div className='grid grid-cols-1 lg:grid-cols-3 gap-4 mt-4'>
-            {['SOL/USD', 'Network Volume', 'Trending Token'].map((title, i) => {
-              const changeValue =
-                i === 0 ? solChange : i === 1 ? volumeChange : trendingChange
+          <div className='grid grid-cols-2 lg:grid-cols-4 gap-4 mt-4'>
+            {marketStats.map((stat, i) => {
+              const changeValue = stat.change
               return (
                 <div
                   key={i}
                   className='bg-[#0f1a18] border-[1px] border-[#23483B] rounded-md p-4 flex flex-col gap-2'
                 >
-                  <span className='text-xs text-[#B0E4DD]'>{title}</span>
+                  <span className='text-xs text-[#B0E4DD]'>{stat.title}</span>
                   <div className='h-8 overflow-hidden relative'>
                     <AnimatePresence mode='wait'>
                       <motion.span
-                        key={i === 2 ? trendingToken : 'static'}
+                        key={i === 3 ? stat.value : `stat-${i}`}
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -10 }}
                         transition={{ duration: 0.3 }}
                         className='text-xl font-semibold text-white absolute inset-0'
                       >
-                        {i === 0 &&
-                          (solPrice ? `$${solPrice.toFixed(2)}` : 'Loading...')}
-                        {i === 1 && formatVolume(networkVolume)}
-                        {i === 2 && trendingToken}
+                        {getStatValue(stat.title, stat.value)}
                       </motion.span>
                     </AnimatePresence>
                   </div>
@@ -238,7 +243,7 @@ const DashboardView = () => {
                   <div className='h-4 overflow-hidden relative'>
                     <AnimatePresence mode='wait'>
                       <motion.span
-                        key={i === 2 ? trendingToken : 'static-change'}
+                        key={`stat-change-${i}`}
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}

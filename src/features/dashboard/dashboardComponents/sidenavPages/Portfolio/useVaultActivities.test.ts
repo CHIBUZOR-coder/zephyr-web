@@ -77,6 +77,24 @@ describe('formatVaultActivity', () => {
     expect(formatted.tx).toBe('N/A')
   })
 
+  it('formats DEPOSIT_MASTER event correctly', () => {
+    const activity: VaultActivity = {
+      id: '7',
+      type: 'DEPOSIT_MASTER',
+      vaultAddress: 'TestVault',
+      signature: 'MasterDepositSig123',
+      timestamp: new Date().toISOString(),
+      data: { amount: '5000000000' },
+      processed: true,
+    }
+
+    const formatted = formatVaultActivity(activity)
+
+    expect(formatted.type).toBe('DEPOSIT')
+    expect(formatted.token).toBe('SOL')
+    expect(formatted.amount).toBe('+5.00')
+  })
+
   it('handles missing signature gracefully', () => {
     const activity: VaultActivity = {
       id: '5',

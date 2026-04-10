@@ -142,14 +142,16 @@ initTierConfig();
 
 The transaction creates a singleton PDA (Program Derived Address) that stores:
 
-### 5 Tier Levels with thresholds for:
+### 5 Tier Levels with thresholds for
+
 - **Tier 1 (Community)**: 80/20 fee split, low barriers to entry
 - **Tier 2 (Rising)**: 85/15 fee split, moderate requirements
 - **Tier 3 (Verified Alpha)**: 90/10 fee split, requires admin flag
 - **Tier 4 (Elite)**: 92.5/7.5 fee split, requires multiple flags
 - **Tier 5 (Institutional)**: 95/5 fee split, strictest requirements
 
-### Per-tier thresholds include:
+### Per-tier thresholds include
+
 - Minimum trading volume
 - Minimum track record (days active)
 - Minimum AUM (assets under management)
@@ -158,7 +160,8 @@ The transaction creates a singleton PDA (Program Derived Address) that stores:
 - Minimum number of copiers
 - Trader/platform fee split
 
-### Admin capabilities:
+### Admin capabilities
+
 - `authority`: Can update tier configuration
 - `admin`: Can approve/reject tier downgrades and set verified flags
 
@@ -168,7 +171,8 @@ The transaction creates a singleton PDA (Program Derived Address) that stores:
 
 After initialization, verify it worked:
 
-### From Backend Terminal:
+### From Backend Terminal
+
 ```bash
 curl http://localhost:3000/api/tier/config
 ```
@@ -176,6 +180,7 @@ curl http://localhost:3000/api/tier/config
 **Before:** Returns 400 with "TierConfig has not been initialised on-chain yet"
 
 **After:** Returns 200 with full tier configuration:
+
 ```json
 {
   "success": true,
@@ -208,7 +213,7 @@ curl http://localhost:3000/api/tier/config
 ## Troubleshooting
 
 | Problem | Solution |
-|---------|----------|
+| --------- | ---------- |
 | **"Program or wallet not initialized"** | Make sure wallet is connected and ProgramProvider is in component tree |
 | **"Account does not exist"** (old error) | This will be fixed after running initialization |
 | **Transaction failed with "Account already exists"** | TierConfig already initialized (check with `GET /api/tier/config`) |
