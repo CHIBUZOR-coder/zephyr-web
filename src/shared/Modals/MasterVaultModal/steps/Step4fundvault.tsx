@@ -110,7 +110,9 @@ const TransferDiagram = () => (
 // ─── COMPONENT ────────────────────────────────────────────────────────────────
 
 const Step4FundVault: React.FC<Props> = ({ onNext, vaultAddress }) => {
-  const { publicKey } = useWallet()
+
+  const { publicKey, connected } = useWallet()
+
   const { refetchAll, copierVaults } = useUserVaults()
 
   const {
@@ -130,10 +132,10 @@ const Step4FundVault: React.FC<Props> = ({ onNext, vaultAddress }) => {
   const [success, setSuccess] = useState(false)
   const [loading, setLoading] = useState(false)
   const [showUsdc, setShowUsdc] = useState(false)
-  const { publicKey, connected } = useWallet()
+
   const { data: balanceData } = useWalletBalance(publicKey?.toBase58())
   const balance = balanceData?.balance ?? null
-  const { data: solPriceData } = useSolPrice()
+  // const { data: solPriceData } = useSolPrice()
   const solPrice = solPriceData?.price ?? 0
 
   const numericAmount = parseFloat(amount) || 0

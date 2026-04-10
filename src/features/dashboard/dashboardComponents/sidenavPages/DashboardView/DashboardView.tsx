@@ -49,7 +49,7 @@ const DashboardView = () => {
 
   const marketStats = [
     { title: 'SOL/USD' as const, value: solPrice, change: solChange },
-    { title: 'Zephyr Protocol Volume' as const, value: networkVolumeAllTime, change: 0 },
+    { title: 'Protocol Volume' as const, value: networkVolumeAllTime, change: 0 },
     { title: 'SOL Volume (24h)' as const, value: solVolume, change: solChange },
     { title: 'Trending Token' as const, value: trendingToken, change: trendingChange },
   ]
@@ -214,7 +214,7 @@ const DashboardView = () => {
         <section className='w-full'>
           <div className='flex justify-between items-center'>
             <p className='font-[700] text-white'>Market overview</p>
-            <p className='text-white text-[10.5px]'>View All Markets</p>
+            {/* <p className='text-white text-[10.5px]'>View All Markets</p> */}
           </div>
           <div className='grid grid-cols-2 lg:grid-cols-4 gap-4 mt-4'>
             {marketStats.map((stat, i) => {
