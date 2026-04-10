@@ -57,6 +57,12 @@ const MasterMode = ({
   }
 
   const handleViewVault = (vault: PinnedVault) => {
+    const formatCompact = (num: number): string => {
+      if (Math.abs(num) >= 1_000_000_000) return `${(num / 1_000_000_000).toFixed(1)}B`;
+      if (Math.abs(num) >= 1_000_000) return `${(num / 1_000_000).toFixed(1)}M`;
+      if (Math.abs(num) >= 1_000) return `${(num / 1_000).toFixed(1)}K`;
+      return num.toFixed(0);
+    };
     const traderData = {
       id: parseInt(vault.id) || 0,
       rank: 0,
@@ -77,6 +83,7 @@ const MasterMode = ({
       copiers: vault.connectedCopiers,
       rio: 0,
       follows: vault.connectedCopiers,
+      followsDisplay: formatCompact(vault.connectedCopiers),
       sol: vault.totalBalanceSol.toString(),
       vaultAddress: vault.fullAddress
     }

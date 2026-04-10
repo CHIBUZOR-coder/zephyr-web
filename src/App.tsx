@@ -1,7 +1,7 @@
 // zephyr-web/src/App.tsx
 
 import { useEffect, useState } from 'react'
-// import { useWallet } from '@solana/wallet-adapter-react'
+import { useWallet } from '@solana/wallet-adapter-react'
 // import { useAuthLogin } from './features/auth/useAuthLogin'
 import { useAuthStore } from './features/auth/auth.store'
 import { useWalletAuthSync } from './core/hooks/useWalletAuthSync'
@@ -37,9 +37,10 @@ import MasterTradingFlow from './shared/Modals/MasterVaultModal/Mastertradingflo
 import { TierConfigInitModal } from './shared/Modals/TierConfigInitModal'
 import { ClaimFeesModal } from './shared/Modals/ClaimFeesModal/ClaimFeesModal'
 import { useUserVaults } from './features/master/useUserVaults'
-
+// import Onboarding from './shared/Modals/OnboardingModal/Onboarding'
 
 function App () {
+  const { connected } = useWallet()
   useWalletAuthSync()
   useAuthRefresh() // ← Replaces useRestoreAuth + useAuthSession
   useWalletPersistSync()
@@ -54,6 +55,9 @@ function App () {
   const authReady = useAuthReady()
   const mismatch = useWalletMismatch()
   const { accessToken } = useAuthStore()
+  // const [showOnboarding, setShowOnboarding] = useState(() => {
+  //   return !localStorage.getItem('onboarding_done')
+  // })
 
   const {
     openNotifications,
@@ -246,7 +250,7 @@ function App () {
   return (
     <div className='bg-primary relative'>
       <MobileBottomNav />
-      {masterMode && (
+      {masterMode && connected && (
         <div
           onClick={() => {
             // hasMaterVault ? masterTraderOpen : setOpenCallTrade(true)
@@ -374,6 +378,15 @@ function App () {
           open={claimFeesOpen}
           onClose={() => setClaimFeesOpen(false)}
         />
+
+        {/* {showOnboarding && (
+          <Onboarding
+            onComplete={() => {
+              setShowOnboarding(false)
+              localStorage.setItem('onboarding_done', 'true')
+            }}
+          />
+        )} */}
       </ErrorBoundary>
     </div>
   )

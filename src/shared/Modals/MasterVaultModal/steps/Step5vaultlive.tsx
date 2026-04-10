@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { motion } from 'framer-motion'
 import { FiGrid } from 'react-icons/fi'
 import { BsWallet2 } from 'react-icons/bs'
@@ -16,8 +16,6 @@ interface Props {
 }
 
 // ─── CONSTANTS ────────────────────────────────────────────────────────────────
-
-
 
 // ─── INNER COMPONENTS ─────────────────────────────────────────────────────────
 
@@ -60,6 +58,22 @@ const SecondaryButton = ({
 // ─── COMPONENT ────────────────────────────────────────────────────────────────
 
 const Step5VaultLive: React.FC<Props> = ({ onNext, vaultAddress }) => {
+  const [copied, setCopied] = useState(false)
+
+  const truncateAddress = (addr: string) => {
+    return `${addr.slice(0, 6)}...${addr.slice(-6)}`
+  }
+
+const handleCopy = async () => {
+  await navigator.clipboard.writeText(vaultAddress)
+
+  setCopied(true)
+
+  setTimeout(() => {
+    setCopied(false)
+  }, 2000)
+}
+
   const navigate = useNavigate()
   const { setOpenCallTrade, setMasterTradingFlowOpen } = useGeneralContext()
   const { toggleMasterMode } = useTradingModeStore()
@@ -133,9 +147,26 @@ const Step5VaultLive: React.FC<Props> = ({ onNext, vaultAddress }) => {
           <span className='text-[12px] font-[700] tracking-[1px] uppercase text-[#6e8885] block mb-1'>
             MASTER EXECUTION VAULT
           </span>
-          <p className='text-[18px] font-[900] text-white m-0 mb-[3px] leading-[27px]'>
-            {vaultAddress}
-          </p>
+          
+          <div
+            onClick={handleCopy}
+            className='cursor-pointer group flex items-center gap-2'
+          >
+            <p className='text-[14px] font-[700] text-white m-0 leading-[27px]'>
+              {truncateAddress(vaultAddress)}
+            </p>
+
+            {copied ? (
+              <span className='text-[11px] text-[#00d4a8] font-semibold'>
+                Copied
+              </span>
+            ) : (
+              <span
+                style={{ backgroundImage: `url("/images/copy.svg")` }}
+                className='h-5 w-5 bg-center bg-cover'
+              />
+            )}
+          </div>
           <p className='text-[13px] text-[#6e8885] m-0 font-[500]'>
             Deployed on Solana Mainnet
           </p>

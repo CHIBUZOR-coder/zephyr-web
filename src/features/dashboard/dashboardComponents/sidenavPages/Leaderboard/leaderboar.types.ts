@@ -30,6 +30,7 @@ export type Trader = {
   copiers: number;
   rio: number; // ← added
   follows: number; // ← added
+  followsDisplay: string; // ← formatted follows count (e.g., "1.2K")
   sol: string; // ← added
   address?: string; // ← added
   vaultAddress?: string; // ← added

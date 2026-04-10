@@ -10,7 +10,8 @@ function formatRoiPct(roiPct: number): string {
   return `${capped >= 0 ? "+" : ""}${capped.toFixed(1)}%`;
 }
 
-function formatCompactNumber(num: number): string {
+function formatCompactNumber(num: number | undefined | null): string {
+  if (num === undefined || num === null || isNaN(num)) return '0';
   if (Math.abs(num) >= 1_000_000_000) return `${(num / 1_000_000_000).toFixed(1)}B`;
   if (Math.abs(num) >= 1_000_000) return `${(num / 1_000_000).toFixed(1)}M`;
   if (Math.abs(num) >= 1_000) return `${(num / 1_000).toFixed(1)}K`;
@@ -89,8 +90,9 @@ export function useDashboardLeaderboard() {
           trades: entry.metrics.totalTrades,
           copiers: entry.metrics.activeCopiers,
           rio: parseFloat(entry.metrics.roiPct.toFixed(1)),
-          follows: entry.metrics.activeCopiers, // Using copiers as proxy for follows
-          sol: (entry.metrics.aumUsd / 150).toFixed(0), // Estimating SOL based on $150 price
+          follows: entry.metrics.activeCopiers,
+          followsDisplay: formatCompactNumber(entry.metrics.activeCopiers),
+          sol: (entry.metrics.aumUsd / 150).toFixed(0),
           address: entry.masterWallet,
           vaultAddress: entry.vaultPda,
         }));

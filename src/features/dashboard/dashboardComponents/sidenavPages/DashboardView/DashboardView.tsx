@@ -339,8 +339,7 @@ const DashboardView = () => {
                             </div>
                             <div className='flex flex-col gap-3 w-[50%]'>
                               <p className='text-[#B0E4DD] text-[9px] font-[400] text-end'>
-                                Followers: {item.follows}
-                                {item.follows < 500 ? 'K' : ''}
+                                Followers: {item.followsDisplay}
                               </p>
                               <button className='border border-teal-500 text-teal-400 px-3 py-2 rounded text-xs hover:bg-teal-500 transition ease-in-out duration-500 cursor-pointer hover:text-white'>
                                 Follow

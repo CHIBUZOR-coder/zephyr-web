@@ -2,9 +2,9 @@ import React, { useState } from 'react'
 import { motion } from 'framer-motion'
 import { FiArrowRight } from 'react-icons/fi'
 import { MdOutlineAccountBalanceWallet } from 'react-icons/md'
+import { useWallet } from '@solana/wallet-adapter-react'
 import { useUserVaults } from '../../../../features/master/useUserVaults'
 import { useVaultOperations } from '../../../../features/master/useVaultOperations'
-import { useWallet } from '@solana/wallet-adapter-react'
 import { useWalletBalance } from '../../../../features/wallet/useWalletQuery'
 import { useSolPrice } from '../../../../core/hooks/usePrice'
 
@@ -15,11 +15,6 @@ interface Props {
   onBack: () => void
   vaultAddress: string
 }
-
-// ─── CONSTANTS ────────────────────────────────────────────────────────────────
-
-const WALLET_BALANCE = 42.5
-const SOL_USD_RATE = 148.32
 
 // ─── INNER COMPONENTS ─────────────────────────────────────────────────────────
 
@@ -115,6 +110,7 @@ const TransferDiagram = () => (
 // ─── COMPONENT ────────────────────────────────────────────────────────────────
 
 const Step4FundVault: React.FC<Props> = ({ onNext, vaultAddress }) => {
+  const { publicKey } = useWallet()
   const { refetchAll, copierVaults } = useUserVaults()
 
   const {
@@ -122,6 +118,14 @@ const Step4FundVault: React.FC<Props> = ({ onNext, vaultAddress }) => {
     depositToMasterVault,
     error: opError
   } = useVaultOperations()
+
+  const walletAddress = publicKey?.toBase58()
+  const { data: walletBalanceData } = useWalletBalance(walletAddress)
+  const { data: solPriceData } = useSolPrice()
+
+  const walletBalance = walletBalanceData?.balance ?? 0
+  const solUsdRate = solPriceData?.price ?? 150
+
   const [amount, setAmount] = useState('')
   const [success, setSuccess] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -133,9 +137,9 @@ const Step4FundVault: React.FC<Props> = ({ onNext, vaultAddress }) => {
   const solPrice = solPriceData?.price ?? 0
 
   const numericAmount = parseFloat(amount) || 0
-  const usdValue = (numericAmount * SOL_USD_RATE).toFixed(2)
+  const usdValue = (numericAmount * solUsdRate).toFixed(2)
 
-  const handleMax = () => setAmount(WALLET_BALANCE.toString())
+  const handleMax = () => setAmount(walletBalance.toString())
 
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value
@@ -218,7 +222,7 @@ const Step4FundVault: React.FC<Props> = ({ onNext, vaultAddress }) => {
           {connected && balance !== null && (
             <button
               onClick={() => setShowUsdc(!showUsdc)}
-              className='text-[11px] font-[700] leading-[16.5px] uppercase tracking-[0.08em] text-[#6e8885]'
+              className='flex items-center gap-2 text-[14px] font-[700] leading-[16.5px] uppercase tracking-[0.08em] text-[#6e8885]'
             >
               <span
                 style={{
@@ -248,6 +252,11 @@ const Step4FundVault: React.FC<Props> = ({ onNext, vaultAddress }) => {
               0 SOL
             </span>
           </p>
+          {vaultAddress && (
+            <p className='text-[10px] text-[#6e8885] mt-1 truncate'>
+              {vaultAddress.slice(0, 4)}...{vaultAddress.slice(-4)}
+            </p>
+          )}
         </div>
       </div>
 

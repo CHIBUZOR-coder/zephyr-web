@@ -9,10 +9,10 @@ import {
 } from 'recharts'
 import React, { useEffect, useRef, useState } from 'react'
 import { useGeneralContext } from '../../../../../Context/GeneralContext'
-import { getTier } from '../../../../../utils/Gettiter'
 import { useDashboardLeaderboard } from './useLeaderboard'
 import type { Trader } from './leaderboar.types'
 import { Link } from 'react-router-dom'
+import { TierBadge } from '../../../../../Pages/Components/TierBadge'
 
 // ─── Movement indicator ───────────────────────────────────────────────────────
 // Renders a small teal arrow (up) or red arrow (down) + the number of positions
@@ -243,7 +243,6 @@ const Leaderboard: React.FC = () => {
               ) : (
                 filteredTraders.map(trader => {
                   const displayRank = trader.rank
-                  const tag = getTier(trader.tag)
 
                   return (
                     <tr
@@ -286,18 +285,14 @@ const Leaderboard: React.FC = () => {
                             <span className='animate-pulse h-[4px] w-[4px] bg-[#6A7282] rounded-full inline-block'></span>
                           </span>
                         </Link>
-                        <div>
+                        <div className='flex flex-col gap-1'>
                           <Link
                             to={`/profile/${trader.vaultAddress}`}
                             className='font-[900] text-[14px]'
                           >
                             {trader.name}
                           </Link>
-                          <span
-                            className={`text-[8px] uppercase rounded-md font-medium ${tag?.text} ${tag?.bg} border-[1.1px] ${tag?.border} p-[4px]`}
-                          >
-                            {trader.tag}
-                          </span>
+                          <TierBadge tierLabel={trader.tag} size='sm' />
                         </div>
                       </td>
                       <td className='pdd text-[10px] text-[#709692] uppercase font-[700]'>
@@ -347,12 +342,14 @@ const Leaderboard: React.FC = () => {
                 <span className='text-[10px] bg-[#2a2a00] text-yellow-400 px-3 py-1 rounded-full uppercase tracking-wider'>
                   Trader of the Week
                 </span>
-                <h3 className='mt-4 text-xl font-bold bg-[#0d3b40] inline-block px-2 py-1 rounded'>
-                  @{traderOfWeek.name}
-                </h3>
+                <div className='mt-3 flex items-center gap-2'>
+                  <h3 className='text-xl font-bold'>
+                    @{traderOfWeek.name}
+                  </h3>
+                  <TierBadge tierLabel={traderOfWeek.tag} size='sm' />
+                </div>
                 <p className='text-xs text-[#7a9398] mt-3 max-w-xs'>
-                  Specializing in {traderOfWeek.tiers} strategies and
-                  professional-grade risk management.
+                  {traderOfWeek.tag} ranked #{traderOfWeek.rank} with {traderOfWeek.trades} trades and {traderOfWeek.winRate} win rate.
                 </p>
                 <div className='flex gap-4 mt-6'>
                   <div className='bg-[#0a1d20] px-4 py-3 rounded-xl text-center'>
@@ -463,40 +460,47 @@ const Leaderboard: React.FC = () => {
                 <div className='flex justify-between items-center'>
                   <div>
                     <p className='text-[10px] text-[#5f7d84] uppercase'>
-                      Risk-Adjusted Ratio
+                      Win Rate
                     </p>
-                    <p className='font-bold text-lg'>4.8</p>
+                    <p className='font-bold text-lg'>{traderOfWeek.winRate}</p>
                   </div>
-                  <span className='text-xs bg-[#0d3b40] text-[#19d3c5] px-3 py-1 rounded-full'>
-                    OPTIMAL
+                  <span className={`text-xs px-3 py-1 rounded-full ${
+                    parseFloat(traderOfWeek.winRate) >= 50 
+                      ? 'bg-[#0d3b40] text-[#19d3c5]' 
+                      : 'bg-[#3b0d0d] text-red-400'
+                  }`}>
+                    {parseFloat(traderOfWeek.winRate) >= 50 ? 'PROFITABLE' : 'UNPROFITABLE'}
                   </span>
                 </div>
                 <div className='flex justify-between items-center'>
                   <div>
                     <p className='text-[10px] text-[#5f7d84] uppercase'>
-                      Avg Trade Hold
+                      Max Drawdown
                     </p>
-                    <p className='font-bold text-lg'>4.2h</p>
+                    <p className='font-bold text-lg text-red-400'>-{traderOfWeek.drawdown}</p>
                   </div>
-                  <span className='text-xs bg-[#0d3b40] text-[#19d3c5] px-3 py-1 rounded-full'>
-                    STABLE
+                  <span className={`text-xs px-3 py-1 rounded-full ${
+                    parseFloat(traderOfWeek.drawdown) <= 20 
+                      ? 'bg-[#0d3b40] text-[#19d3c5]' 
+                      : 'bg-[#3b0d0d] text-red-400'
+                  }`}>
+                    {parseFloat(traderOfWeek.drawdown) <= 20 ? 'LOW RISK' : 'HIGH RISK'}
                   </span>
                 </div>
                 <div className='flex justify-between items-center'>
                   <div>
                     <p className='text-[10px] text-[#5f7d84] uppercase'>
-                      Total Copier Equity
+                      Total Copiers
                     </p>
-                    <p className='font-bold text-lg'>$2.4M</p>
+                    <p className='font-bold text-lg'>{traderOfWeek.copiers}</p>
                   </div>
                   <span className='text-xs bg-[#0d3b40] text-[#19d3c5] px-3 py-1 rounded-full'>
-                    GROWING
+                    ACTIVE
                   </span>
                 </div>
               </div>
               <div className='mt-8 text-[10px] text-[#5f7d84] bg-[#0a1d20] p-4 rounded-xl'>
-                "Consistent sizing and disciplined exit strategy are the bedrock
-                of my trading. Risk management is the only holy grail."
+                <p className='text-[#7a9398]'>"Ranked #{traderOfWeek.rank} on the leaderboard with {traderOfWeek.trades} total trades and {traderOfWeek.copiers} active copiers."</p>
               </div>
             </div>
           </div>

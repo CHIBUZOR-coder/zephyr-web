@@ -119,7 +119,8 @@ export default {
         elite:'rgba(234, 179, 8, 1)',
         elitebg:'rgba(234, 179, 8, 0.1)',
         institutional:'rgba(229, 231, 235, 1)',
-        institutionalbg:'rgba(255, 255, 255, 0.05)'
+        institutionalbg:'rgba(255, 255, 255, 0.05)',
+        step1:"rgba(61, 73, 70, 0.15)"
       }
     }
   },

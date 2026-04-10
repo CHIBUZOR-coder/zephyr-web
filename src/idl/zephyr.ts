@@ -4733,7 +4733,7 @@ export type Zephyr = {
           {
             "name": "currentTier",
             "docs": [
-              "Master's currently active tier (0 = Unranked, 1–5).",
+              "Master's currently active tier (1–5, starts at 1 = Community Trader).",
               "Updated immediately on upgrade; only updated after admin approval on downgrade."
             ],
             "type": "u8"

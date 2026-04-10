@@ -3,10 +3,16 @@ import { useTradingModeStore } from '../../features/dashboard/useTradingModeStor
 import { useWallet } from '@solana/wallet-adapter-react'
 import { useUserVaults } from '../../features/master/useUserVaults'
 import { useUserProfile } from '../../features/users/useUserProfile'
+import { useMasterTierState } from '../../features/master/useMasterTier'
 import { useEffect, useMemo } from 'react'
 import { useGeneralContext } from '../../Context/GeneralContext'
 import { getTimeAgo } from '../../utils/dateHelpers'
 import { Link } from 'react-router-dom'
+import { TierBadge } from './TierBadge'
+
+function getDefaultAvatar(walletAddress: string): string {
+  return `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(walletAddress)}`
+}
 
 export default function ProfileHeader () {
   const { masterMode, toggleMasterMode } = useTradingModeStore()
@@ -16,6 +22,7 @@ export default function ProfileHeader () {
 
   const walletAddress = publicKey?.toBase58() || ''
   const { data: userProfile } = useUserProfile(walletAddress)
+  const { data: tierState } = useMasterTierState(walletAddress)
   useEffect(()=>{
     console.log("User Profile:", userProfile)
   },[walletAddress, userProfile])
@@ -47,14 +54,12 @@ export default function ProfileHeader () {
       <div className='flex flex-col lg:flex-row  gap-4  w-full md:w-auto'>
         <div className='flex flex-col gap-10 lg:gap-14  items-center md:items-start '>
           <div className='w-[96px] h-[96px] rounded-lg flex items-center justify-center  font-[900] text-[30px] leading-[36px] text-white bg-gradient-to-b from-[#009883] to-[#00A991]'>
-            {userProfile?.avatar ? (
+            {publicKey ? (
               <img
-                src={userProfile.avatar}
+                src={userProfile?.avatar || getDefaultAvatar(walletAddress)}
                 alt='Avatar'
                 className='w-full h-full rounded-lg object-cover'
               />
-            ) : publicKey ? (
-              walletAddress.slice(0, 2).toUpperCase()
             ) : (
               '??'
             )}
@@ -83,17 +88,8 @@ export default function ProfileHeader () {
               </h2>
             </div>
 
-            {masterMode && (
-              <div className='inline-flex items-center gap-1 rounded-xl py-2 px-5 border border-medal_border bg-medal'>
-                <span
-                  style={{ backgroundImage: `url("/images/medal.svg")` }}
-                  className='bg-center bg-cover h-[12px] w-[12px] inline-block cursor-pointer'
-                ></span>
-
-                <p className='text-[#FFB900] text-[12px] font-[900] uppercase leading-[16px]'>
-                  Elite
-                </p>
-              </div>
+            {masterMode && tierState?.currentTierLabel && (
+              <TierBadge tierLabel={tierState.currentTierLabel} />
             )}
           </div>
           <div className='flex items-center gap-2 text-[#7c9b97]'>

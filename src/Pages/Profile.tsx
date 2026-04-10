@@ -51,6 +51,16 @@ export default function Profile () {
     win: '/images/bar_chart3.svg'
   }
 
+  const maxDrawdownBps = tierState?.metrics?.maxDrawdownBps || 0
+  
+  const riskScore = Math.max(0, Math.min(100, Math.round(100 - maxDrawdownBps / 50)))
+  const riskProfile = riskScore >= 80 ? 'Low risk profile' : riskScore >= 60 ? 'Moderate risk profile' : riskScore >= 40 ? 'Higher risk profile' : 'High risk profile'
+  
+  const copierRetentionPct = tierState?.metrics?.copierRetentionPct || '0'
+  const consistencyScore = parseFloat(copierRetentionPct)
+  const consistencyLabel = consistencyScore >= 80 ? 'Stable' : consistencyScore >= 60 ? 'Moderate' : consistencyScore >= 40 ? 'Volatile' : 'Highly Volatile'
+  const consistencyColor = consistencyScore >= 60 ? 'text-emerald-400' : consistencyScore >= 40 ? 'text-yellow-400' : 'text-red-400'
+
   return (
     <div className='min-h-screen bg-[#020c0c] text-white p-3 md:p-6 '>
       <div className='max-w-6xl mx-auto space-y-6'>
@@ -78,15 +88,15 @@ export default function Profile () {
         <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
           <RiskCard
             title='Risk Score'
-            value='78 / 100'
-            subtitle='Moderate risk profile'
+            value={`${riskScore} / 100`}
+            subtitle={riskProfile}
           />
 
           <RiskCard
             title='Consistency'
-            value='Stable'
-            subtitle='Performance stability'
-            color='text-emerald-400'
+            value={consistencyLabel}
+            subtitle={`${copierRetentionPct}% copier retention`}
+            color={consistencyColor}
           />
         </div>
 

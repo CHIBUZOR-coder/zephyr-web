@@ -3,6 +3,7 @@ import { useLiveTradeStore } from './useLiveTradeStore'
 import { ExitPositionModal } from './ExitPositionModal'
 import { useWallet } from '@solana/wallet-adapter-react'
 import { useGeneralContext } from '../../../../../Context/GeneralContext'
+import { TierBadge } from '../../../../../Pages/Components/TierBadge'
 // import { useAuthStore } from '../../../../auth/auth.store'
 // import { p } from 'framer-motion/client'
 // import { useTradingModeStore } from './useTradingModeStore'
@@ -163,7 +164,7 @@ const LiveTrade = () => {
   const liveTraders: Trader[] = [
     {
       name: '@sol_whale',
-      tyter: 'Elite Alpha',
+      tyter: 'Elite',
       trade: 'SOL/USDC',
       amout: '142.50 SOL',
       wallet: '5K2b...9zL1',
@@ -172,7 +173,7 @@ const LiveTrade = () => {
     },
     {
       name: '@alpha_seeker',
-      tyter: 'Verified Alpha',
+      tyter: 'Verified',
       trade: 'SOL/USDC',
       amout: '25,000 JUP',
       wallet: '2A7x...4mP9',
@@ -181,7 +182,7 @@ const LiveTrade = () => {
     },
     {
       name: '@zephyr_mod',
-      tyter: 'Verified Alpha',
+      tyter: 'Rising',
       trade: 'BONK/SOL',
       amout: '4.2B BONK',
       wallet: '9L1v...2qW8',
@@ -199,7 +200,7 @@ const LiveTrade = () => {
     },
     {
       name: '@macro_king',
-      tyter: 'Elite Alpha',
+      tyter: 'Elite',
       trade: 'SOL/USDC',
       amout: '85.00 SOL',
       wallet: '8M2k...1tY3',
@@ -208,7 +209,7 @@ const LiveTrade = () => {
     },
     {
       name: '@onchain_guru',
-      tyter: 'Legendary',
+      tyter: 'Institutional',
       trade: 'WIF/SOL',
       amout: '450.20 WIF',
       wallet: '8M2k...1tY3',
@@ -217,7 +218,7 @@ const LiveTrade = () => {
     },
     {
       name: '@smart_money',
-      tyter: 'Verified Alpha',
+      tyter: 'Verified',
       trade: 'DRIFT/USDC',
       amout: '15,000 DRIFT',
       wallet: '1Z3m...5uI9',
@@ -226,7 +227,7 @@ const LiveTrade = () => {
     },
     {
       name: '@velocity_cap',
-      tyter: 'Elite Alpha',
+      tyter: 'Elite',
       trade: 'SOL/USDC',
       amout: '200.00 SOL',
       wallet: '1Z3m...5uI9',
@@ -234,19 +235,6 @@ const LiveTrade = () => {
       time: '8m ago'
     }
   ]
-
-  const badgeColor = (type: string) => {
-    switch (type) {
-      case 'Elite Alpha':
-        return 'bg-purple-600/20 text-purple-400'
-      case 'Verified Alpha':
-        return 'bg-green-600/20 text-green-400'
-      case 'Legendary':
-        return 'bg-yellow-500/20 text-yellow-400'
-      default:
-        return 'bg-gray-600/20 text-gray-300'
-    }
-  }
 
   // 🔥 Filter based on active tab
   // const filteredTrades =
@@ -331,17 +319,11 @@ const LiveTrade = () => {
                         ></span>
                       </div>
 
-                      <div>
+                      <div className='flex flex-col gap-1'>
                         <p className='font-semibold text-sm md:text-base'>
                           {trader.name}
                         </p>
-                        <span
-                          className={`text-[10px] px-2 py-1 rounded-full ${badgeColor(
-                            trader.tyter
-                          )}`}
-                        >
-                          {trader.tyter}
-                        </span>
+                        <TierBadge tierLabel={trader.tyter} size='sm' />
                       </div>
                     </div>
 

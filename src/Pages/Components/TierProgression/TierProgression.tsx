@@ -4,15 +4,7 @@ import RequirementBar from './components/RequirementBar'
 import TierStep from './components/TierStep'
 import { useMasterTierState, useProtocolTierConfig } from '../../../features/master/useMasterTier'
 import { useWallet } from '@solana/wallet-adapter-react'
-
-const TIER_LABELS: Record<number, string> = {
-  0: 'Unranked',
-  1: 'Community Trader',
-  2: 'Rising Trader',
-  3: 'Verified Alpha',
-  4: 'Elite Alpha',
-  5: 'Institutional Alpha'
-}
+import { formatCurrency, formatPercentage } from '../../../utils/formatters'
 
 export default function TierProgression () {
   const { publicKey } = useWallet()
@@ -20,33 +12,24 @@ export default function TierProgression () {
   const { data: tierState } = useMasterTierState(masterWalletAddress)
   const { data: protocolTierConfig } = useProtocolTierConfig()
 
-  const currentTier = tierState?.currentTier || 0
+  const currentTier = tierState?.currentTier || 1
+  const isMaxTier = currentTier >= 5
 
-  const progression = Object.entries(TIER_LABELS)
-    .filter(([key]) => parseInt(key) > 0) // Exclude 'Unranked'
-    .map(([key, label]) => {
-      const tierIndex = parseInt(key)
-      const tierConfig = protocolTierConfig?.tiers.find(
-        t => t.tierIndex === tierIndex
-      )
-      const traderFeePct = tierConfig?.traderFeePct || 'N/A'
-      const platformFeePct = tierConfig
-        ? (100 - parseFloat(tierConfig.traderFeePct)).toFixed(1)
-        : 'N/A'
-      const value = tierConfig ? `${traderFeePct} / ${platformFeePct}` : ''
+  const progression = protocolTierConfig?.tiers.map((tier) => {
+      const value = `${tier.traderFeePct} / ${(100 - parseFloat(tier.traderFeePct)).toFixed(1)}`
       return {
-        label,
+        label: tier.label,
         value,
-        completed: tierIndex < currentTier,
-        active: tierIndex === currentTier
+        completed: tier.tierIndex < currentTier,
+        active: tier.tierIndex === currentTier
       }
-    })
+    }) || []
 
   const nextTierIndex = currentTier < 5 ? currentTier + 1 : currentTier
-  const nextTierLabel = TIER_LABELS[nextTierIndex]
   const nextTierConfig = protocolTierConfig?.tiers.find(
     t => t.tierIndex === nextTierIndex
   )
+  const nextTierLabel = nextTierConfig?.label || 'N/A'
   const nextTierTraderFeePct = nextTierConfig?.traderFeePct || 'N/A'
   const nextTierPlatformFeePct = nextTierConfig
     ? (100 - parseFloat(nextTierConfig.traderFeePct)).toFixed(1)
@@ -61,6 +44,16 @@ export default function TierProgression () {
   const currentTierTraderFeePct = currentTierConfig?.traderFeePct || 'N/A'
   const currentTierPlatformFeePct = currentTierConfig ? (100 - parseFloat(currentTierConfig.traderFeePct)).toFixed(1) : 'N/A'
 
+  const currentAum = parseFloat(tierState?.metrics?.rollingAumUsd || '0')
+  const requiredAum = parseFloat(nextTierConfig?.minAumUsd || '0')
+  const currentCopiers = tierState?.metrics?.activeCopiers || 0
+  const requiredCopiers = nextTierConfig?.minCopiers || 0
+
+  const getProgress = (current: number, required: number) => {
+    if (required === 0) return 100
+    return Math.min(100, (current / required) * 100)
+  }
+
   return (
     <div className='bg-gradient-to-br from-[#071b1b] to-[#041010] border border-teal-900/30 rounded-2xl p-6 space-y-6'>
       {/* HEADER */}
@@ -72,24 +65,28 @@ export default function TierProgression () {
           </h3>
 
           <p className='text-xs text-teal-200/50 mt-1'>
-            Track your progress toward the next trader tier.
+            {isMaxTier 
+              ? 'You have reached the highest tier!' 
+              : 'Track your progress toward the next trader tier.'}
           </p>
         </div>
 
-        <div className='bg-next text-[#C27AFF] text-xs px-3 py-1 rounded-lg border border-next2 flex items-center '>
-          <span
-            className='h-[16px] w-[16px]'
-            style={{ backgroundImage: `url("/images/blue_award.svg")` }}
-          ></span>
-          <div className='text-center'>
-            <span className='text-[12px] font-[900] text-[#C27AFF] leading-[16px]'>
-              NEXT TIER
-            </span>
-            <p className='text-[12px] font-[400] text-[#C27AFF] leading-[16px]'>
-              {nextTierLabel} ({nextTierRevenueSplit})
-            </p>
+        {nextTierConfig && (
+          <div className='bg-next text-[#C27AFF] text-xs px-3 py-1 rounded-lg border border-next2 flex items-center '>
+            <span
+              className='h-[16px] w-[16px]'
+              style={{ backgroundImage: `url("/images/blue_award.svg")` }}
+            ></span>
+            <div className='text-center'>
+              <span className='text-[12px] font-[900] text-[#C27AFF] leading-[16px]'>
+                NEXT TIER
+              </span>
+              <p className='text-[12px] font-[400] text-[#C27AFF] leading-[16px]'>
+                {nextTierLabel} ({nextTierRevenueSplit})
+              </p>
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       {/* CURRENT TIER CARD */}
@@ -103,7 +100,7 @@ export default function TierProgression () {
           <p className='text-xs text-teal-200/60'>CURRENT TIER</p>
 
           <h4 className='font-semibold text-[1rem] md:text-lg text-yellow-400'>
-            {tierState?.currentTierLabel || 'Unranked'}
+            {tierState?.currentTierLabel || 'Community Trader'}
           </h4>
 
           <p className='text-xs text-teal-200/50'>
@@ -135,113 +132,51 @@ export default function TierProgression () {
         ))}
       </div>
 
-      {/* REQUIREMENTS */}
-
-      <div className='space-y-3'>
-        <h4 className='text-[12px] md:text-[18px] text-white font-[900] uppercase '>
-          REQUIREMENTS FOR {nextTierLabel?.toUpperCase() || 'THE NEXT TIER'}
-        </h4>
-
-        <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
-          ;
-          <RequirementBar
-            title='Trade Count'
-            progress={tierState?.totalTrades && nextTierConfig?.minTrackRecordDays ? (tierState.totalTrades / nextTierConfig.minTrackRecordDays) * 100 : 0}
-            value={`${tierState?.totalTrades || 0} / ${nextTierConfig?.minTrackRecordDays || 0}`}
-            info={`${(nextTierConfig?.minTrackRecordDays || 0) - (tierState?.totalTrades || 0)} trades remaining`}
-          />
-          <RequirementBar
-            title='Assets Under Management'
-            progress={
-              tierState?.metrics.rollingAumUsd && nextTierConfig?.minAumUsd
-                ? (parseFloat(tierState.metrics.rollingAumUsd) /
-                    parseFloat(nextTierConfig.minAumUsd)) *
-                  100
-                : 0
-            }
-            value={`$${parseFloat(
-              tierState?.metrics.rollingAumUsd || '0'
-            ).toFixed(1)}M / $${parseFloat(
-              nextTierConfig?.minAumUsd || '0'
-            ).toFixed(1)}M`}
-            info={`$${(
-              parseFloat(nextTierConfig?.minAumUsd || '0') -
-              parseFloat(tierState?.metrics.rollingAumUsd || '0')
-            ).toFixed(1)}M to go`}
-          />
-          <RequirementBar
-            title='Risk Consistency Score'
-            progress={
-              tierState?.metrics.maxDrawdownBps &&
-              nextTierConfig?.maxDrawdownBps
-                ? (tierState.metrics.maxDrawdownBps /
-                    nextTierConfig.maxDrawdownBps) *
-                  100
-                : 0
-            }
-            value={`${tierState?.metrics.maxDrawdownPct || '0'}% / ${
-              nextTierConfig?.maxDrawdownPct || '0'
-            }%`}
-            info={`${(
-              parseFloat(nextTierConfig?.maxDrawdownPct || '0') -
-              parseFloat(tierState?.metrics.maxDrawdownPct || '0')
-            ).toFixed(1)}% buffer`}
-          />
-          <RequirementBar
-            title='Maximum Drawdown'
-            progress={
-              tierState?.metrics.maxDrawdownBps &&
-              nextTierConfig?.maxDrawdownBps
-                ? (tierState.metrics.maxDrawdownBps /
-                    nextTierConfig.maxDrawdownBps) *
-                  100
-                : 0
-            }
-            value={`${tierState?.metrics.maxDrawdownPct || '0'}% / ${
-              nextTierConfig?.maxDrawdownPct || '0'
-            }%`}
-            info={`${(
-              parseFloat(nextTierConfig?.maxDrawdownPct || '0') -
-              parseFloat(tierState?.metrics.maxDrawdownPct || '0')
-            ).toFixed(1)}% buffer`}
-          />
-          <RequirementBar
-            title='Track Record Duration'
-            progress={
-              tierState?.metrics.daysActive &&
-              nextTierConfig?.minTrackRecordDays
-                ? (tierState.metrics.daysActive /
-                    nextTierConfig.minTrackRecordDays) *
-                  100
-                : 0
-            }
-            value={`${tierState?.metrics.daysActive || 0} days / ${
-              nextTierConfig?.minTrackRecordDays || 0
-            } days`}
-            info={`${
-              (nextTierConfig?.minTrackRecordDays || 0) -
-              (tierState?.metrics.daysActive || 0)
-            } days required`}
-          />
-          <RequirementBar
-            title='Copier Count'
-            progress={
-              tierState?.metrics.activeCopiers && nextTierConfig?.minCopiers
-                ? (tierState.metrics.activeCopiers /
-                    nextTierConfig.minCopiers) *
-                  100
-                : 0
-            }
-            value={`${tierState?.metrics.activeCopiers || 0} / ${
-              nextTierConfig?.minCopiers || 0
-            }`}
-            info={`${
-              (nextTierConfig?.minCopiers || 0) -
-              (tierState?.metrics.activeCopiers || 0)
-            } more copiers`}
-          />
+      {/* REQUIREMENTS - Only show if not at max tier */}
+      {!isMaxTier && nextTierConfig && (
+        <div className='space-y-3'>
+          <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+            <RequirementBar
+              title='Trade Count'
+              progress={getProgress(tierState?.totalTrades || 0, nextTierConfig.minTrackRecordDays)}
+              value={`${tierState?.totalTrades || 0} / ${nextTierConfig.minTrackRecordDays}`}
+              info={`${Math.max(0, nextTierConfig.minTrackRecordDays - (tierState?.totalTrades || 0))} trades remaining`}
+            />
+            <RequirementBar
+              title='Assets Under Management'
+              progress={getProgress(currentAum, requiredAum)}
+              value={`${formatCurrency(currentAum, { compact: true })} / ${formatCurrency(requiredAum, { compact: true })}`}
+              info={`${formatCurrency(Math.max(0, requiredAum - currentAum), { compact: true })} to go`}
+            />
+            <RequirementBar
+              title='Risk Consistency'
+              progress={getProgress(parseFloat(tierState?.metrics?.maxDrawdownPct || '0'), parseFloat(nextTierConfig.maxDrawdownPct))}
+              value={`${tierState?.metrics?.maxDrawdownPct || '0'}% / ${nextTierConfig.maxDrawdownPct}%`}
+              info={`${formatPercentage(Math.max(0, parseFloat(nextTierConfig.maxDrawdownPct) - parseFloat(tierState?.metrics?.maxDrawdownPct || '0')))} buffer`}
+            />
+            <RequirementBar
+              title='Maximum Drawdown'
+              progress={getProgress(parseFloat(tierState?.metrics?.maxDrawdownPct || '0'), parseFloat(nextTierConfig.maxDrawdownPct))}
+              value={`${tierState?.metrics?.maxDrawdownPct || '0'}% / ${nextTierConfig.maxDrawdownPct}%`}
+              info={`${formatPercentage(Math.max(0, parseFloat(nextTierConfig.maxDrawdownPct) - parseFloat(tierState?.metrics?.maxDrawdownPct || '0')))} buffer`}
+            />
+            <RequirementBar
+              title='Track Record'
+              progress={getProgress(tierState?.metrics?.daysActive || 0, nextTierConfig.minTrackRecordDays)}
+              value={`${tierState?.metrics?.daysActive || 0} / ${nextTierConfig.minTrackRecordDays} days`}
+              info={`${Math.max(0, nextTierConfig.minTrackRecordDays - (tierState?.metrics?.daysActive || 0))} days required`}
+            />
+            {requiredCopiers > 0 && (
+              <RequirementBar
+                title='Copier Count'
+                progress={getProgress(currentCopiers, requiredCopiers)}
+                value={`${currentCopiers} / ${requiredCopiers}`}
+                info={`${Math.max(0, requiredCopiers - currentCopiers)} more copiers needed`}
+              />
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* BOTTOM GRID */}
 

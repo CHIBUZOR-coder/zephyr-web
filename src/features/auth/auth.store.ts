@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type { AuthUser } from "./auth.types";
+import { API_BASE } from "../../core/query/authClient";
 
 type AuthState = {
   authenticated: boolean;
@@ -33,13 +34,27 @@ export const useAuthStore = create<AuthState>()(
           authResolved: true,
         }),
 
-      logout: () =>
+      logout: async () => {
         set({
           authenticated: false,
           user: null,
           accessToken: null,
           authResolved: true,
-        }),
+        });
+
+        try {
+          await fetch(`${API_BASE}/api/auth/logout`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "ngrok-skip-browser-warning": "true",
+            },
+            credentials: "include",
+          });
+        } catch (err) {
+          console.error("Logout API call failed:", err);
+        }
+      },
     }),
     {
       name: "auth-storage",
