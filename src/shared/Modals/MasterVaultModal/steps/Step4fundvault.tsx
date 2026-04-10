@@ -4,6 +4,9 @@ import { FiArrowRight } from 'react-icons/fi'
 import { MdOutlineAccountBalanceWallet } from 'react-icons/md'
 import { useUserVaults } from '../../../../features/master/useUserVaults'
 import { useVaultOperations } from '../../../../features/master/useVaultOperations'
+import { useWallet } from '@solana/wallet-adapter-react'
+import { useWalletBalance } from '../../../../features/wallet/useWalletQuery'
+import { useSolPrice } from '../../../../core/hooks/usePrice'
 
 // ─── TYPES ───────────────────────────────────────────────────────────────────
 
@@ -122,6 +125,12 @@ const Step4FundVault: React.FC<Props> = ({ onNext, vaultAddress }) => {
   const [amount, setAmount] = useState('')
   const [success, setSuccess] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [showUsdc, setShowUsdc] = useState(false)
+  const { publicKey, connected } = useWallet()
+  const { data: balanceData } = useWalletBalance(publicKey?.toBase58())
+  const balance = balanceData?.balance ?? null
+  const { data: solPriceData } = useSolPrice()
+  const solPrice = solPriceData?.price ?? 0
 
   const numericAmount = parseFloat(amount) || 0
   const usdValue = (numericAmount * SOL_USD_RATE).toFixed(2)
@@ -205,11 +214,25 @@ const Step4FundVault: React.FC<Props> = ({ onNext, vaultAddress }) => {
               WALLET BALANCE
             </span>
           </div>
-          <p className='text-[11px] font-[700] leading-[16.5px] uppercase tracking-[0.08em] text-[#6e8885]'>
-            <span className='text-[20px] font-[900] leading-[30px] text-white'>
-              {WALLET_BALANCE} SOL
-            </span>
-          </p>
+
+          {connected && balance !== null && (
+            <button
+              onClick={() => setShowUsdc(!showUsdc)}
+              className='text-[11px] font-[700] leading-[16.5px] uppercase tracking-[0.08em] text-[#6e8885]'
+            >
+              <span
+                style={{
+                  backgroundImage: `url("/images/${
+                    showUsdc ? 'usdc.svg' : 'solana.svg'
+                  }")`
+                }}
+                className='inline-block bg-enter bg-cover h-[16px] w-[16px]'
+              ></span>
+              {showUsdc
+                ? `${(balance * solPrice).toFixed(2)} USDC`
+                : `${balance.toFixed(2)} SOL`}
+            </button>
+          )}
         </div>
 
         {/* Vault Balance */}

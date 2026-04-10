@@ -12,11 +12,12 @@ import { useTradingModeStore } from '../../../../features/dashboard/useTradingMo
 interface Props {
   onNext: () => void
   onBack: () => void
+  vaultAddress: string
 }
 
 // ─── CONSTANTS ────────────────────────────────────────────────────────────────
 
-const VAULT_ADDRESS = '7xWp...3aQ1'
+
 
 // ─── INNER COMPONENTS ─────────────────────────────────────────────────────────
 
@@ -58,7 +59,7 @@ const SecondaryButton = ({
 
 // ─── COMPONENT ────────────────────────────────────────────────────────────────
 
-const Step5VaultLive: React.FC<Props> = ({ onNext }) => {
+const Step5VaultLive: React.FC<Props> = ({ onNext, vaultAddress }) => {
   const navigate = useNavigate()
   const { setOpenCallTrade, setMasterTradingFlowOpen } = useGeneralContext()
   const { toggleMasterMode } = useTradingModeStore()
@@ -133,7 +134,7 @@ const Step5VaultLive: React.FC<Props> = ({ onNext }) => {
             MASTER EXECUTION VAULT
           </span>
           <p className='text-[18px] font-[900] text-white m-0 mb-[3px] leading-[27px]'>
-            {VAULT_ADDRESS}
+            {vaultAddress}
           </p>
           <p className='text-[13px] text-[#6e8885] m-0 font-[500]'>
             Deployed on Solana Mainnet

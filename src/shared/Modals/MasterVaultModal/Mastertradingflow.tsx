@@ -75,7 +75,13 @@ const MasterTradingFlow: React.FC = () => {
                 />
               )}
 
-              {step === 5 && <Step5VaultLive key='step-5' {...stepProps} />}
+              {step === 5 && vaultAddress && (
+                <Step5VaultLive
+                  vaultAddress={vaultAddress}
+                  key='step-5'
+                  {...stepProps}
+                />
+              )}
             </AnimatePresence>
           </motion.div>
         </motion.div>
