@@ -1,6 +1,7 @@
 import type { Trader } from '../../../features/dashboard/dashboardComponents/sidenavPages/Leaderboard/leaderboar.types'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef } from 'react'
 import { createChart, AreaSeries } from 'lightweight-charts'
+import { useMasterRoiChart } from '../../../features/master/useMasterTier'
 
 type PerformanceSectionProps = {
   trader: Trader
@@ -11,52 +12,20 @@ type InfoProps = {
   value: string | number
 }
 
-type Range = '30D' | '90D' | 'ALL'
-
-type ChartPoint = {
-  time: string
-  value: number
-}
-
 export default function PerformanceSection ({
   trader
 }: PerformanceSectionProps) {
   const chartRef = useRef<HTMLDivElement | null>(null)
   const tooltipRef = useRef<HTMLDivElement | null>(null)
-  const [range, setRange] = useState<Range>('30D')
-  const [chartData, setChartData] = useState<ChartPoint[]>([])
-  const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const chartInstanceRef = useRef<ReturnType<typeof createChart> | null>(null)
+  const { data: roiData, isLoading, error } = useMasterRoiChart(trader.address)
 
   useEffect(() => {
-    const controller = new AbortController()
+    if (!chartRef.current || !roiData || roiData.length === 0) return
 
-    async function fetchPerformance () {
-      setIsLoading(true)
-      setError(null)
-      try {
-        const res = await fetch(
-          `/api/traders/${trader.id}/performance?range=${range}`,
-          { signal: controller.signal }
-        )
-        if (!res.ok) throw new Error('Failed to fetch performance data')
-        const data: ChartPoint[] = await res.json()
-        setChartData(data)
-      } catch (err) {
-        if ((err as Error).name !== 'AbortError') {
-          setError('No network connection. Please check your internet.')
-        }
-      } finally {
-        setIsLoading(false)
-      }
+    if (chartInstanceRef.current) {
+      chartInstanceRef.current.remove()
     }
-
-    fetchPerformance()
-    return () => controller.abort()
-  }, [trader.id, range])
-
-  useEffect(() => {
-    if (!chartRef.current || chartData.length === 0) return
 
     const chart = createChart(chartRef.current, {
       layout: {
@@ -74,6 +43,8 @@ export default function PerformanceSection ({
       height: 220
     })
 
+    chartInstanceRef.current = chart
+
     const series = chart.addSeries(AreaSeries, {
       lineColor: '#2dd4bf',
       topColor: 'rgba(45, 212, 191, 0.4)',
@@ -81,16 +52,12 @@ export default function PerformanceSection ({
       lineWidth: 3
     })
 
-    let i = 0
-    const interval = setInterval(() => {
-      if (i < chartData.length) {
-        series.update(chartData[i])
-        i++
-      } else {
-        clearInterval(interval)
-      }
-    }, 15)
+    const chartData = roiData.map(d => ({
+      time: `2024-01-${String(d.day).padStart(2, '0')}` as const,
+      value: d.roiPct
+    }))
 
+    series.setData(chartData)
     chart.timeScale().fitContent()
 
     chart.subscribeCrosshairMove(param => {
@@ -120,44 +87,30 @@ export default function PerformanceSection ({
       tooltipRef.current.style.top = param.point.y + 'px'
       tooltipRef.current.innerHTML = `
         <div style="font-size:12px;">
-          <strong>$${price.toFixed(2)}</strong>
+          <strong>${price >= 0 ? '+' : ''}${price.toFixed(2)}%</strong>
         </div>
       `
     })
 
     const handleResize = () => {
-      chart.applyOptions({ width: chartRef.current?.clientWidth || 0 })
+      if (chartRef.current) {
+        chart.applyOptions({ width: chartRef.current.clientWidth })
+      }
     }
     window.addEventListener('resize', handleResize)
 
     return () => {
-      clearInterval(interval)
       window.removeEventListener('resize', handleResize)
       chart.remove()
+      chartInstanceRef.current = null
     }
-  }, [chartData])
+  }, [roiData])
 
   return (
     <div className='bg-gradient-to-b from-[#0a2a2a] to-[#051919] rounded-2xl p-6 border border-white/5'>
       {/* Header */}
       <div className='flex justify-between items-center mb-4'>
         <h3 className='text-sm text-gray-400'>Performance Overview</h3>
-
-        <div className='flex gap-2 text-xs'>
-          {(['30D', '90D', 'ALL'] as Range[]).map(r => (
-            <button
-              key={r}
-              onClick={() => setRange(r)}
-              className={`px-2 py-1 rounded transition ${
-                range === r
-                  ? 'bg-teal-600 text-white'
-                  : 'bg-[#0d2b2b] text-gray-400'
-              }`}
-            >
-              {r}
-            </button>
-          ))}
-        </div>
       </div>
 
       {/* Chart */}
@@ -178,22 +131,16 @@ export default function PerformanceSection ({
         {!isLoading && error && (
           <div className='absolute inset-0 flex flex-col gap-2 items-center justify-center z-10'>
             <span className='text-2xl'>📡</span>
-            <span className='text-xs text-red-400'>{error}</span>
-            <button
-              onClick={() => setRange(r => r)}
-              className='mt-1 text-xs text-teal-400 underline'
-            >
-              Retry
-            </button>
+            <span className='text-xs text-red-400'>Failed to load chart</span>
           </div>
         )}
 
         {/* Empty state */}
-        {!isLoading && !error && chartData.length === 0 && (
+        {!isLoading && !error && (!roiData || roiData.length === 0) && (
           <div className='absolute inset-0 flex flex-col gap-2 items-center justify-center z-10'>
             <span className='text-2xl'>📭</span>
             <span className='text-xs text-gray-400'>
-              No performance data available for this period.
+              No performance data available.
             </span>
           </div>
         )}
@@ -210,7 +157,7 @@ export default function PerformanceSection ({
         <Info label='AUM' value={trader.aum} />
         <Info label='Copiers' value={trader.copiers} />
         <Info label='Total Trades' value={trader.trades} />
-        <Info label='Volume Traded' value={trader.sol} />
+        <Info label='Volume Traded' value={`${trader.sol} SOL`} />
       </div>
     </div>
   )

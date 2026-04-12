@@ -40,6 +40,8 @@ export interface LeaderboardEntry {
     displayName: string | null;
     avatar: string | null;
     isVerified: boolean;
+    createdAt: string;
+    updatedAt: string;
   };
   currentTier: number;
   tierLabel: string;
@@ -116,4 +118,73 @@ export function useDashboardLeaderboard() {
   }, []);
 
   return { leaders, loading, error, refetch: fetchLeaderboard };
+}
+
+function mapLeaderboardEntryToTrader(entry: LeaderboardEntry): Trader {
+  return {
+    id: entry.rank,
+    rank: entry.rank,
+    name: entry.user.displayName || `Trader ${entry.masterWallet.slice(0, 4)}`,
+    image: entry.user.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${entry.masterWallet}`,
+    tag: entry.tierShortLabel,
+    tiers: entry.tierLabel,
+    type: "PRO",
+    pnl: formatRoiPct(entry.metrics.roiPct),
+    aum: `$${formatCompactNumber(entry.metrics.aumUsd)}`,
+    winRate: `${entry.metrics.winRatePct.toFixed(0)}%`,
+    drawdown: `${entry.metrics.maxDrawdownPct.toFixed(1)}%`,
+    trades: entry.metrics.totalTrades,
+    copiers: entry.metrics.activeCopiers,
+    rio: parseFloat(entry.metrics.roiPct.toFixed(1)),
+    follows: entry.metrics.activeCopiers,
+    followsDisplay: formatCompactNumber(entry.metrics.activeCopiers),
+    sol: (entry.metrics.aumUsd / 150).toFixed(0),
+    address: entry.masterWallet,
+    vaultAddress: entry.vaultPda,
+    createdAt: entry.user.createdAt,
+    updatedAt: entry.user.updatedAt,
+  };
+}
+
+interface TraderProfileResponse {
+  success: boolean;
+  data?: LeaderboardEntry;
+  error?: string;
+}
+
+export function useTraderProfile(vaultAddress: string | undefined) {
+  const [trader, setTrader] = useState<Trader | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!vaultAddress) {
+      setLoading(false);
+      return;
+    }
+
+    const fetchTrader = async () => {
+      try {
+        setLoading(true);
+        const response = await authFetch<TraderProfileResponse>(
+          `/api/leaderboard/trader/${vaultAddress}`,
+        );
+
+        if (response.success && response.data) {
+          setTrader(mapLeaderboardEntryToTrader(response.data));
+        } else {
+          setError(response.error || "Trader not found");
+        }
+      } catch (err: unknown) {
+        console.error("Failed to fetch trader profile:", err);
+        setError("Failed to fetch trader profile");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTrader();
+  }, [vaultAddress]);
+
+  return { trader, loading, error };
 }

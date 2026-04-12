@@ -8,7 +8,7 @@ import CopierMode from './CopierMode'
 import { useGeneralContext } from '../../../../../Context/GeneralContext'
 import { useUserVaults } from '../../../../master/useUserVaults'
 import { useSolPrice } from '../../../../../core/hooks/usePrice'
-import { VaultActivity } from './VaultActivity'
+import { AllVaultsActivity } from './VaultActivity'
 
 // ─── Helpers
 
@@ -452,8 +452,9 @@ export default function Portfolio () {
             )}
           </>
         ) : (
-          <VaultActivity
-            vaultAddress={masterMode ? masterVault?.vaultPda : copierVaults?.[0]?.vaultPda ?? null}
+          <AllVaultsActivity
+            masterVaultPda={masterVault?.vaultPda}
+            copierVaultsPdas={copierVaults?.map(v => v.vaultPda) ?? []}
           />
         )}
 

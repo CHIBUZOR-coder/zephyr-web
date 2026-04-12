@@ -8,6 +8,11 @@ type RiskSectionProps = {
 }
 
 export default function RiskSection ({ trader }: RiskSectionProps) {
+  const winRate = parseFloat(trader.winRate.replace('%', ''))
+  const lossRate = 100 - winRate
+  const winningTrades = Math.round((winRate / 100) * trader.trades)
+  const losingTrades = trader.trades - winningTrades
+
   return (
     <div className='space-y-6'>
       {/* HEADER */}
@@ -24,16 +29,16 @@ export default function RiskSection ({ trader }: RiskSectionProps) {
       <div className='grid md:grid-cols-2 gap-6'>
         <TopCard
           title='CONSISTENCY SCORE'
-          value='78/100'
-          description='High consistency. Low deviation from average performance patterns.'
+          value={`${winRate.toFixed(0)}%`}
+          description={`Based on ${trader.trades} total trades with ${winRate.toFixed(1)}% win rate.`}
           icon={<FiBarChart2 />}
           iconBg='bg-emerald-500/10 text-emerald-400'
         />
 
         <TopCard
           title='RISK STABILITY'
-          value='Stable'
-          description='Risk exposure remains within defined parameters across market conditions.'
+          value={parseFloat(trader.drawdown) < 10 ? 'Low' : 'Moderate'}
+          description={`Max drawdown of ${trader.drawdown} indicates ${parseFloat(trader.drawdown) < 10 ? 'conservative' : 'active'} risk management.`}
           icon={<RiShieldCheckLine />}
           iconBg='bg-yellow-500/10 text-yellow-400'
         />
@@ -52,9 +57,9 @@ export default function RiskSection ({ trader }: RiskSectionProps) {
 
           <div className='space-y-3 text-sm'>
             <Row label='Maximum Drawdown' value={trader.drawdown} negative />
-            <Row label='Average Drawdown' value='-4.2%' negative />
-            <Row label='Recovery Time' value='8 days' />
-            <Row label='Current Drawdown' value='0%' positive />
+            <Row label='Win Rate' value={trader.winRate} positive />
+            <Row label='Total Trades' value={trader.trades.toString()} />
+            <Row label='Active Copiers' value={trader.copiers.toString()} />
           </div>
         </div>
 
@@ -68,10 +73,10 @@ export default function RiskSection ({ trader }: RiskSectionProps) {
           </div>
 
           <div className='space-y-3 text-sm'>
-            <Row label='Winning Trades' value='282 (68.5%)' positive />
-            <Row label='Losing Trades' value='130 (31.5%)' negative />
-            <Row label='Avg Win Size' value='+8.4%' positive />
-            <Row label='Avg Loss Size' value='-3.2%' negative />
+            <Row label='Winning Trades' value={`${winningTrades} (${winRate.toFixed(1)}%)`} positive />
+            <Row label='Losing Trades' value={`${losingTrades} (${lossRate.toFixed(1)}%)`} negative />
+            <Row label='PnL' value={trader.pnl} positive={parseFloat(trader.pnl) >= 0} />
+            <Row label='Copiers' value={trader.copiers.toString()} />
           </div>
         </div>
       </div>

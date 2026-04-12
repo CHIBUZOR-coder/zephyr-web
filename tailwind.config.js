@@ -4,7 +4,8 @@ export default {
     extend: {
       fontFamily: {
         inter: ['Inter', 'sans-serif'],
-        jetbrains: ['"JetBrains Mono"', 'monospace']
+        jetbrains: ['"JetBrains Mono"', 'monospace'],
+        manrope: ['Manrope', 'sans-serif']
       },
       boxShadow: {
         'white-glow': '0 0 100px rgb(37, 99, 235, 0.2)'
@@ -116,11 +117,11 @@ export default {
         risingbg: 'rgba(59, 130, 246, 0.1)',
         verified: 'rgba(168, 85, 247, 1)',
         verifiedbg: 'rgba(rgba(168, 85, 247, 0.1))',
-        elite:'rgba(234, 179, 8, 1)',
-        elitebg:'rgba(234, 179, 8, 0.1)',
-        institutional:'rgba(229, 231, 235, 1)',
-        institutionalbg:'rgba(255, 255, 255, 0.05)',
-        step1:"rgba(61, 73, 70, 0.15)"
+        elite: 'rgba(234, 179, 8, 1)',
+        elitebg: 'rgba(234, 179, 8, 0.1)',
+        institutional: 'rgba(229, 231, 235, 1)',
+        institutionalbg: 'rgba(255, 255, 255, 0.05)',
+        step1: 'rgba(61, 73, 70, 0.15)'
       }
     }
   },

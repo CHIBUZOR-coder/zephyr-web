@@ -11,7 +11,7 @@ export default function StatsGrid ({ trader }: StatsGridProps) {
       <StatCard label='PnL' value={trader.pnl} highlight />
       <StatCard label='Win Rate' value={trader.winRate} />
       <StatCard label='Max DD' value={trader.drawdown} negative />
-      <StatCard label='Success Rate' value='68.5%' />
+      <StatCard label='Copiers' value={trader.follows.toString()} />
     </div>
   )
 }

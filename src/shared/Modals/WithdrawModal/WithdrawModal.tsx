@@ -217,8 +217,8 @@ export const WithdrawModal = ({ open, onClose }: Props) => {
                 <div className="bg-amber-900/20 border border-amber-500/50 p-3 rounded-lg flex items-start gap-2">
                   <FiAlertTriangle className="text-amber-400 shrink-0 mt-0.5" size={14} />
                   <div>
-                    <p className="text-[11px] text-amber-200 font-semibold">Session Expired</p>
-                    <p className="text-[10px] text-amber-300 mt-0.5">Please sign in again to sync your dashboard after the transaction.</p>
+                    <p className="text-[11px] text-amber-200 font-semibold">Dashboard Sync Paused</p>
+                    <p className="text-[10px] text-amber-300 mt-0.5">Your transaction is secured on-chain. Dashboard will sync automatically after page refresh.</p>
                   </div>
                 </div>
               )}

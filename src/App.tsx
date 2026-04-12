@@ -37,7 +37,7 @@ import MasterTradingFlow from './shared/Modals/MasterVaultModal/Mastertradingflo
 import { TierConfigInitModal } from './shared/Modals/TierConfigInitModal'
 import { ClaimFeesModal } from './shared/Modals/ClaimFeesModal/ClaimFeesModal'
 import { useUserVaults } from './features/master/useUserVaults'
-// import Onboarding from './shared/Modals/OnboardingModal/Onboarding'
+import Onboarding from './shared/Modals/OnboardingModal/Onboarding'
 
 function App () {
   const { connected } = useWallet()
@@ -55,9 +55,9 @@ function App () {
   const authReady = useAuthReady()
   const mismatch = useWalletMismatch()
   const { accessToken } = useAuthStore()
-  // const [showOnboarding, setShowOnboarding] = useState(() => {
-  //   return !localStorage.getItem('onboarding_done')
-  // })
+  const [showOnboarding, setShowOnboarding] = useState(() => {
+    return !localStorage.getItem('onboarding_done')
+  })
 
   const {
     openNotifications,
@@ -379,14 +379,14 @@ function App () {
           onClose={() => setClaimFeesOpen(false)}
         />
 
-        {/* {showOnboarding && (
+        {showOnboarding && (
           <Onboarding
             onComplete={() => {
               setShowOnboarding(false)
               localStorage.setItem('onboarding_done', 'true')
             }}
           />
-        )} */}
+        )}
       </ErrorBoundary>
     </div>
   )

@@ -20,7 +20,6 @@ export type Trader = {
   image: string;
   tag: string;
   tiers: string;
-  // type: "PRO" | "STANDARD" | "ELITE";
   type: string;
   pnl: string;
   aum: string;
@@ -28,10 +27,12 @@ export type Trader = {
   drawdown: string;
   trades: number;
   copiers: number;
-  rio: number; // ← added
-  follows: number; // ← added
-  followsDisplay: string; // ← formatted follows count (e.g., "1.2K")
-  sol: string; // ← added
-  address?: string; // ← added
-  vaultAddress?: string; // ← added
+  rio: number;
+  follows: number;
+  followsDisplay: string;
+  sol: string;
+  address?: string;
+  vaultAddress?: string;
+  createdAt?: string;
+  updatedAt?: string;
 };

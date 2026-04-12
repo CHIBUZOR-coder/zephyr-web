@@ -67,9 +67,12 @@ export const StepTwo = ({ onBack, onNext, form, setForm }: StepTwoProps) => {
         dailyLossLimitBps: (parseInt(String(form.maxVaultDrawdown ?? '20'), 10) || 20) * 100,
       })
 
-      if (res && res.vault) {
-        setForm((prev: StepTwoProps['form']) => ({ ...prev, vaultPda: res.vault.vaultPda }))
-        onNext()
+      const vaultPda = (res as any)?.vault?.vaultPda ?? (res as any)?.data?.vaultPda ?? (res as any)?.vaultPda;
+      if (vaultPda) {
+        setForm((prev: StepTwoProps['form']) => ({ ...prev, vaultPda }));
+        onNext();
+      } else {
+        setLocalError('Failed to get vault address. Please refresh the page.');
       }
     } catch (err: unknown) {
       console.error('Failed to create copier vault:', err)

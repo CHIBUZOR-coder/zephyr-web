@@ -6,7 +6,7 @@ import ProfileHeader from './components/ProfileHeader'
 import StatsGrid from './components/StatsGrid'
 import PerformanceSection from './components/PerformanceSection'
 import RiskSection from './components/RiskSection'
-import { useDashboardLeaderboard } from '../../features/dashboard/dashboardComponents/sidenavPages/Leaderboard/useLeaderboard'
+import { useTraderProfile } from '../../features/dashboard/dashboardComponents/sidenavPages/Leaderboard/useLeaderboard'
 
 type Params = {
   address?: string
@@ -14,14 +14,10 @@ type Params = {
 
 export default function VisitorProfile () {
   const { address } = useParams<Params>()
-  const { leaders, loading, error } = useDashboardLeaderboard()
+  const { trader, loading, error } = useTraderProfile(address)
 
   if (loading) return <ProfileSkeleton />
-  if (error) return <div className='text-red-500'>Failed to load profile</div>
-
-  // Find trader by vaultAddress (passed in URL)
-  const trader = leaders.find(t => t.vaultAddress === address)
-
+  if (error) return <div className='text-white'>{error}</div>
   if (!trader) return <div className='text-white'>Trader not found</div>
 
   return (

@@ -1,12 +1,10 @@
 import { useState } from 'react'
-import { RiSendPlaneFill } from 'react-icons/ri'
+
 import Step1Welcome from './steps/Step1welcome'
 import Step2HowItWorks from './steps/Step2howitworks'
 import Step3ChooseRole from './steps/Step3chooserole'
 import Step4CopyTradingExplanation from './steps/Step4copytradingexplanation'
 import Step5ConnectWallet from './steps/Step5connectwallet'
-
-
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type StepNumber = 1 | 2 | 3 | 4 | 5
@@ -25,7 +23,7 @@ function StepIndicator ({
   const isDone = n < current
 
   return (
-    <div className='flex flex-col items-center gap-1'>
+    <div className='flex flex-col items-center gap-1  '>
       <div
         className={`h-1 rounded-full transition-all duration-300 ${
           isActive
@@ -63,18 +61,25 @@ export default function Onboarding ({ onComplete }: OnboardingProps) {
     }
   }
 
+  // ── Added: go back one step ──
+  const goBack = () => {
+    if (currentStep > 1) {
+      setCurrentStep(s => (s - 1) as StepNumber)
+    }
+  }
+
   const renderStep = () => {
     switch (currentStep) {
       case 1:
         return <Step1Welcome onNext={goNext} />
       case 2:
-        return <Step2HowItWorks onNext={goNext} />
+        return <Step2HowItWorks onNext={goNext} onBack={goBack} />
       case 3:
-        return <Step3ChooseRole onNext={goNext} />
+        return <Step3ChooseRole onNext={goNext} onBack={goBack} />
       case 4:
-        return <Step4CopyTradingExplanation onNext={goNext} />
+        return <Step4CopyTradingExplanation onNext={goNext} onBack={goBack} />
       case 5:
-        return <Step5ConnectWallet onNext={goNext} />
+        return <Step5ConnectWallet onNext={goNext} onBack={goBack} />
     }
   }
 
@@ -82,22 +87,26 @@ export default function Onboarding ({ onComplete }: OnboardingProps) {
     /* Full-viewport overlay */
     <div className='fixed inset-0 z-[100] flex items-center justify-center bg-black/80'>
       {/* Modal */}
-      <div className='relative w-full h-full  flex flex-col  overflow-hidden rounded-2xl border border-[rgba(255,255,255,0.07)] bg-gradient-to-b from-[#0d1b26] via-[#081219] to-[#05100e] shadow-[0_40px_80px_rgba(0,0,0,0.6)]'>
+      <div className='relative w-full h-full flex flex-col overflow-hidden  border border-[rgba(255,255,255,0.07)] bg-gradient-to-b from-[#0d1b26] via-[#081219] to-[#05100e] shadow-[0_40px_80px_rgba(0,0,0,0.6)]'>
         {/* Top teal glow */}
         <div className='pointer-events-none absolute inset-x-0 top-0 h-40 bg-[radial-gradient(ellipse_70%_50%_at_50%_0%,rgba(45,232,200,0.08)_0%,transparent_100%)]' />
 
         {/* ── Top bar ── */}
         <div className='relative z-10 flex items-center justify-between border-b border-[rgba(255,255,255,0.07)] px-5 py-3 flex-shrink-0'>
           {/* Brand */}
-          <div className='flex items-center gap-2'>
-            <div className='w-7 h-7 rounded-lg bg-[rgba(45,232,200,0.12)] border border-[rgba(45,232,200,0.32)] flex items-center justify-center'>
-              <RiSendPlaneFill className='text-[#2de8c8] text-sm' />
-            </div>
-            <div className='flex flex-col leading-none'>
+          <div className='flex  items-center gap-2'>
+            
+            <span
+              className='inline-block bg-center bg-cover w-[40px] h-[40px]'
+              style={{
+                backgroundImage: `url("/images/zeflogo.png")`
+              }}
+            ></span>
+            <div className='flex flex-col gap-1'>
               <span className='font-display text-[13px] font-bold text-[#e8edf2] tracking-wide'>
                 Zephyr
               </span>
-              <span className='text-[8px] uppercase tracking-[0.08em] text-[#3d5060]'>
+              <span className='text-[8px] uppercase tracking-[0.08em] text-[#B0E4DD]'>
                 Social Copy Trading
               </span>
             </div>
@@ -113,7 +122,7 @@ export default function Onboarding ({ onComplete }: OnboardingProps) {
         </div>
 
         {/* ── Step body ── */}
-        <div className='relative z-10 flex-1 flex items-center justify-center px-6 sm:px-8 py-7 min-h-[380px] overflow-y-auto'>
+        <div className='relative z-10 flex-1 flex  justify-center px-6 sm:px-8 py-7  overflow-y-auto sid '>
           {renderStep()}
         </div>
 

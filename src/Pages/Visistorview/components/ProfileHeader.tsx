@@ -1,9 +1,10 @@
 import { FaCopy, FaUserPlus, FaShareAlt } from 'react-icons/fa'
+import { FaCheck } from 'react-icons/fa'
 import type { ReactNode } from 'react'
 import type { Trader } from '../../../features/dashboard/dashboardComponents/sidenavPages/Leaderboard/leaderboar.types'
 import { useGeneralContext } from '../../../Context/GeneralContext'
 
-import { getTier } from '../../../utils/Gettiter'
+import { getTier, isCommunityTier } from '../../../utils/Gettiter'
 
 type ProfileHeaderProps = {
   trader: Trader
@@ -14,6 +15,27 @@ type ActionBtnProps = {
   label: string
   primary?: boolean
   trader: Trader
+}
+
+function formatDate(dateStr: string | undefined): string {
+  if (!dateStr) return 'N/A'
+  const date = new Date(dateStr)
+  return date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
+}
+
+function formatRelativeTime(dateStr: string | undefined): string {
+  if (!dateStr) return 'N/A'
+  const date = new Date(dateStr)
+  const now = new Date()
+  const diffMs = now.getTime() - date.getTime()
+  const diffMins = Math.floor(diffMs / 60000)
+  const diffHours = Math.floor(diffMins / 60)
+  const diffDays = Math.floor(diffHours / 24)
+
+  if (diffMins < 60) return `${diffMins}m ago`
+  if (diffHours < 24) return `${diffHours}h ago`
+  if (diffDays < 30) return `${diffDays}d ago`
+  return formatDate(dateStr)
 }
 
 export default function ProfileHeader ({ trader }: ProfileHeaderProps) {
@@ -45,36 +67,39 @@ export default function ProfileHeader ({ trader }: ProfileHeaderProps) {
         <div className='space-y-2'>
           <div className='flex items-center gap-2'>
             <h2 className='text-lg font-semibold'>{trader.name}</h2>
-            <span
-              className={`text-[10px] px-2 py-0.5 rounded-md font-medium border-[1.1px] ${
-                tier
-                  ? `${tier.text} ${tier.bg} ${tier.border}`
-                  : 'text-gray-400 bg-gray-200/20 border-gray-300'
-              }`}
-            >
-              {trader.tag || 'Unranked'}
-            </span>
+            {isCommunityTier(trader.tag) ? (
+              <span className='flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-md font-medium border-[1.1px] bg-[#10B981]/10 border-[#10B981]/40 text-[#10B981]'>
+                <FaCheck className='text-[8px]' />
+                {trader.tag}
+              </span>
+            ) : (
+              <span
+                className={`text-[10px] px-2 py-0.5 rounded-md font-medium border-[1.1px] ${
+                  tier
+                    ? `${tier.text} ${tier.bg} ${tier.border}`
+                    : 'text-gray-400 bg-gray-200/20 border-gray-300'
+                }`}
+              >
+                {trader.tag || 'Unranked'}
+              </span>
+            )}
           </div>
 
           <p className='text-xs text-gray-400'>{trader.tag}</p>
 
-          {/* Description (static for now to match UI) */}
           <p className='text-xs text-gray-400 max-w-md leading-relaxed'>
-            Institutional DeFi trader specializing in high-conviction altcoin
-            momentum plays. 3+ years on-chain. Risk-first approach with strict
-            drawdown controls.
+            Master trader on Zephyr Protocol.
           </p>
 
-          {/* Bottom meta */}
           <div className='flex items-center gap-6 text-xs mt-2'>
             <div>
               <p className='text-gray-500'>JOINED</p>
-              <p className='text-white font-medium'>Jan 2023</p>
+              <p className='text-white font-medium'>{formatDate(trader.createdAt)}</p>
             </div>
 
             <div>
               <p className='text-gray-500'>LAST ACTIVE</p>
-              <p className='text-green-400 font-medium'>2 hours ago</p>
+              <p className='text-green-400 font-medium'>{formatRelativeTime(trader.updatedAt)}</p>
             </div>
           </div>
         </div>

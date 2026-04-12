@@ -50,6 +50,51 @@ export function useVaultActivities(vaultAddress: string | null, limit = 15) {
   };
 }
 
+export function useAllVaultActivities(
+  vaultAddresses: string[],
+  limit = 15
+) {
+  const { data, isLoading, error, refetch } = useQuery({
+    queryKey: ["all-vault-activities", vaultAddresses, limit],
+    queryFn: async () => {
+      if (vaultAddresses.length === 0) return [];
+      
+      try {
+        const allActivities: VaultActivity[] = [];
+        
+        await Promise.all(
+          vaultAddresses.map(async (address) => {
+            const res = await authFetch<VaultActivityResponse>(
+              `/api/vaults/${address}/activities?limit=${limit}`
+            );
+            if (res.success && res.data) {
+              allActivities.push(...res.data);
+            }
+          })
+        );
+        
+        // Sort by timestamp descending
+        allActivities.sort((a, b) => 
+          new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+        );
+        
+        return allActivities.slice(0, limit);
+      } catch {
+        return [];
+      }
+    },
+    enabled: vaultAddresses.length > 0,
+    staleTime: 30000,
+  });
+
+  return {
+    activities: data ?? [],
+    isLoading,
+    error,
+    refetch,
+  };
+}
+
 export function formatVaultActivity(item: VaultActivity): {
   id: string;
   type: string;

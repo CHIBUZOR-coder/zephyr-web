@@ -1,11 +1,82 @@
 // zephyr-web/src/features/master/useVaultOperations.ts
 import { useState, useCallback } from 'react';
 import { useProgram } from '../../core/solana/useProgram';
-import { PublicKey, SystemProgram, LAMPORTS_PER_SOL } from '@solana/web3.js';
+import { PublicKey, SystemProgram, LAMPORTS_PER_SOL, SendTransactionError } from '@solana/web3.js';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { BN } from '@coral-xyz/anchor';
 import { authFetch } from '../../core/query/authClient';
 import type { TierState } from './useMasterTier';
+
+function parseSolanaError(err: unknown): string {
+  const error = err as Error & { logs?: string[] };
+  
+  if (error instanceof SendTransactionError) {
+    try {
+      const logs = error.logs;
+      if (logs) {
+        const logsStr = logs.join(' ');
+        
+        if (logsStr.includes('insufficient lamports') || logsStr.includes('insufficient funds')) {
+          const match = logsStr.match(/insufficient lamports (\d+), need (\d+)/);
+          if (match) {
+            const have = parseInt(match[1]) / LAMPORTS_PER_SOL;
+            const need = parseInt(match[2]) / LAMPORTS_PER_SOL;
+            return `Insufficient balance. You have ${have.toFixed(4)} SOL but need ${need.toFixed(4)} SOL.`;
+          }
+          return 'Insufficient SOL balance for this transaction. Please check your wallet balance.';
+        }
+        
+        if (logsStr.includes('custom program error: 0x1')) {
+          return 'Transaction failed due to an on-chain error. Please try again.';
+        }
+        
+        if (logsStr.includes('depositBelowMinimum') || logsStr.includes('Minimum deposit')) {
+          return 'Deposit amount is below the minimum required. Please deposit at least 0.1 SOL.';
+        }
+        
+        if (logsStr.includes('Invalid account owner')) {
+          return 'Invalid vault account. The vault may have been closed or does not exist.';
+        }
+        
+        if (logsStr.includes('Signature verification failed')) {
+          return 'Transaction signature verification failed. Please try again.';
+        }
+        
+        if (logsStr.includes('already processed') || logsStr.includes('Blockhash not found')) {
+          return 'Transaction is too old or already processed. Please try again.';
+        }
+        
+        if (logsStr.includes('would exceed max compute budget')) {
+          return 'Transaction requires too much compute. Please try again later.';
+        }
+        
+        return 'Transaction failed. Please try again or contact support if the issue persists.';
+      }
+    } catch {
+      // Fall through to default
+    }
+  }
+  
+  const message = error?.message || String(err);
+  
+  if (message.includes('User rejected') || message.includes('user rejected')) {
+    return 'Transaction was rejected in your wallet. No action was taken.';
+  }
+  
+  if (message.includes('Failed to fetch') || message.includes('network')) {
+    return 'Network error. Please check your connection and try again.';
+  }
+  
+  if (message.includes('Wallet not connected') || message.includes('not connected')) {
+    return 'Wallet not connected. Please connect your wallet and try again.';
+  }
+  
+  if (message.includes('timeout') || message.includes('timed out')) {
+    return 'Transaction timed out. Please try again.';
+  }
+  
+  return message || 'Transaction failed. Please try again.';
+}
 
 export const useVaultOperations = () => {
   const { program } = useProgram();
@@ -45,8 +116,9 @@ export const useVaultOperations = () => {
       return tx;
     } catch (err: unknown) {
       console.error('Deposit failed:', err);
-      setError((err as Error).message || 'Deposit failed');
-      throw err;
+      const friendlyError = parseSolanaError(err);
+      setError(friendlyError);
+      throw new Error(friendlyError);
     } finally {
       setLoading(false);
     }
@@ -74,8 +146,9 @@ export const useVaultOperations = () => {
       return signature;
     } catch (err: unknown) {
       console.error('Transfer failed:', err);
-      setError((err as Error).message || 'Transfer failed');
-      throw err;
+      const friendlyError = parseSolanaError(err);
+      setError(friendlyError);
+      throw new Error(friendlyError);
     } finally {
       setLoading(false);
     }
@@ -107,8 +180,9 @@ export const useVaultOperations = () => {
       return tx;
     } catch (err: unknown) {
       console.error('Withdrawal failed:', err);
-      setError((err as Error).message || 'Withdrawal failed');
-      throw err;
+      const friendlyError = parseSolanaError(err);
+      setError(friendlyError);
+      throw new Error(friendlyError);
     } finally {
       setLoading(false);
     }
@@ -144,8 +218,9 @@ export const useVaultOperations = () => {
       return tx;
     } catch (err: unknown) {
       console.error('Master deposit failed:', err);
-      setError((err as Error).message || 'Deposit failed');
-      throw err;
+      const friendlyError = parseSolanaError(err);
+      setError(friendlyError);
+      throw new Error(friendlyError);
     } finally {
       setLoading(false);
     }
@@ -181,8 +256,9 @@ export const useVaultOperations = () => {
       return tx;
     } catch (err: unknown) {
       console.error('Master withdrawal failed:', err);
-      setError((err as Error).message || 'Withdrawal failed');
-      throw err;
+      const friendlyError = parseSolanaError(err);
+      setError(friendlyError);
+      throw new Error(friendlyError);
     } finally {
       setLoading(false);
     }
@@ -218,8 +294,9 @@ export const useVaultOperations = () => {
       return tx;
     } catch (err: unknown) {
       console.error('Fee claim failed:', err);
-      setError((err as Error).message || 'Fee claim failed');
-      throw err;
+      const friendlyError = parseSolanaError(err);
+      setError(friendlyError);
+      throw new Error(friendlyError);
     } finally {
       setLoading(false);
     }
@@ -309,8 +386,9 @@ export const useVaultOperations = () => {
       return tx;
     } catch (err: unknown) {
       console.error('Trade failed:', err);
-      setError((err as Error).message || 'Trade failed');
-      throw err;
+      const friendlyError = parseSolanaError(err);
+      setError(friendlyError);
+      throw new Error(friendlyError);
     } finally {
       setLoading(false);
     }
@@ -335,11 +413,9 @@ export const useVaultOperations = () => {
       return tx;
     } catch (err: unknown) {
       console.error('TierConfig init failed:', err);
-      // if (err.logs) {
-      //   console.log('Program Logs:', err.logs);
-      // }
-      setError((err as Error).message || 'TierConfig init failed');
-      throw err;
+      const friendlyError = parseSolanaError(err);
+      setError(friendlyError);
+      throw new Error(friendlyError);
     } finally {
       setLoading(false);
     }
@@ -372,8 +448,9 @@ export const useVaultOperations = () => {
       return tx;
     } catch (err: unknown) {
       console.error('RiskConfig init failed:', err);
-      setError((err as Error).message || 'RiskConfig init failed');
-      throw err;
+      const friendlyError = parseSolanaError(err);
+      setError(friendlyError);
+      throw new Error(friendlyError);
     } finally {
       setLoading(false);
     }
@@ -405,8 +482,9 @@ export const useVaultOperations = () => {
       return tx;
     } catch (err: unknown) {
       console.error('RiskConfig update failed:', err);
-      setError((err as Error).message || 'RiskConfig update failed');
-      throw err;
+      const friendlyError = parseSolanaError(err);
+      setError(friendlyError);
+      throw new Error(friendlyError);
     } finally {
       setLoading(false);
     }
