@@ -52,11 +52,11 @@ export default function Step4CopyTradingExplanation ({
 
       {/* Right content */}
       <div className='flex flex-col items-start gap-3.5 flex-1 text-left w-full lg:w-[60%] relative'>
-        <span className='text-[9px] font-bold tracking-[0.14em] uppercase text-[#3d5060]'>
+        <span className='text-[9px] font-bold tracking-[0.14em] uppercase text-[#66DAC2]'>
           — Precision Trading
         </span>
 
-        <h1 className='font-display text-2xl sm:text-3xl font-extrabold text-[#e8edf2] tracking-tight leading-tight'>
+        <h1 className='font-display text-2xl sm:text-3xl text-[#e8edf2] tracking-tight leading-tight grok font-[400]'>
           Copy Trading
           <br />
           Made Simple

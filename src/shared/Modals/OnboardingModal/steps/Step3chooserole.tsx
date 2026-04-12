@@ -9,33 +9,38 @@ export default function Step3ChooseRole ({ onNext, onBack }: StepProps) {
   const [selected, setSelected] = useState<Role>('copy')
 
   return (
-    <div className='flex flex-col items-center text-center gap-4 animate-fade-up w-full'>
-      <h1 className='font-display text-3xl sm:text-4xl font-extrabold text-[#e8edf2] '>
-        Choose Your Role
-      </h1>
-      <p className='text-xs text-[#7a8fa0] max-w-xs leading-relaxed'>
-        Define your journey in the Ethereal Exchange. Select the path that
-        aligns with your trading expertise.
-      </p>
+    <div className='relative flex flex-col items-center text-center gap-8 animate-fade-up w-full'>
+      <div className='flex gap-1 flex-col text-center'>
+        <h1 className='font-display  text-[18px] lg:text-[22px] grok font-extrabold text-[#e8edf2] '>
+          Choose Your Role
+        </h1>
+        <div className='flex justify-center items-center'>
+          <p className='text-xs text-[#BCC9C4] w-[80%] leading-relaxed'>
+            Define your journey in the Ethereal Exchange. Select the path that
+            aligns with your trading expertise.
+          </p>
+        </div>
+      </div>
 
       {/* Role cards */}
-      <div className='flex gap-8 lg:gap-8 w-full  lg:w-1/2  flex-col lg:flex-row mt-4 '>
+      <div className='flex gap-8 lg:gap-8 w-full  lg:w-1/2  flex-col lg:flex-row mt-2 '>
         {/* Copy Traders */}
         <button
           onClick={() => setSelected('copy')}
-          className={` w-full lg:w-1/2 relative flex flex-col text-left rounded-2xl border p-4 overflow-hidden transition-all duration-200 cursor-pointer bg-[#151a1f] ${
+          className={` w-full lg:w-1/2 relative flex flex-col text-left rounded-2xl border p-4  transition-all duration-200 cursor-pointer bg-[#151a1f] ${
             selected === 'copy'
               ? 'border-[#2de8c8] bg-[rgba(21, 26, 31, 0.94)]'
               : 'border-[rgba(255,255,255,0.07)]  hover:border-[rgba(45,232,200,0.32)]'
           }`}
         >
+          <span className='bg-[#66DAC2] text-[10px] rounded-md font-[700] p-[2px] absolute -top-[8px] left-6 manrope'>
+            Recommended
+          </span>
           <div className='absolute inset-0 bg-gradient-to-br from-[rgba(45,232,200,0.06)] to-transparent pointer-events-none' />
-
           <div
             style={{ backgroundImage: `url("/images/copy_chart.png")` }}
-            className='bg-center bg-cover h-[150px] w-full'
+            className='bg-center bg-cover h-[150px] lg:h-[90px] w-full'
           ></div>
-
           <div className='flex items-center gap-2 mt-4'>
             <div className=' rounded-lg bg-[rgba(45,232,200,0.12)] border border-[rgba(45,232,200,0.32)] flex items-center justify-center mb-2 p-2'>
               <span
@@ -51,7 +56,6 @@ export default function Step3ChooseRole ({ onNext, onBack }: StepProps) {
             Perfect for those starting out or looking to automate. Follow elite
             strategies and match their performance automatically.
           </p>
-
           <div className='flex justify-between items-center'>
             <div className='flex'>
               <div className='circle bg-[#334155]'></div>
@@ -80,7 +84,7 @@ export default function Step3ChooseRole ({ onNext, onBack }: StepProps) {
 
           <div
             style={{ backgroundImage: `url("/images/master_chart.png")` }}
-            className='bg-center bg-cover h-[150px] w-full '
+            className='bg-center bg-cover h-[150px] lg:h-[90px] w-full '
           ></div>
           <div className='flex items-center gap-2 mt-4'>
             <div className=' rounded-lg bg-[rgba(45,232,200,0.12)] border border-[rgba(45,232,200,0.32)] flex items-center justify-center mb-2 p-2'>

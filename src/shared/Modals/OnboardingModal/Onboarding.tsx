@@ -122,7 +122,7 @@ export default function Onboarding ({ onComplete }: OnboardingProps) {
         </div>
 
         {/* ── Step body ── */}
-        <div className='relative z-10 flex-1 flex  justify-center px-6 sm:px-8 py-7  overflow-y-auto sid '>
+        <div className='relative z-10 flex-1 flex items-start lg:items-start  justify-center px-6 sm:px-8 py-4  overflow-y-auto sid '>
           {renderStep()}
         </div>
 

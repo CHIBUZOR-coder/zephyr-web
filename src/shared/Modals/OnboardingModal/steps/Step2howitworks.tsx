@@ -30,13 +30,15 @@ const checks = [
 
 export default function Step2HowItWorks ({ onNext, onBack }: StepProps) {
   return (
-    <div className='flex flex-col items-center text-center gap-5 animate-fade-up w-full'>
-      <h1 className='font-display text-3xl sm:text-4xl font-extrabold text-[#e8edf2] tracking-tight'>
-        How Zephyr Works
-      </h1>
-      <p className='text-xs text-[#7a8fa0]'>
-        Demystifying the future of social trading
-      </p>
+    <div className='flex flex-col items-center text-center gap-4 animate-fade-up w-full'>
+      <div className='flex gap-1 flex-col'>
+        <h1 className='font-display text-[18px] lg:text-[22px] font-extrabold text-[#e8edf2] tracking-tight'>
+          How Zephyr Works
+        </h1>
+        <p className='text-xs text-[#7a8fa0]'>
+          Demystifying the future of social trading
+        </p>
+      </div>
 
       {/* Flow diagram */}
       <div className='flex items-center justify-center gap-3 flex-wrap mt-1'>
@@ -46,9 +48,9 @@ export default function Step2HowItWorks ({ onNext, onBack }: StepProps) {
               <div
                 className={`p-4 rounded-md ${
                   node.center
-                    ? ' bg-[rgba(45,232,200,0.12)] border-[rgba(45,232,200,0.32)]'
-                    : ' bg-[#111d27] border-[rgba(255,255,255,0.07)]'
-                }`}
+                    ? ' bg-[#0a0f14] border-[#66DAC2]'
+                    : ' bg-[#111d27] border-gray-600'
+                } border-[1px] `}
               >
                 <span
                   style={{ backgroundImage: `url(${node.icon})` }}

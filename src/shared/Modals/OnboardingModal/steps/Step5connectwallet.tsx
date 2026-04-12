@@ -30,7 +30,7 @@ export default function Step5ConnectWallet ({ onNext, onBack }: StepProps) {
           ● Step 5: Security
         </span>
 
-        <h1 className='font-display text-3xl sm:text-4xl font-extrabold text-[#e8edf2] tracking-tight'>
+        <h1 className='font-display text-[] font-extrabold text-[#e8edf2] tracking-tight'>
           Connect Your Wallet
         </h1>
 
