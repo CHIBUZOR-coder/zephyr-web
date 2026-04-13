@@ -9,15 +9,12 @@ import {
 } from 'recharts'
 import React, { useEffect, useRef, useState } from 'react'
 import { useGeneralContext } from '../../../../../Context/GeneralContext'
-import { useDashboardLeaderboard } from './useLeaderboard'
-import type { Trader } from './leaderboar.types'
+import { useLeaderboard } from './useLeaderboard'
+import type { Trader, LeaderboardPeriod, LeaderboardSort } from './leaderboar.types'
 import { Link } from 'react-router-dom'
 import { TierBadge } from '../../../../../Pages/Components/TierBadge'
 
 // ─── Movement indicator ───────────────────────────────────────────────────────
-// Renders a small teal arrow (up) or red arrow (down) + the number of positions
-// moved, or a dash for no change. Sits inline next to the rank number.
-
 type Movement = 'up' | 'down' | 'same'
 
 const RankMovement = ({ movement }: { movement: Movement }) => {
@@ -29,7 +26,7 @@ const RankMovement = ({ movement }: { movement: Movement }) => {
     return (
       <span
         style={{ backgroundImage: `url("/images/rank.svg")` }}
-        className='bg-center  inline-block bg-cover h-[12px] w-[12px] text-[#19d3c5] leading-none'
+        className='bg-center inline-block bg-cover h-[12px] w-[12px] text-[#19d3c5] leading-none'
       ></span>
     )
   }
@@ -37,15 +34,33 @@ const RankMovement = ({ movement }: { movement: Movement }) => {
   return (
     <span
       style={{ backgroundImage: `url("/images/rank.svg")` }}
-      className='bg-center rotate-180  inline-block bg-cover h-[12px] w-[12px] text-[#19d3c5] leading-none'
+      className='bg-center rotate-180 inline-block bg-cover h-[12px] w-[12px] text-[#19d3c5] leading-none'
     ></span>
   )
 }
 
 const Leaderboard: React.FC = () => {
   const { openVaultFlow } = useGeneralContext()
-  const { leaders, loading, error } = useDashboardLeaderboard()
   const dropdownRef = useRef<HTMLDivElement>(null)
+
+  const [activePeriod, setPeriod] = useState<LeaderboardPeriod>('30d')
+  const [searchTerm, setSearchTerm] = useState('')
+  const [activeTier, setActiveTier] = useState<number | undefined>(undefined)
+  const [activeSort, setSort] = useState<LeaderboardSort>('pnl')
+  const [page, setPage] = useState(1)
+  const [tierOpen, setTierOpen] = useState(false)
+
+  const { data, isLoading, error } = useLeaderboard({
+    period: activePeriod,
+    sort: activeSort,
+    tier: activeTier,
+    page,
+    limit: 20
+  })
+
+  const leaders = data?.traders ?? []
+  const totalTraders = data?.total ?? 0
+  const totalPages = Math.ceil(totalTraders / 20)
 
   const performanceData = [
     { date: 'Day 1', roi: 0 },
@@ -62,26 +77,13 @@ const Leaderboard: React.FC = () => {
 
   const traderOfWeek: Trader | null = leaders.length > 0 ? leaders[0] : null
 
-  // Map leaders to include movement
-  const traders: (Trader & { movement: Movement })[] = leaders.map(leader => ({
-    ...leader,
-    movement: 'same' as Movement
-  }))
-
-  const [activePeriod, setPeriod] = useState<'7D' | '30D' | '90D' | 'ALLTIME'>(
-    '30D'
-  )
-  const [searchTerm, setSearchTerm] = useState('')
-  const [activeTier, setActiveTier] = useState('ALL TIERS')
-  const [tierOpen, setTierOpen] = useState(false)
-
   const tiers = [
-    'ALL TIERS',
-    'Community Trader',
-    'Rising Trader',
-    'Verified Alpha',
-    'Elite Alpha',
-    'Institutional Alpha'
+    { label: 'ALL TIERS', value: undefined },
+    { label: 'Community', value: 1 },
+    { label: 'Rising', value: 2 },
+    { label: 'Verified Alpha', value: 3 },
+    { label: 'Elite', value: 4 },
+    { label: 'Institutional', value: 5 }
   ]
 
   useEffect(() => {
@@ -99,19 +101,15 @@ const Leaderboard: React.FC = () => {
     }
   }, [])
 
-  const filteredTraders = traders.filter(trader => {
-    const matchesSearch =
-      trader.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      trader.tag.toLowerCase().includes(searchTerm.toLowerCase())
+  // Local filtering for the search term since it's fast
+  const filteredTraders = leaders.filter(trader => 
+    trader.name.toLowerCase().includes(searchTerm.toLowerCase())
+  )
 
-    // Simple filter for demo - in production backend should handle these
-    const matchesTier =
-      activeTier === 'ALL TIERS'
-        ? true
-        : trader.tag === activeTier || trader.tiers === activeTier
-
-    return matchesSearch && matchesTier
-  })
+  const handlePageChange = (newPage: number) => {
+    setPage(newPage)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
 
   return (
     <div className='min-h-screen bg-[#031b1f] text-white p-6 lg:p-10 mb-32 lg:mb-0 '>
@@ -126,20 +124,20 @@ const Leaderboard: React.FC = () => {
       </div>
       {/* FILTER / SEARCH */}
       <div className='flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-8'>
-        <div className='flex flex-col md:flex-row  gap-5 md:gap-6 '>
+        <div className='flex flex-col md:flex-row gap-5 md:gap-6 '>
           {/* PERIOD BUTTONS */}
           <div className='flex items-center gap-2 bg-[#0a1d20] p-1 rounded-xl border border-[#123c42] w-fit'>
-            {(['7D', '30D', '90D', 'ALLTIME'] as const).map(period => (
+            {(['7d', '30d', '90d', 'all'] as LeaderboardPeriod[]).map(p => (
               <button
-                key={period}
-                onClick={() => setPeriod(period)}
-                className={`px-4 py-1.5 text-xs font-semibold rounded-lg transition ${
-                  activePeriod === period
+                key={p}
+                onClick={() => { setPeriod(p); setPage(1); }}
+                className={`px-4 py-1.5 text-xs font-semibold rounded-lg transition uppercase ${
+                  activePeriod === p
                     ? 'bg-[#19d3c5] text-black'
                     : 'text-[#5f7d84] hover:text-white'
                 }`}
               >
-                {period === 'ALLTIME' ? 'ALL-TIME' : period}
+                {p === 'all' ? 'ALL-TIME' : p}
               </button>
             ))}
           </div>
@@ -156,7 +154,9 @@ const Leaderboard: React.FC = () => {
               onClick={() => setTierOpen(!tierOpen)}
               className='flex items-center justify-between gap-3 bg-[#0a1d20] border border-[#123c42] rounded-xl px-4 py-2 text-xs text-white min-w-[140px] hover:border-[#19d3c5] transition'
             >
-              <span className='uppercase text-[#5f7d84]'>{activeTier}</span>
+              <span className='uppercase text-[#5f7d84]'>
+                {tiers.find(t => t.value === activeTier)?.label || 'ALL TIERS'}
+              </span>
               <svg
                 className={`w-3 h-3 transition-transform ${
                   tierOpen ? 'rotate-180' : ''
@@ -178,14 +178,15 @@ const Leaderboard: React.FC = () => {
               <div className='absolute mt-2 w-full bg-[#0f2a2f] border border-[#123c42] rounded-xl shadow-xl z-50 overflow-hidden'>
                 {tiers.map(tier => (
                   <button
-                    key={tier}
+                    key={tier.label}
                     onClick={() => {
-                      setActiveTier(tier)
+                      setActiveTier(tier.value)
+                      setPage(1)
                       setTierOpen(false)
                     }}
                     className='w-full text-left px-4 py-2 text-xs text-[#5f7d84] hover:bg-[#102221] hover:text-white transition'
                   >
-                    {tier}
+                    {tier.label}
                   </button>
                 ))}
               </div>
@@ -202,7 +203,7 @@ const Leaderboard: React.FC = () => {
         />
       </div>
       {/* Table */}
-      <div className='rounded-lg border border-[#0f3a40] overflow-hidden bg-slate-700'>
+      <div className='rounded-lg border border-[#0f3a40] overflow-hidden'>
         <div className='overflow-x-auto scrollbar-hide'>
           <table className='w-full min-w-[900px] lg:min-w-0 border-collapse'>
             {/* TABLE HEAD */}
@@ -211,33 +212,63 @@ const Leaderboard: React.FC = () => {
                 <th className='thh'>Rank</th>
                 <th className='thh'>Trader</th>
                 <th className='thh'>Tiers</th>
-                <th className='thh'>PnL</th>
-                <th className='thh'>AUM</th>
-                <th className='thh'>Win Rate</th>
-                <th className='thh'>Drawdown</th>
-                <th className='thh'>Trades</th>
-                <th className='thh'>Copiers</th>
+                <th 
+                  className='thh cursor-pointer hover:text-white transition'
+                  onClick={() => { setSort('pnl'); setPage(1); }}
+                >
+                  PnL {activeSort === 'pnl' && '▼'}
+                </th>
+                <th 
+                  className='thh cursor-pointer hover:text-white transition'
+                  onClick={() => { setSort('aum'); setPage(1); }}
+                >
+                  AUM {activeSort === 'aum' && '▼'}
+                </th>
+                <th 
+                  className='thh cursor-pointer hover:text-white transition'
+                  onClick={() => { setSort('winRate'); setPage(1); }}
+                >
+                  Win Rate {activeSort === 'winRate' && '▼'}
+                </th>
+                <th 
+                  className='thh cursor-pointer hover:text-white transition'
+                  onClick={() => { setSort('maxDrawdown'); setPage(1); }}
+                >
+                  Drawdown {activeSort === 'maxDrawdown' && '▲'}
+                </th>
+                <th 
+                  className='thh cursor-pointer hover:text-white transition'
+                  onClick={() => { setSort('volume'); setPage(1); }}
+                >
+                  Trades {activeSort === 'volume' && '▼'}
+                </th>
+                <th 
+                  className='thh cursor-pointer hover:text-white transition'
+                  onClick={() => { setSort('copiers'); setPage(1); }}
+                >
+                  Copiers {activeSort === 'copiers' && '▼'}
+                </th>
                 <th className='thh'>Action</th>
               </tr>
             </thead>
             {/* TABLE BODY */}
             <tbody>
-              {loading ? (
+              {isLoading ? (
                 <tr>
                   <td colSpan={10} className='p-10 text-center text-gray-400'>
-                    Loading traders...
+                    <div className='animate-pulse'>Fetching Real-time Leaderboard...</div>
                   </td>
                 </tr>
               ) : error ? (
                 <tr>
                   <td colSpan={10} className='p-10 text-center text-red-400'>
-                    Error: {error}
+                    Error: {error instanceof Error ? error.message : 'Failed to load leaderboard'}
                   </td>
                 </tr>
               ) : filteredTraders.length === 0 ? (
                 <tr>
                   <td colSpan={10} className='p-10 text-center text-gray-500'>
-                    No active master traders found.
+                    No active master traders found matching your criteria.
                   </td>
                 </tr>
               ) : (
@@ -249,7 +280,7 @@ const Leaderboard: React.FC = () => {
                       key={trader.id}
                       className='border-t bg-[#102221] border-[#0f3a40] hover:bg-[#0f2a2a] transition'
                     >
-                      {/* ── RANK: number + movement indicator side by side ── */}
+                      {/* ── RANK ── */}
                       <td className='pdd'>
                         <div className='flex items-center gap-1.5'>
                           {displayRank <= 3 ? (
@@ -262,7 +293,7 @@ const Leaderboard: React.FC = () => {
                                   : displayRank === 3
                                   ? 'bg-rank_3 border-[1.5px] border-rank_border_3 text-[#BB4D00]'
                                   : ''
-                              } h-[26px] w-[26px] text-[#19d3c5] rounded-full  min-w-[24px] text-center  flex justify-center items-center`}
+                              } h-[26px] w-[26px] rounded-full min-w-[24px] text-center flex justify-center items-center`}
                             >
                               {displayRank}
                             </span>
@@ -271,7 +302,7 @@ const Leaderboard: React.FC = () => {
                               {displayRank}
                             </span>
                           )}
-                          <RankMovement movement={trader.movement} />
+                          <RankMovement movement='same' />
                         </div>
                       </td>
 
@@ -311,7 +342,7 @@ const Leaderboard: React.FC = () => {
                       <td className='pdd'>
                         <button
                           onClick={() => openVaultFlow(1, trader)}
-                          className='bg-[#19d3c5] text-white hover:opacity-90 transition text-[10px] font-[900] px-3 py-1 rounded-lg'
+                          className='bg-[#19d3c5] text-white hover:opacity-90 transition text-[10px] font-[900] px-3 py-1 rounded-lg cursor-pointer'
                         >
                           Copy
                         </button>
@@ -324,13 +355,37 @@ const Leaderboard: React.FC = () => {
           </table>
         </div>
       </div>
+
+      {/* PAGINATION */}
+      {totalPages > 1 && (
+        <div className='flex justify-center mt-8 gap-2'>
+          <button
+            disabled={page === 1}
+            onClick={() => handlePageChange(page - 1)}
+            className='px-4 py-2 rounded-lg bg-[#0a1d20] border border-[#123c42] disabled:opacity-30'
+          >
+            PREV
+          </button>
+          <div className='flex items-center px-4 text-xs font-bold text-[#5f7d84] uppercase tracking-widest'>
+            Page {page} of {totalPages}
+          </div>
+          <button
+            disabled={page === totalPages}
+            onClick={() => handlePageChange(page + 1)}
+            className='px-4 py-2 rounded-lg bg-[#0a1d20] border border-[#123c42] disabled:opacity-30'
+          >
+            NEXT
+          </button>
+        </div>
+      )}
+
       {/* TRADER SPOTLIGHT */}
       <div className='mt-14'>
         <h2 className='text-sm font-bold uppercase tracking-wider mb-6 flex items-center gap-2'>
           🏆 TRADER SPOTLIGHT
         </h2>
 
-        {loading ? (
+        {isLoading ? (
           <div className='text-gray-500 text-center p-10'>
             Loading spotlight...
           </div>
@@ -377,7 +432,7 @@ const Leaderboard: React.FC = () => {
                 </div>
                 <button
                   onClick={() => openVaultFlow(1, traderOfWeek)}
-                  className='mt-8 bg-[#19d3c5] hover:opacity-90 transition text-black font-bold text-sm px-6 py-3 rounded-xl'
+                  className='mt-8 bg-[#19d3c5] hover:opacity-90 transition text-black font-bold text-sm px-6 py-3 rounded-xl cursor-pointer'
                 >
                   COPY MASTER STRATEGY ⚡
                 </button>

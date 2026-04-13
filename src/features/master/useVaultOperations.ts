@@ -50,7 +50,9 @@ function parseSolanaError(err: unknown): string {
           return 'Transaction requires too much compute. Please try again later.';
         }
         
-        return 'Transaction failed. Please try again or contact support if the issue persists.';
+        // If it's a SendTransactionError but we don't recognize the specific log, 
+        // return the message if it's descriptive, else a better default.
+        return error.message || 'Transaction failed. Please check the logs or try again.';
       }
     } catch {
       // Fall through to default
@@ -72,10 +74,15 @@ function parseSolanaError(err: unknown): string {
   }
   
   if (message.includes('timeout') || message.includes('timed out')) {
-    return 'Transaction timed out. Please try again.';
+    return 'Transaction timed out. The transaction might still succeed on-chain. Please check your dashboard in a moment.';
+  }
+
+  // Avoid adding "Transaction failed: " prefix if the message already has it
+  if (message.toLowerCase().includes('transaction failed')) {
+    return message;
   }
   
-  return message || 'Transaction failed. Please try again.';
+  return message ? `Transaction failed: ${message}` : 'Transaction failed. Please try again.';
 }
 
 export const useVaultOperations = () => {
@@ -91,7 +98,7 @@ export const useVaultOperations = () => {
     setError(null);
 
     try {
-      const amountLamports = new BN(amountSol * LAMPORTS_PER_SOL);
+      const amountLamports = new BN(Math.round(amountSol * LAMPORTS_PER_SOL));
       const vaultPubkey = new PublicKey(vaultPda);
 
       // Derivations for instruction accounts
@@ -137,7 +144,7 @@ export const useVaultOperations = () => {
         SystemProgram.transfer({
           fromPubkey: publicKey,
           toPubkey: new PublicKey(vaultPda),
-          lamports: amountSol * LAMPORTS_PER_SOL,
+          lamports: Math.round(amountSol * LAMPORTS_PER_SOL),
         })
       );
 
@@ -161,7 +168,7 @@ export const useVaultOperations = () => {
     setError(null);
 
     try {
-      const amountLamports = new BN(amountSol * LAMPORTS_PER_SOL);
+      const amountLamports = new BN(Math.round(amountSol * LAMPORTS_PER_SOL));
       const vaultPubkey = new PublicKey(vaultPda);
 
       console.log(`Withdrawing ${amountSol} SOL from copier vault ${vaultPda}...`);
@@ -195,7 +202,7 @@ export const useVaultOperations = () => {
     setError(null);
 
     try {
-      const amountLamports = new BN(amountSol * LAMPORTS_PER_SOL);
+      const amountLamports = new BN(Math.round(amountSol * LAMPORTS_PER_SOL));
       
       const [masterVaultPda] = PublicKey.findProgramAddressSync(
         [Buffer.from('master_vault'), publicKey.toBuffer()],
@@ -233,7 +240,7 @@ export const useVaultOperations = () => {
     setError(null);
 
     try {
-      const amountLamports = new BN(amountSol * LAMPORTS_PER_SOL);
+      const amountLamports = new BN(Math.round(amountSol * LAMPORTS_PER_SOL));
       
       const [masterVaultPda] = PublicKey.findProgramAddressSync(
         [Buffer.from('master_vault'), publicKey.toBuffer()],
@@ -271,7 +278,7 @@ export const useVaultOperations = () => {
     setError(null);
 
     try {
-      const amountLamports = new BN(amountSol * LAMPORTS_PER_SOL);
+      const amountLamports = new BN(Math.round(amountSol * LAMPORTS_PER_SOL));
       
       const [masterVaultPda] = PublicKey.findProgramAddressSync(
         [Buffer.from('master_vault'), publicKey.toBuffer()],

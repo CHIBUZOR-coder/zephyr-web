@@ -1,12 +1,14 @@
 import { AnimatePresence, motion } from 'framer-motion'
-import { useState, useEffect, useCallback } from 'react'
-import { FiX, FiAlertTriangle, FiInfo, FiRefreshCw } from 'react-icons/fi'
+import { useState, useEffect, useCallback, useRef } from 'react'
+import { FiX, FiAlertTriangle, FiInfo, FiRefreshCw, FiUser } from 'react-icons/fi'
 import { useGeneralContext } from '../../../Context/GeneralContext'
 import { useVaultOperations } from '../../../features/master/useVaultOperations'
 import { useUserVaults } from '../../../features/master/useUserVaults'
 import { useWalletBalance } from '../../../features/wallet/useWalletQuery'
 import { useSolPrice } from '../../../core/hooks/usePrice'
 import { useAuthStore } from '../../../features/auth/auth.store'
+import { useAuthLogin } from '../../../features/auth/useAuthLogin'
+import { useWallet } from '@solana/wallet-adapter-react'
 import { Connection, PublicKey, LAMPORTS_PER_SOL } from '@solana/web3.js'
 import { endpoint } from '../../../core/config/solanaWallet'
 
@@ -33,23 +35,40 @@ export const WithdrawModal = ({ open, onClose }: Props) => {
   const { withdrawFromCopierVault, withdrawFromMasterVault } = useVaultOperations()
   const { refetchAll, copierVaults, masterVault } = useUserVaults()
   const { data: solPrice } = useSolPrice()
-  const { accessToken } = useAuthStore()
+  const { accessToken, hydrated } = useAuthStore()
+  const { publicKey, signMessage } = useWallet()
+  const loginMutation = useAuthLogin()
   const [connection] = useState(() => new Connection(endpoint, 'confirmed'))
   
+  const inputRef = useRef<HTMLInputElement>(null)
   const [amount, setAmount] = useState('')
   const { data: balanceData, refetch: refetchBalance } = useWalletBalance(selectedVaultPda ?? undefined)
   const vaultBalance = balanceData?.balance ?? 0
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
+  const [syncing, setSyncing] = useState(false)
   const [localError, setLocalError] = useState<string | null>(null)
   const [onChainBalance, setOnChainBalance] = useState<number | null>(null)
   const [balanceMismatch, setBalanceMismatch] = useState(false)
 
   const isCopier = copierVaults?.some(v => v.vaultPda === selectedVaultPda)
   const isMaster = masterVault?.vaultPda === selectedVaultPda
-  const isNotAuthenticated = !accessToken
+  const isNotAuthenticated = hydrated && !accessToken
 
   const feeUsd = solPrice ? (NETWORK_FEE_SOL * (solPrice.price ?? 79)).toFixed(4) : "0.00";
   const impactPct = amount ? ((parseFloat(amount) / (vaultBalance + parseFloat(amount))) * 100).toFixed(2) : "0.00";
+
+  useEffect(() => {
+    if (open) {
+      setAmount('')
+      setStatus('idle')
+      setLocalError(null)
+      setSyncing(false)
+      // Small timeout to ensure the modal animation has started and element is focusable
+      setTimeout(() => {
+        inputRef.current?.focus()
+      }, 100)
+    }
+  }, [open])
 
   const checkOnChainBalance = useCallback(async () => {
     if (!selectedVaultPda) return 0
@@ -72,17 +91,30 @@ export const WithdrawModal = ({ open, onClose }: Props) => {
   }, [open, selectedVaultPda, vaultBalance, checkOnChainBalance])
 
   const handleSyncVault = async () => {
-    setStatus('loading')
+    setSyncing(true)
     setLocalError(null)
     try {
       await refetchBalance()
       const freshBalance = await checkOnChainBalance()
       setOnChainBalance(freshBalance)
       setBalanceMismatch(Math.abs(freshBalance - vaultBalance) > 0.001)
-      setStatus('idle')
     } catch {
       setLocalError('Failed to sync vault. Please try again.')
-      setStatus('error')
+    } finally {
+      setSyncing(false)
+    }
+  }
+
+  const handleSignIn = async () => {
+    if (!publicKey || !signMessage) {
+      setLocalError('Please connect your wallet first.')
+      return
+    }
+    try {
+      await loginMutation.mutateAsync({ publicKey: publicKey.toBase58(), signMessage })
+      setLocalError(null)
+    } catch (err: any) {
+      setLocalError('Sign in failed: ' + err.message)
     }
   }
 
@@ -172,7 +204,7 @@ export const WithdrawModal = ({ open, onClose }: Props) => {
               'Tip: Click "Sync Vault" to verify your current balance.'
             )
           } else {
-            setLocalError('Transaction failed: ' + errorMsg)
+            setLocalError(errorMsg)
           }
       }
     }
@@ -216,9 +248,16 @@ export const WithdrawModal = ({ open, onClose }: Props) => {
               {isNotAuthenticated && (
                 <div className="bg-amber-900/20 border border-amber-500/50 p-3 rounded-lg flex items-start gap-2">
                   <FiAlertTriangle className="text-amber-400 shrink-0 mt-0.5" size={14} />
-                  <div>
+                  <div className="flex-1">
                     <p className="text-[11px] text-amber-200 font-semibold">Dashboard Sync Paused</p>
-                    <p className="text-[10px] text-amber-300 mt-0.5">Your transaction is secured on-chain. Dashboard will sync automatically after page refresh.</p>
+                    <p className="text-[10px] text-amber-300 mt-0.5">Please sign in to ensure your dashboard syncs with your on-chain activity.</p>
+                    <button
+                      onClick={handleSignIn}
+                      disabled={loginMutation.isPending}
+                      className="mt-2 text-[10px] bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 px-3 py-1 rounded border border-amber-500/50 flex items-center gap-1 transition-colors"
+                    >
+                      <FiUser size={10} /> {loginMutation.isPending ? 'Signing In...' : 'Sign In Now'}
+                    </button>
                   </div>
                 </div>
               )}
@@ -233,9 +272,10 @@ export const WithdrawModal = ({ open, onClose }: Props) => {
                     </p>
                     <button
                       onClick={handleSyncVault}
-                      className="mt-2 text-[10px] text-red-200 underline flex items-center gap-1"
+                      disabled={syncing}
+                      className="mt-2 text-[10px] text-red-200 underline flex items-center gap-1 disabled:opacity-50"
                     >
-                      <FiRefreshCw size={10} /> Sync Vault
+                      <FiRefreshCw size={10} className={syncing ? 'animate-spin' : ''} /> {syncing ? 'Syncing...' : 'Sync Vault'}
                     </button>
                   </div>
                 </div>
@@ -275,17 +315,18 @@ export const WithdrawModal = ({ open, onClose }: Props) => {
                     </p>
                     <button
                       onClick={handleSyncVault}
-                      disabled={status === 'loading'}
+                      disabled={syncing}
                       className="text-[#6ef3d6] hover:text-[#8ff4e3] disabled:opacity-50"
                       title="Sync vault balance"
                     >
-                      <FiRefreshCw size={12} className={status === 'loading' ? 'animate-spin' : ''} />
+                      <FiRefreshCw size={12} className={syncing ? 'animate-spin' : ''} />
                     </button>
                   </div>
                 </div>
 
                 <div className='bg-[#081a1a] border border-[#1c3535] rounded-lg px-3 py-3 flex items-center justify-between'>
                   <input
+                    ref={inputRef}
                     type='number'
                     placeholder='0.00'
                     value={amount}

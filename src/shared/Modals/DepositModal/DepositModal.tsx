@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from 'framer-motion'
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect, useRef } from 'react'
 import { FiX, FiAlertTriangle } from 'react-icons/fi'
 import { useGeneralContext } from '../../../Context/GeneralContext'
 import { useVaultOperations } from '../../../features/master/useVaultOperations'
@@ -33,6 +33,7 @@ export const DepositModal = ({ open, onClose }: Props) => {
   const { refetchAll, copierVaults, masterVault } = useUserVaults()
   const { publicKey } = useWallet()
   
+  const inputRef = useRef<HTMLInputElement>(null)
   const [amount, setAmount] = useState('')
   const { data: balanceData } = useWalletBalance(publicKey?.toBase58())
   const userBalance = balanceData?.balance ?? 0
@@ -42,6 +43,17 @@ export const DepositModal = ({ open, onClose }: Props) => {
   
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
   const [localError, setLocalError] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (open) {
+      setAmount('')
+      setStatus('idle')
+      setLocalError(null)
+      setTimeout(() => {
+        inputRef.current?.focus()
+      }, 100)
+    }
+  }, [open])
 
   const handleMaxAmount = () => {
     // Subtract buffer to leave enough SOL for transaction fees
@@ -231,6 +243,7 @@ export const DepositModal = ({ open, onClose }: Props) => {
                 '
                 >
                   <input
+                    ref={inputRef}
                     type='number'
                     placeholder='0.00'
                     value={amount}

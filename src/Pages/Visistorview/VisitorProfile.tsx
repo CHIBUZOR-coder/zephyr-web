@@ -14,10 +14,10 @@ type Params = {
 
 export default function VisitorProfile () {
   const { address } = useParams<Params>()
-  const { trader, loading, error } = useTraderProfile(address)
+  const { data: trader, isLoading: loading, error } = useTraderProfile(address)
 
   if (loading) return <ProfileSkeleton />
-  if (error) return <div className='text-white'>{error}</div>
+  if (error) return <div className='text-white'>{error.message}</div>
   if (!trader) return <div className='text-white'>Trader not found</div>
 
   return (

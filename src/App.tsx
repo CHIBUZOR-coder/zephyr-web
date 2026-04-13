@@ -1,6 +1,6 @@
 // zephyr-web/src/App.tsx
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useWallet } from '@solana/wallet-adapter-react'
 // import { useAuthLogin } from './features/auth/useAuthLogin'
 import { useAuthStore } from './features/auth/auth.store'
@@ -47,14 +47,14 @@ function App () {
   useRealtimeUpdates() // ← Listen for real-time vault updates
   useUserVaults() // ← Sync hasMaterVault state globally
 
-  // const { xxxxxxxpublicKey, signMessage } = useWallet()
-  // const loginMutation = useAuthLogin()
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  
   const authReady = useAuthReady()
   const mismatch = useWalletMismatch()
-  const { accessToken } = useAuthStore()
+  const { accessToken, logout, user: authUser } = useAuthStore()
+
   const [showOnboarding, setShowOnboarding] = useState(() => {
     return !localStorage.getItem('onboarding_done')
   })
@@ -77,10 +77,6 @@ function App () {
     setVisible,
     openCallTrade,
     setOpenCallTrade,
-
-    // masterTraderOpen,
-
-    // setHasMatervalt
     tierConfigInitOpen,
     setTierConfigInitOpen,
     claimFeesOpen,
@@ -97,79 +93,67 @@ function App () {
     }
   }, [location.pathname, setVisible])
 
-  // const handleSignIn = () => {
-  //   if (!publicKey || !signMessage) return
+  const fetchMe = useCallback(async () => {
+    if (!accessToken) return
 
-  //   loginMutation.mutate({
-  //     publicKey: publicKey.toBase58(),
-  //     signMessage
-  //   })
-  // }
+    try {
+      setLoading(true)
+      setError(null)
+
+      const res = await fetch(`${API_BASE}/api/auth/me`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${accessToken}`,
+          'ngrok-skip-browser-warning': 'true'
+        }
+      })
+
+      if (!res.ok) {
+        const text = await res.text()
+        
+        // Handling session expiration/invalid tokens
+        if (res.status === 401 || res.status === 403 || text.toLowerCase().includes('expired') || text.toLowerCase().includes('invalid')) {
+          console.warn('⚠️ Authentication check failed: Session expired or invalid token. Redirecting to login state.')
+          logout()
+          return
+        }
+        
+        throw new Error(`Auth check failed: ${text || res.statusText}`)
+      }
+
+      const contentType = res.headers.get('content-type')
+      if (!contentType?.includes('application/json')) {
+        const text = await res.text()
+        throw new Error(`Expected JSON response, but received: ${text.slice(0, 100)}`)
+      }
+
+      const data = await res.json()
+      setProfile(data.user)
+    } catch (err) {
+      console.error('❌ Profile fetch failed:', err)
+      // Only set UI error if it's NOT a token problem (handled above)
+      if (accessToken) {
+        setError('Connection failed. Please refresh or try again later.')
+      }
+    } finally {
+      setLoading(false)
+    }
+  }, [accessToken, logout])
 
   useEffect(() => {
-    if (!authReady) return
-    if (!accessToken) return
-    if (profile) return
-
-    let cancelled = false
-
-    const fetchMe = async () => {
-      try {
-        setLoading(true)
-        setError(null)
-
-        const res = await fetch(`${API_BASE}/api/auth/me`, {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${accessToken}`,
-            'ngrok-skip-browser-warning': 'true'
-          }
-        })
-
-        const contentType = res.headers.get('content-type')
-
-        if (!res.ok) {
-          const text = await res.text()
-          throw new Error(text || 'Unauthorized')
-        }
-
-        if (!contentType?.includes('application/json')) {
-          const text = await res.text()
-          throw new Error(`Expected JSON, got: ${text.slice(0, 200)}`)
-        }
-
-        const data = await res.json()
-
-        if (!cancelled) {
-          setProfile(data.user)
-        }
-      } catch (err) {
-        console.error('❌ /auth/me failed:', err)
-        if (!cancelled) {
-          setError('Failed to load profile')
-        }
-      } finally {
-        if (!cancelled) {
-          setLoading(false)
-        }
-      }
+    if (authReady && accessToken && !profile) {
+      fetchMe()
     }
+  }, [authReady, accessToken, profile, fetchMe])
 
-    fetchMe()
-
-    return () => {
-      cancelled = true
+  // Clear profile if accessToken is lost
+  useEffect(() => {
+    if (!accessToken) {
+      setProfile(null)
+      setError(null)
     }
-  }, [authReady, accessToken, profile])
-
-  // useEffect(() => {
-  //   if (hydrated && connected && !authenticated) {
-  //     console.log('signing called')
-  //     handleSignIn()
-  //   }
-  //   // eslint-disable-next-line react-hooks/exhaustive-deps
-  // }, [hydrated, connected, authenticated])
+  }, [accessToken])
 
   const navLinks = [
     { title: 'Dashboard', icon: '/images/dashh.svg', path: '/' },
@@ -191,60 +175,50 @@ function App () {
   ]
 
   const { masterMode } = useTradingModeStore()
-  // const [walletModal, setWalletModal] = useState(false)
 
   if (!authReady) {
     return (
       <StateScreen
-        title='Restoring session…'
-        description='Please wait a moment'
+        title='Loading Zephyr…'
+        description='Restoring secure session'
       />
     )
   }
 
-  // if (!accessToken) {
-  //   return (
-  //     <StateScreen
-  //       title='Not authenticated'
-  //       description='Please sign in again.'
-  //       tone='error'
-  //     />
-  //   )
-  // }
-
   if (mismatch) {
     return (
       <StateScreen
-        title='Wallet mismatch detected'
-        description='Please reconnect the wallet you signed in with.'
+        title='Wallet Mismatch'
+        description='Please connect the wallet associated with your signed session.'
         tone='error'
       />
     )
   }
 
-  if (loading) {
+  if (loading && !profile) {
     return (
       <div className='h-screen '>
-        <div
-          className={` absolute top-0 left-0 bg-primary z-50 w-full h-full flex flex-col justify-center items-center gap-8`}
-        >
-          <div
-            className='w-24 h-24 border-r-[4px] bg-primary border-white  flex justify-center items-center rounded-full  animate-spin
-'
-          >
-            <span className="bg-[url('/images/logo.png')] bg-cover bg-center h-16 w-16  animate-spin-slow animate-spin-reverse  "></span>
+        <div className={`absolute top-0 left-0 bg-primary z-50 w-full h-full flex flex-col justify-center items-center gap-8`}>
+          <div className='w-24 h-24 border-r-[4px] bg-primary border-white flex justify-center items-center rounded-full animate-spin'>
+            <span className="bg-[url('/images/logo.png')] bg-cover bg-center h-16 w-16 animate-spin-slow animate-spin-reverse"></span>
           </div>
-
-          <p className='text-white font-[900] text-xl text-center'>
-            Loading Profile...
+          <p className='text-white font-[900] text-xl text-center uppercase tracking-widest'>
+            Synchronizing...
           </p>
         </div>
       </div>
     )
   }
 
-  if (error) {
-    return <StateScreen title='Error' description={error} tone='error' />
+  // If there's a fatal error (not auth-related), show it
+  if (error && accessToken) {
+    return (
+      <StateScreen 
+        title='System Error' 
+        description={error} 
+        tone='error' 
+      />
+    )
   }
 
   return (
@@ -253,26 +227,17 @@ function App () {
       {masterMode && connected && (
         <div
           onClick={() => {
-            // hasMaterVault ? masterTraderOpen : setOpenCallTrade(true)
             setOpenCallTrade(true)
           }}
-          className='call border-b-[4px] border-t-[1.5px] border-l-[1.5px] border-r-[1.5px] shadow-2xl shadow-[#574516] border-[#574516] rounded-3xl fixed lg:bottom-[5.5rem] bottom-[8rem]  z-50 left-[1.8rem] lg:left-4  flex justify-center items-center py-2 px-3 gap-2 cursor-pointer'
+          className='call border-b-[4px] border-t-[1.5px] border-l-[1.5px] border-r-[1.5px] shadow-2xl shadow-[#574516] border-[#574516] rounded-3xl fixed lg:bottom-[5.5rem] bottom-[8rem] z-50 left-[1.8rem] lg:left-4 flex justify-center items-center py-2 px-3 gap-2 cursor-pointer'
         >
-          <div
-            className='
-  bg-[#fe9a00]
-  h-[29px] w-[29px]
-  rounded-full
-  flex justify-center items-center
-  shadow-[0_0_12px_rgba(254,154,0,0.8)]
-'
-          >
+          <div className='bg-[#fe9a00] h-[29px] w-[29px] rounded-full flex justify-center items-center shadow-[0_0_12px_rgba(254,154,0,0.8)]'>
             <span
               style={{ backgroundImage: `url('/images/mode2.svg')` }}
               className='inline-block bg-center bg-cover h-[20px] w-[20px]'
             ></span>
           </div>
-          <p className='text-[12px] font-[900] "tracking-[1.636px] uppercase text-white'>
+          <p className='text-[12px] font-[900] uppercase text-white tracking-widest'>
             Call Trade
           </p>
         </div>
@@ -285,11 +250,8 @@ function App () {
               <div className='flex items-center gap-4'>
                 <span
                   className='inline-block bg-center bg-cover w-[40px] h-[40px]'
-                  style={{
-                    backgroundImage: `url("/images/zeflogo.png")`
-                  }}
+                  style={{ backgroundImage: `url("/images/zeflogo.png")` }}
                 ></span>
-
                 <div>
                   <div className='text-[12px] font-[700] text-teal-400'>
                     Zephyr
@@ -312,12 +274,11 @@ function App () {
                         isActive ? 'bg-[#009883]' : ''
                       }  text-left text-white p-2 rounded-lg flex justify-start items-center gap-4 w-full hover:bg-[#009883]/30 transition ease-in-out duration-300 ${
                         item.mt ? 'mt-8' : ''
-                      }
-          `
+                      }`
                     }
                   >
                     <img src={item.icon} alt={item.title} className='w-5 h-5' />
-                    <span>{item.title}</span>
+                    <span className='uppercase tracking-widest text-[10px] font-bold'>{item.title}</span>
                   </NavLink>
                 ))}
               </nav>
@@ -326,7 +287,6 @@ function App () {
           <div className=' w-full lg:w-[84%] '>
             <Layout>
               <ScrollToTop />
-
               <Outlet />
             </Layout>
           </div>
@@ -343,7 +303,6 @@ function App () {
           open={withdrawOpen}
           onClose={() => setWithdrawOpen(false)}
         />
-        {/* GLOBAL OVERLAY */}
         <NotificationPanel
           isOpen={openNotifications}
           onClose={() => setOpenNotifications(false)}
@@ -354,7 +313,6 @@ function App () {
           showRiskModal={showRiskModal}
           setShowRiskModal={() => setShowRiskModal(false)}
         />
-
         <CallTradeModal
           open={openCallTrade}
           onClose={() => setOpenCallTrade(false)}
@@ -363,11 +321,9 @@ function App () {
           open={openStopModal}
           onClose={() => setOpenStopModal(false)}
           onConfirm={() => {
-            console.log('Stopped copying')
             setOpenStopModal(false)
           }}
         />
-
         <BecomeMasterTraderModal />
         <MasterTradingFlow />
         <TierConfigInitModal
@@ -378,7 +334,6 @@ function App () {
           open={claimFeesOpen}
           onClose={() => setClaimFeesOpen(false)}
         />
-
         {showOnboarding && (
           <Onboarding
             onComplete={() => {

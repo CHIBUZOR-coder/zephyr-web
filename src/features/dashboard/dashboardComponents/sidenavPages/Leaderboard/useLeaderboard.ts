@@ -1,11 +1,10 @@
-import { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { authFetch } from "../../../../../core/query/authClient";
-import type { Trader } from "./leaderboar.types";
+import type { Trader, LeaderboardPeriod, LeaderboardSort } from "./leaderboar.types";
 
 const MAX_DISPLAY_PCT = 99999; // Cap display at 99,999%
 
 function formatRoiPct(roiPct: number): string {
-  // Cap extreme values for display
   const capped = Math.abs(roiPct) > MAX_DISPLAY_PCT ? Math.sign(roiPct) * MAX_DISPLAY_PCT : roiPct;
   return `${capped >= 0 ? "+" : ""}${capped.toFixed(1)}%`;
 }
@@ -60,66 +59,6 @@ interface LeaderboardResponse {
   };
 }
 
-export function useDashboardLeaderboard() {
-  const [leaders, setLeaders] = useState<Trader[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const fetchLeaderboard = async () => {
-    try {
-      setLoading(true);
-      const response = await authFetch<LeaderboardResponse>(
-        "/api/leaderboard?period=30d&sort=pnl&limit=10",
-      );
-
-      if (response.success) {
-        const mappedLeaders: Trader[] = response.data.traders.map((entry) => ({
-          id: entry.rank,
-          rank: entry.rank,
-          name:
-            entry.user.displayName ||
-            `Trader ${entry.masterWallet.slice(0, 4)}`,
-          image:
-            entry.user.avatar ||
-            `https://api.dicebear.com/7.x/avataaars/svg?seed=${entry.masterWallet}`,
-          tag: entry.tierShortLabel,
-          tiers: entry.tierLabel,
-          type: "PRO",
-          pnl: formatRoiPct(entry.metrics.roiPct),
-          aum: `$${formatCompactNumber(entry.metrics.aumUsd)}`,
-          winRate: `${entry.metrics.winRatePct.toFixed(0)}%`,
-          drawdown: `${entry.metrics.maxDrawdownPct.toFixed(1)}%`,
-          trades: entry.metrics.totalTrades,
-          copiers: entry.metrics.activeCopiers,
-          rio: parseFloat(entry.metrics.roiPct.toFixed(1)),
-          follows: entry.metrics.activeCopiers,
-          followsDisplay: formatCompactNumber(entry.metrics.activeCopiers),
-          sol: (entry.metrics.aumUsd / 150).toFixed(0),
-          address: entry.masterWallet,
-          vaultAddress: entry.vaultPda,
-        }));
-        setLeaders(mappedLeaders);
-      }
-    } catch (err: unknown) {
-      console.error("Failed to fetch dashboard leaderboard:", err);
-
-      if (err instanceof Error) {
-        setError(err.message);
-      } else {
-        setError("Failed to fetch dashboard leaderboard");
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchLeaderboard();
-  }, []);
-
-  return { leaders, loading, error, refetch: fetchLeaderboard };
-}
-
 function mapLeaderboardEntryToTrader(entry: LeaderboardEntry): Trader {
   return {
     id: entry.rank,
@@ -133,7 +72,7 @@ function mapLeaderboardEntryToTrader(entry: LeaderboardEntry): Trader {
     aum: `$${formatCompactNumber(entry.metrics.aumUsd)}`,
     winRate: `${entry.metrics.winRatePct.toFixed(0)}%`,
     drawdown: `${entry.metrics.maxDrawdownPct.toFixed(1)}%`,
-    trades: entry.metrics.totalTrades,
+    trades: entry.metrics.totalTrades || 0,
     copiers: entry.metrics.activeCopiers,
     rio: parseFloat(entry.metrics.roiPct.toFixed(1)),
     follows: entry.metrics.activeCopiers,
@@ -146,6 +85,47 @@ function mapLeaderboardEntryToTrader(entry: LeaderboardEntry): Trader {
   };
 }
 
+export function useLeaderboard(params: {
+  period?: LeaderboardPeriod;
+  sort?: LeaderboardSort;
+  tier?: number;
+  page?: number;
+  limit?: number;
+} = {}) {
+  const { period = "30d", sort = "pnl", tier, page = 1, limit = 20 } = params;
+
+  return useQuery({
+    queryKey: ["leaderboard", period, sort, tier, page, limit],
+    queryFn: async () => {
+      let url = `/api/leaderboard?period=${period}&sort=${sort}&page=${page}&limit=${limit}`;
+      if (tier !== undefined) url += `&tier=${tier}`;
+
+      const response = await authFetch<LeaderboardResponse>(url);
+      if (!response.success) throw new Error("Failed to fetch leaderboard");
+      
+      return {
+        traders: response.data.traders.map(mapLeaderboardEntryToTrader),
+        total: response.data.total,
+        page: response.data.page,
+        limit: response.data.limit,
+      };
+    },
+    staleTime: 60000, // 60s
+  });
+}
+
+/** Lean version for dashboard display */
+export function useDashboardLeaderboard() {
+  const query = useLeaderboard({ period: "30d", sort: "pnl", limit: 10 });
+  
+  return {
+    leaders: query.data?.traders ?? [],
+    loading: query.isLoading,
+    error: query.error instanceof Error ? query.error.message : null,
+    refetch: query.refetch,
+  };
+}
+
 interface TraderProfileResponse {
   success: boolean;
   data?: LeaderboardEntry;
@@ -153,38 +133,19 @@ interface TraderProfileResponse {
 }
 
 export function useTraderProfile(vaultAddress: string | undefined) {
-  const [trader, setTrader] = useState<Trader | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!vaultAddress) {
-      setLoading(false);
-      return;
-    }
-
-    const fetchTrader = async () => {
-      try {
-        setLoading(true);
-        const response = await authFetch<TraderProfileResponse>(
-          `/api/leaderboard/trader/${vaultAddress}`,
-        );
-
-        if (response.success && response.data) {
-          setTrader(mapLeaderboardEntryToTrader(response.data));
-        } else {
-          setError(response.error || "Trader not found");
-        }
-      } catch (err: unknown) {
-        console.error("Failed to fetch trader profile:", err);
-        setError("Failed to fetch trader profile");
-      } finally {
-        setLoading(false);
+  return useQuery({
+    queryKey: ["trader-profile", vaultAddress],
+    queryFn: async () => {
+      if (!vaultAddress) return null;
+      const response = await authFetch<TraderProfileResponse>(
+        `/api/leaderboard/trader/${vaultAddress}`
+      );
+      if (!response.success || !response.data) {
+        throw new Error(response.error || "Trader not found");
       }
-    };
-
-    fetchTrader();
-  }, [vaultAddress]);
-
-  return { trader, loading, error };
+      return mapLeaderboardEntryToTrader(response.data);
+    },
+    enabled: !!vaultAddress,
+    staleTime: 60000,
+  });
 }

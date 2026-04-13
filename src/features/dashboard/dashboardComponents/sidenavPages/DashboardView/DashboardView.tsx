@@ -11,7 +11,6 @@ import { useState } from 'react'
 import { useGeneralContext } from '../../../../../Context/GeneralContext'
 
 import { Link } from 'react-router-dom'
-// import type { Trader } from '../Leaderboard/leaderboar.types'
 import { useDashboardLeaderboard } from '../Leaderboard/useLeaderboard'
 import { useMarketStats } from '../../../../../core/hooks/useMarketStats'
 
@@ -19,20 +18,22 @@ type TimeRange = 'ALL' | '24H' | '7D' | '30D'
 
 const DashboardView = () => {
   const { openVaultFlow } = useGeneralContext()
-  const { leaders, loading, error } = useDashboardLeaderboard()
-  const [search, setSearch] = useState('')
-  const [range, setRange] = useState<TimeRange>('ALL')
-  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
-  const [showModal, setShowModal] = useState(false)
-  const [openIndex, setOpenIndex] = useState<number | null>(null)
+  const { leaders, loading: leadersLoading, error: leadersError } = useDashboardLeaderboard()
   const {
     solPrice,
     solChange,
     solVolume,
     networkVolumeAllTime,
     trendingToken,
-    trendingChange
+    trendingChange,
+    isLoading: marketLoading
   } = useMarketStats()
+
+  const [search, setSearch] = useState('')
+  const [range, setRange] = useState<TimeRange>('ALL')
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
+  const [showModal, setShowModal] = useState(false)
+  const [openIndex, setOpenIndex] = useState<number | null>(null)
 
   const formatVolume = (val?: number) => {
     if (val === undefined || val === 0) return '$0.00'
@@ -142,51 +143,6 @@ const DashboardView = () => {
       titer: 'rising',
       date: '2026-01-28',
       timestamp: 'Mar 02, 2026 16:30 UTC'
-    },
-    {
-      name: 'Aether Finance',
-      person: 'ZeroX_Maxi',
-      img: '/images/ath.png',
-      text: 'AETH',
-      time: '30 DAYS',
-      num: 88.2,
-      col: 'blu',
-      wallet: '0x74...3f92',
-      cap: 177,
-      peackCap: 55.9,
-      titer: 'Verifieda',
-      date: '2026-01-22',
-      timestamp: 'Jun 15, 2026 18:00 UTC'
-    },
-    {
-      name: 'Aether Finance',
-      person: 'ZeroX_Maxi',
-      img: '/images/ath.png',
-      text: 'AETH',
-      time: '30 DAYS',
-      num: 88.2,
-      col: 'blu',
-      wallet: '0x74...3f92',
-      cap: 177,
-      peackCap: 55.9,
-      titer: 'Verifieda',
-      date: '2028-02-01',
-      timestamp: 'May 12, 2026 13:30 UTC'
-    },
-    {
-      name: 'Aether Finance',
-      person: 'ZeroX_Maxi',
-      img: '/images/ath.png',
-      text: 'AETH',
-      time: '30 DAYS',
-      num: 88.2,
-      col: 'blu',
-      wallet: '0x74...3f92',
-      cap: 177,
-      peackCap: 55.9,
-      titer: 'Verifieda',
-      date: '2026-02-01',
-      timestamp: 'Oct 5, 2026 14:00 UTC'
     }
   ]
 
@@ -214,7 +170,6 @@ const DashboardView = () => {
         <section className='w-full'>
           <div className='flex justify-between items-center'>
             <p className='font-[700] text-white'>Market overview</p>
-            {/* <p className='text-white text-[10.5px]'>View All Markets</p> */}
           </div>
           <div className='grid grid-cols-2 lg:grid-cols-4 gap-4 mt-4'>
             {marketStats.map((stat, i) => {
@@ -228,33 +183,35 @@ const DashboardView = () => {
                   <div className='h-8 overflow-hidden relative'>
                     <AnimatePresence mode='wait'>
                       <motion.span
-                        key={i === 3 ? stat.value : `stat-${i}`}
+                        key={i === 3 ? (stat.value as string) : `stat-${i}`}
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -10 }}
                         transition={{ duration: 0.3 }}
                         className='text-xl font-semibold text-white absolute inset-0'
                       >
-                        {getStatValue(stat.title, stat.value)}
+                        {marketLoading ? '...' : getStatValue(stat.title, stat.value)}
                       </motion.span>
                     </AnimatePresence>
                   </div>
 
                   <div className='h-4 overflow-hidden relative'>
                     <AnimatePresence mode='wait'>
-                      <motion.span
-                        key={`stat-change-${i}`}
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className={`text-xs absolute inset-0 ${
-                          changeValue >= 0 ? 'text-green-400' : 'text-red-400'
-                        }`}
-                      >
-                        {changeValue >= 0 ? '+' : ''}
-                        {changeValue.toFixed(1)}%{' '}
-                        <span className='text-white ml-1'>24h</span>
-                      </motion.span>
+                      {!marketLoading && (
+                        <motion.span
+                          key={`stat-change-${i}`}
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          exit={{ opacity: 0 }}
+                          className={`text-xs absolute inset-0 ${
+                            changeValue >= 0 ? 'text-green-400' : 'text-red-400'
+                          }`}
+                        >
+                          {changeValue >= 0 ? '+' : ''}
+                          {changeValue.toFixed(1)}%{' '}
+                          <span className='text-white ml-1'>24h</span>
+                        </motion.span>
+                      )}
                     </AnimatePresence>
                   </div>
                 </div>
@@ -284,24 +241,24 @@ const DashboardView = () => {
                 }}
                 className='w-full relative px-3'
               >
-                <button className='flex justify-center items-center swiper-prev bg-swipnav border-[1.5px] border-[#23483B] z-30 rounded-full absolute top-1/2 left-5'>
+                <button className='flex justify-center items-center swiper-prev bg-swipnav border-[1.5px] border-[#23483B] z-30 rounded-full absolute top-1/2 left-5 cursor-pointer'>
                   <MdKeyboardArrowLeft className='h-6 w-6 text-white' />
                 </button>
-                <button className='flex justify-center items-center swiper-next bg-swipnav border-[1.5px] border-[#23483B] z-30 rounded-full absolute top-1/2 right-5'>
+                <button className='flex justify-center items-center swiper-next bg-swipnav border-[1.5px] border-[#23483B] z-30 rounded-full absolute top-1/2 right-5 cursor-pointer'>
                   <MdKeyboardArrowRight className='h-6 w-6 text-white' />
                 </button>
 
-                {loading ? (
+                {leadersLoading ? (
                   <div className='flex items-center justify-center h-44 text-gray-500'>
-                    Loading...
+                    <div className='animate-pulse uppercase text-[10px] tracking-widest font-bold'>Loading Leaders...</div>
                   </div>
-                ) : error ? (
+                ) : leadersError ? (
                   <div className='flex items-center justify-center h-44 text-red-500 text-xs'>
-                    {error}
+                    {leadersError}
                   </div>
                 ) : leaders.length === 0 ? (
                   <div className='flex items-center justify-center h-44 text-gray-500 text-xs'>
-                    No traders
+                    No traders found
                   </div>
                   ) : (
                     leaders.map((item, i) => (
@@ -358,13 +315,13 @@ const DashboardView = () => {
                   Hot Performers
                 </h4>
                 <div className='mt-4 h-[295px] overflow-y-auto scrollbar-hide'>
-                  {loading ? (
-                    <div className='p-4 text-gray-500 text-xs text-center'>
-                      Loading...
+                  {leadersLoading ? (
+                    <div className='p-4 text-gray-500 text-xs text-center animate-pulse uppercase font-bold tracking-widest'>
+                      Syncing...
                     </div>
-                  ) : error ? (
+                  ) : leadersError ? (
                     <div className='p-4 text-red-500 text-xs text-center'>
-                      {error}
+                      {leadersError}
                     </div>
                   ) : leaders.length === 0 ? (
                     <div className='p-4 text-gray-500 text-xs text-center'>
@@ -494,10 +451,6 @@ const DashboardView = () => {
                     </div>
                     {/* DROPDOWN */}
                     <div
-                      onClick={e => {
-                        e.stopPropagation()
-                        // your button logic here
-                      }}
                       className={`cursor-pointer h-5 w-5 bg-center bg-cover transition-transform duration-300 ${
                         openIndex === i ? 'rotate-180' : ''
                       }`}
@@ -854,7 +807,7 @@ const DashboardView = () => {
 
                   <button
                     onClick={() => setShowModal(false)}
-                    className='text-[#9fd5cc] text-xl'
+                    className='text-[#9fd5cc] text-xl cursor-pointer'
                   >
                     ✕
                   </button>
@@ -862,7 +815,6 @@ const DashboardView = () => {
 
                 {/* BODY */}
                 <div className=''>
-                  {/* SEARCH + FILTERS */}
                   {/* SEARCH + FILTERS */}
                   <div className='mb-5 flex flex-wrap items-center gap-3 p-4'>
                     {/* SEARCH (WIDER) */}
@@ -882,7 +834,7 @@ const DashboardView = () => {
                         <button
                           key={r}
                           onClick={() => setRange(r)}
-                          className={`rounded-lg px-4 py-2 text-xs font-bold transition ${
+                          className={`rounded-lg px-4 py-2 text-xs font-bold transition cursor-pointer ${
                             range === r
                               ? 'bg-[#00A991] text-black'
                               : 'text-[#9fd5cc] hover:bg-[#122523]'
@@ -904,7 +856,7 @@ const DashboardView = () => {
                       <div className='flex flex-col'>
                         <button
                           onClick={() => setSortDir('asc')}
-                          className={`text-[10px] leading-none ${
+                          className={`text-[10px] leading-none cursor-pointer ${
                             sortDir === 'asc'
                               ? 'text-[#00A991]'
                               : 'text-[#6f9f97]'
@@ -914,7 +866,7 @@ const DashboardView = () => {
                         </button>
                         <button
                           onClick={() => setSortDir('desc')}
-                          className={`text-[10px] leading-none ${
+                          className={`text-[10px] leading-none cursor-pointer ${
                             sortDir === 'desc'
                               ? 'text-[#00A991]'
                               : 'text-[#6f9f97]'
@@ -1002,11 +954,7 @@ const DashboardView = () => {
                           </div>
                           {/* DROPDOWN */}
                           <button
-                            onClick={e => {
-                              e.stopPropagation()
-                              // your button logic here
-                            }}
-                            className={`h-5 w-5 bg-cover bg-center transition-transform ml-0 md:ml-8 ${
+                            className={`h-5 w-5 bg-cover bg-center transition-transform ml-0 md:ml-8 cursor-pointer ${
                               openIndex === i ? 'rotate-180' : ''
                             }`}
                             style={{

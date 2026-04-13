@@ -58,11 +58,11 @@ export const useAuthStore = create<AuthState>()(
     }),
     {
       name: "auth-storage",
-      // ✅ Only persist user, NOT the token
+      // Persist user and token to maintain session across refreshes
       partialize: (state) => ({
         user: state.user,
         authenticated: state.authenticated,
-        // accessToken intentionally excluded
+        accessToken: state.accessToken,
       }),
       onRehydrateStorage: () => (state) => {
         if (state) {
