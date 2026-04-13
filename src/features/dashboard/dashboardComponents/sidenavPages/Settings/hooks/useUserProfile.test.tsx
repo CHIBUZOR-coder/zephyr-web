@@ -10,7 +10,13 @@ describe('useUserProfile', () => {
         displayName: 'Test Trader',
         bio: 'A test bio',
         avatar: 'https://example.com/avatar.png',
-        createdAt: '2024-01-01T00:00:00.000Z',
+
+        twitter: null,
+        discord: null,
+        telegram: null,
+        lastSocialsUpdate: null,
+
+        createdAt: '2024-01-01T00:00:00.000Z'
       }
 
       expect(profile.id).toBe('user-123')
@@ -27,7 +33,13 @@ describe('useUserProfile', () => {
         displayName: null,
         bio: null,
         avatar: null,
-        createdAt: '2024-01-01T00:00:00.000Z',
+
+        twitter: null,
+        discord: null,
+        telegram: null,
+        lastSocialsUpdate: null,
+
+        createdAt: '2024-01-01T00:00:00.000Z'
       }
 
       expect(profile.displayName).toBeNull()
