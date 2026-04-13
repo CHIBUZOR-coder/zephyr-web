@@ -53,7 +53,9 @@ function App () {
   
   const authReady = useAuthReady()
   const mismatch = useWalletMismatch()
-  const { accessToken, logout, user: authUser } = useAuthStore()
+ const { accessToken, logout } = useAuthStore()
+// const { accessToken, logout, user: authUser } = useAuthStore()
+
 
   const [showOnboarding, setShowOnboarding] = useState(() => {
     return !localStorage.getItem('onboarding_done')
