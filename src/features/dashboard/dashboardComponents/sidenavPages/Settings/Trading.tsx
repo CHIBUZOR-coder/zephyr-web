@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { FiInfo } from 'react-icons/fi'
 import { AiOutlineThunderbolt } from 'react-icons/ai'
 import { MdOutlineAutoGraph } from 'react-icons/md'
+import { useWallet } from '@solana/wallet-adapter-react'
 
 const Trading: React.FC = () => {
   const [slippage, setSlippage] = useState('1.0%')
@@ -20,146 +21,167 @@ const Trading: React.FC = () => {
       [key]: !prev[key]
     }))
   }
-
+  const { connected } = useWallet()
   return (
-    <div className='min-h-screen bg-[#020A09] text-white px-4 py-10 flex justify-center'>
-      <div className='w-full max-w-4xl space-y-6'>
-        {/* HEADER */}
-        <div>
-          <h1 className='text-xl font-semibold tracking-wide'>
-            TRADING CONFIGURATION
-          </h1>
-          <p className='text-sm text-[#7A9E9A] mt-1'>
-            Configure default trading parameters and automation
-          </p>
-        </div>
-
-        {/* RISK SETTINGS */}
-        <div className='rounded-xl border border-[#1A3D39] bg-gradient-to-r from-[#071F1D] to-[#0A2C28] p-6 space-y-5'>
-          <div className='flex items-center gap-2 text-sm font-semibold text-[#9CE6D9]'>
-            <FiInfo />
-            DEFAULT VAULT RISK SETTINGS
+    <div>
+      {!connected ? (
+        <>
+          <div className='w-full max-w-3xl'>
+            <h1 className='text-lg sm:text-xl font-semibold text-textMain'>
+              PROFILE & IDENTITY
+            </h1>
+            <p className='text-xs sm:text-sm text-textMuted mt-1 mb-6'>
+              Connect your wallet to manage your profile
+            </p>
+            <div className='rounded-xl border border-borderSubtle p-5 sm:p-6 bg-gradient-to-b from-cardTop to-cardBottom'>
+              <p className='text-textMuted text-sm text-center py-8'>
+                Please connect your wallet to view and edit your profile
+                settings.
+              </p>
+            </div>
           </div>
+        </>
+      ) : (
+        <div className='min-h-screen bg-[#020A09] text-white px-4 py-10 flex justify-center'>
+          <div className='w-full max-w-4xl space-y-6'>
+            {/* HEADER */}
+            <div>
+              <h1 className='text-xl font-semibold tracking-wide'>
+                TRADING CONFIGURATION
+              </h1>
+              <p className='text-sm text-[#7A9E9A] mt-1'>
+                Configure default trading parameters and automation
+              </p>
+            </div>
 
-          <div className='grid md:grid-cols-2 gap-4'>
-            <Input label='MAX TRADE SIZE %' defaultValue='10' />
-            <Input label='MAX LOSS %' defaultValue='5' />
-            <Input label='MAX DRAWDOWN %' defaultValue='15' />
-            <Input label='TAKE-PROFIT %' defaultValue='20' />
-          </div>
-        </div>
+            {/* RISK SETTINGS */}
+            <div className='rounded-xl border border-[#1A3D39] bg-gradient-to-r from-[#071F1D] to-[#0A2C28] p-6 space-y-5'>
+              <div className='flex items-center gap-2 text-sm font-semibold text-[#9CE6D9]'>
+                <FiInfo />
+                DEFAULT VAULT RISK SETTINGS
+              </div>
 
-        {/* SLIPPAGE */}
-        <div className='rounded-xl border border-[#1A3D39] bg-gradient-to-r from-[#071F1D] to-[#0A2C28] p-6 space-y-4'>
-          <div className='flex items-center gap-2 text-sm font-semibold text-[#9CE6D9]'>
-            <MdOutlineAutoGraph />
-            SLIPPAGE TOLERANCE
-          </div>
+              <div className='grid md:grid-cols-2 gap-4'>
+                <Input label='MAX TRADE SIZE %' defaultValue='10' />
+                <Input label='MAX LOSS %' defaultValue='5' />
+                <Input label='MAX DRAWDOWN %' defaultValue='15' />
+                <Input label='TAKE-PROFIT %' defaultValue='20' />
+              </div>
+            </div>
 
-          <div className='flex gap-3 flex-wrap'>
-            {['0.5%', '1.0%', '2.0%'].map(val => (
-              <button
-                key={val}
-                onClick={() => setSlippage(val)}
-                className={`flex-1 min-w-[90px] py-2 rounded-lg text-sm font-medium transition
+            {/* SLIPPAGE */}
+            <div className='rounded-xl border border-[#1A3D39] bg-gradient-to-r from-[#071F1D] to-[#0A2C28] p-6 space-y-4'>
+              <div className='flex items-center gap-2 text-sm font-semibold text-[#9CE6D9]'>
+                <MdOutlineAutoGraph />
+                SLIPPAGE TOLERANCE
+              </div>
+
+              <div className='flex gap-3 flex-wrap'>
+                {['0.5%', '1.0%', '2.0%'].map(val => (
+                  <button
+                    key={val}
+                    onClick={() => setSlippage(val)}
+                    className={`flex-1 min-w-[90px] py-2 rounded-lg text-sm font-medium transition
                 ${
                   slippage === val
                     ? 'bg-[#11B89A] text-black'
                     : 'bg-[#061B19] border border-[#1A3D39] text-[#7A9E9A]'
                 }`}
-              >
-                {val}
-              </button>
-            ))}
-          </div>
+                  >
+                    {val}
+                  </button>
+                ))}
+              </div>
 
-          <Input label='' defaultValue='1.0' />
-        </div>
+              <Input label='' defaultValue='1.0' />
+            </div>
 
-        {/* AUTOMATION */}
-        <div className='rounded-xl border border-[#1A3D39] bg-gradient-to-r from-[#071F1D] to-[#0A2C28] p-6 space-y-5'>
-          <div className='flex items-center gap-2 text-sm font-semibold text-[#9CE6D9]'>
-            <AiOutlineThunderbolt />
-            AUTOMATION CONTROLS
-          </div>
+            {/* AUTOMATION */}
+            <div className='rounded-xl border border-[#1A3D39] bg-gradient-to-r from-[#071F1D] to-[#0A2C28] p-6 space-y-5'>
+              <div className='flex items-center gap-2 text-sm font-semibold text-[#9CE6D9]'>
+                <AiOutlineThunderbolt />
+                AUTOMATION CONTROLS
+              </div>
 
-          <Toggle
-            title='Auto-Copy Trades'
-            desc='Automatically execute trades from followed masters'
-            active={toggles.autoCopy}
-            onClick={() => toggle('autoCopy')}
-          />
+              <Toggle
+                title='Auto-Copy Trades'
+                desc='Automatically execute trades from followed masters'
+                active={toggles.autoCopy}
+                onClick={() => toggle('autoCopy')}
+              />
 
-          <Toggle
-            title='Take-Profit Automation'
-            desc='Auto-execute at configured TP levels'
-            active={toggles.takeProfit}
-            onClick={() => toggle('takeProfit')}
-          />
+              <Toggle
+                title='Take-Profit Automation'
+                desc='Auto-execute at configured TP levels'
+                active={toggles.takeProfit}
+                onClick={() => toggle('takeProfit')}
+              />
 
-          <Toggle
-            title='Risk Protection Automation'
-            desc='Auto pause on drawdown limits'
-            active={toggles.riskProtection}
-            onClick={() => toggle('riskProtection')}
-          />
+              <Toggle
+                title='Risk Protection Automation'
+                desc='Auto pause on drawdown limits'
+                active={toggles.riskProtection}
+                onClick={() => toggle('riskProtection')}
+              />
 
-          <Toggle
-            title='Pause All Automation'
-            desc='Emergency stop for all automated actions'
-            active={toggles.pauseAI}
-            danger
-            onClick={() => toggle('pauseAI')}
-          />
-        </div>
+              <Toggle
+                title='Pause All Automation'
+                desc='Emergency stop for all automated actions'
+                active={toggles.pauseAI}
+                danger
+                onClick={() => toggle('pauseAI')}
+              />
+            </div>
 
-        {/* EXECUTION */}
-        <div className='rounded-xl border border-[#1A3D39] bg-gradient-to-r from-[#071F1D] to-[#0A2C28] p-6 space-y-4'>
-          <div className='flex items-center gap-2 text-sm font-semibold text-[#9CE6D9]'>
-            EXECUTION PRIORITY / GAS SETTINGS
-          </div>
+            {/* EXECUTION */}
+            <div className='rounded-xl border border-[#1A3D39] bg-gradient-to-r from-[#071F1D] to-[#0A2C28] p-6 space-y-4'>
+              <div className='flex items-center gap-2 text-sm font-semibold text-[#9CE6D9]'>
+                EXECUTION PRIORITY / GAS SETTINGS
+              </div>
 
-          <div className='flex gap-3 flex-wrap'>
-            {['standard', 'fast', 'custom'].map(mode => {
-              if (mode === 'custom') {
-                return (
-                  <input
-                    key={mode}
-                    type='number'
-                    placeholder='Custom'
-                    className={`flex-1 min-w-[120px] py-2 px-3 rounded-lg text-sm font-semibold uppercase tracking-wide outline-none transition
+              <div className='flex gap-3 flex-wrap'>
+                {['standard', 'fast', 'custom'].map(mode => {
+                  if (mode === 'custom') {
+                    return (
+                      <input
+                        key={mode}
+                        type='number'
+                        placeholder='Custom'
+                        className={`flex-1 min-w-[120px] py-2 px-3 rounded-lg text-sm font-semibold uppercase tracking-wide outline-none transition
             ${
               execution === 'custom'
                 ? 'bg-black text-[#7A9E9A]'
                 : 'bg-[#061B19] border border-[#1A3D39] text-[#7A9E9A]'
             }`}
-                    onFocus={() => setExecution('custom')}
-                  />
-                )
-              } else {
-                return (
-                  <button
-                    key={mode}
-                    onClick={() => setExecution(mode)}
-                    className={`flex-1 min-w-[120px] py-2 rounded-lg text-sm font-semibold uppercase tracking-wide transition
+                        onFocus={() => setExecution('custom')}
+                      />
+                    )
+                  } else {
+                    return (
+                      <button
+                        key={mode}
+                        onClick={() => setExecution(mode)}
+                        className={`flex-1 min-w-[120px] py-2 rounded-lg text-sm font-semibold uppercase tracking-wide transition
                 ${
                   execution === mode
                     ? 'bg-[#11B89A] text-black'
                     : 'bg-[#061B19] border border-[#1A3D39] text-[#7A9E9A]'
                 }`}
-                  >
-                    {mode}
-                  </button>
-                )
-              }
-            })}
-          </div>
+                      >
+                        {mode}
+                      </button>
+                    )
+                  }
+                })}
+              </div>
 
-          <div className='text-xs text-[#6F8F8A] border border-[#1A3D39] rounded-lg p-2'>
-            Standard: Lower fees, slower execution (2-5 blocks)
+              <div className='text-xs text-[#6F8F8A] border border-[#1A3D39] rounded-lg p-2'>
+                Standard: Lower fees, slower execution (2-5 blocks)
+              </div>
+            </div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   )
 }

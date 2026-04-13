@@ -1,3 +1,4 @@
+import { useWallet } from '@solana/wallet-adapter-react'
 import { useState } from 'react'
 import { FiLock, FiGlobe, FiExternalLink } from 'react-icons/fi'
 
@@ -34,77 +35,99 @@ function ToggleItem ({ title, description, value, onChange }: ToggleItemProps) {
 }
 
 export default function Privacy () {
+  const { connected } = useWallet()
   const [publicProfile, setPublicProfile] = useState<boolean>(true)
   const [portfolioValue, setPortfolioValue] = useState<boolean>(false)
   const [tradingHistory, setTradingHistory] = useState<boolean>(true)
 
   return (
-    <div className='min-h-screen bg-[#020A09] text-white flex justify-center px-4 py-10'>
-      <div className='w-full max-w-3xl space-y-6'>
-        {/* Header */}
-        <div>
-          <h1 className='text-xl font-semibold tracking-wide'>
-            PRIVACY & VISIBILITY
-          </h1>
-          <p className='text-sm text-[#7A9E9A] mt-1'>
-            Control your profile visibility and trading transparency
-          </p>
-        </div>
-
-        {/* Visibility Controls */}
-        <div className='rounded-xl border border-[#1A3D39] bg-gradient-to-r from-[#071F1D] to-[#0A2C28] p-6 space-y-4'>
-          <div className='flex items-center gap-2 text-sm font-semibold text-[#9CE6D9]'>
-            <FiLock />
-            VISIBILITY CONTROLS
+    <div>
+      {!connected ? (
+        <>
+          <div className='w-full max-w-3xl'>
+            <h1 className='text-lg sm:text-xl font-semibold text-textMain'>
+              PROFILE & IDENTITY
+            </h1>
+            <p className='text-xs sm:text-sm text-textMuted mt-1 mb-6'>
+              Connect your wallet to manage your profile
+            </p>
+            <div className='rounded-xl border border-borderSubtle p-5 sm:p-6 bg-gradient-to-b from-cardTop to-cardBottom'>
+              <p className='text-textMuted text-sm text-center py-8'>
+                Please connect your wallet to view and edit your profile
+                settings.
+              </p>
+            </div>
           </div>
+        </>
+      ) : (
+        <div className='min-h-screen bg-[#020A09] text-white flex justify-center px-4 py-10'>
+          <div className='w-full max-w-3xl space-y-6'>
+            {/* Header */}
+            <div>
+              <h1 className='text-xl font-semibold tracking-wide'>
+                PRIVACY & VISIBILITY
+              </h1>
+              <p className='text-sm text-[#7A9E9A] mt-1'>
+                Control your profile visibility and trading transparency
+              </p>
+            </div>
 
-          <ToggleItem
-            title='Public Profile Visibility'
-            description='Allow others to view your profile page'
-            value={publicProfile}
-            onChange={() => setPublicProfile(!publicProfile)}
-          />
+            {/* Visibility Controls */}
+            <div className='rounded-xl border border-[#1A3D39] bg-gradient-to-r from-[#071F1D] to-[#0A2C28] p-6 space-y-4'>
+              <div className='flex items-center gap-2 text-sm font-semibold text-[#9CE6D9]'>
+                <FiLock />
+                VISIBILITY CONTROLS
+              </div>
 
-          <ToggleItem
-            title='Show Portfolio Value'
-            description='Display total portfolio value publicly'
-            value={portfolioValue}
-            onChange={() => setPortfolioValue(!portfolioValue)}
-          />
+              <ToggleItem
+                title='Public Profile Visibility'
+                description='Allow others to view your profile page'
+                value={publicProfile}
+                onChange={() => setPublicProfile(!publicProfile)}
+              />
 
-          <ToggleItem
-            title='Show Trading History'
-            description='Display past trades and positions publicly'
-            value={tradingHistory}
-            onChange={() => setTradingHistory(!tradingHistory)}
-          />
-        </div>
+              <ToggleItem
+                title='Show Portfolio Value'
+                description='Display total portfolio value publicly'
+                value={portfolioValue}
+                onChange={() => setPortfolioValue(!portfolioValue)}
+              />
 
-        {/* On-chain transparency */}
-        <div className='rounded-xl border border-[#1A3D39] bg-[#061B19] p-5 space-y-3'>
-          <div className='flex items-center gap-2 text-sm font-semibold text-[#9CE6D9]'>
-            <FiGlobe />
-            On-Chain Transparency
+              <ToggleItem
+                title='Show Trading History'
+                description='Display past trades and positions publicly'
+                value={tradingHistory}
+                onChange={() => setTradingHistory(!tradingHistory)}
+              />
+            </div>
+
+            {/* On-chain transparency */}
+            <div className='rounded-xl border border-[#1A3D39] bg-[#061B19] p-5 space-y-3'>
+              <div className='flex items-center gap-2 text-sm font-semibold text-[#9CE6D9]'>
+                <FiGlobe />
+                On-Chain Transparency
+              </div>
+
+              <p className='text-xs text-[#7A9E9A]'>
+                All trading activity is publicly visible on the blockchain.
+                Privacy settings control visibility within the platform UI only.
+              </p>
+
+              <div className='flex flex-wrap gap-4 text-sm text-[#11B89A]'>
+                <a href='#' className='flex items-center gap-1 hover:underline'>
+                  View Wallets on Explorer
+                  <FiExternalLink size={14} />
+                </a>
+
+                <a href='#' className='flex items-center gap-1 hover:underline'>
+                  View Vaults on Explorer
+                  <FiExternalLink size={14} />
+                </a>
+              </div>
+            </div>
           </div>
-
-          <p className='text-xs text-[#7A9E9A]'>
-            All trading activity is publicly visible on the blockchain. Privacy
-            settings control visibility within the platform UI only.
-          </p>
-
-          <div className='flex flex-wrap gap-4 text-sm text-[#11B89A]'>
-            <a href='#' className='flex items-center gap-1 hover:underline'>
-              View Wallets on Explorer
-              <FiExternalLink size={14} />
-            </a>
-
-            <a href='#' className='flex items-center gap-1 hover:underline'>
-              View Vaults on Explorer
-              <FiExternalLink size={14} />
-            </a>
-          </div>
         </div>
-      </div>
+      )}
     </div>
   )
 }

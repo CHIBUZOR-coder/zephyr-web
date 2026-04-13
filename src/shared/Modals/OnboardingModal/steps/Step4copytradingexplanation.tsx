@@ -1,4 +1,3 @@
-
 import { BsPersonCheck } from 'react-icons/bs'
 import { MdOutlineTune } from 'react-icons/md'
 import { FiZap } from 'react-icons/fi'
@@ -97,7 +96,7 @@ export default function Step4CopyTradingExplanation ({
         </div>
 
         <p className='text-[9px] tracking-widest uppercase text-[#BCC9C499] pb-4 text-center mt-1 w-full'>
-          Full tech of checkout FAQ
+          FINAL STEP OF ONBOARDING
         </p>
       </div>
     </div>

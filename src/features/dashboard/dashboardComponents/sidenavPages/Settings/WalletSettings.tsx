@@ -1,3 +1,5 @@
+import { useWallet } from '@solana/wallet-adapter-react'
+
 import React from 'react'
 import { FiCopy, FiExternalLink, FiTrash2, FiCreditCard } from 'react-icons/fi'
 
@@ -196,9 +198,31 @@ const HardwareSupport = () => {
 }
 
 const WalletSettings: React.FC = () => {
+  const { connected } = useWallet()
+
   return (
-    <div
-      className='
+    <div>
+      {!connected ? (
+        <>
+          <div className='w-full max-w-3xl'>
+            <h1 className='text-lg sm:text-xl font-semibold text-textMain'>
+              PROFILE & IDENTITY
+            </h1>
+            <p className='text-xs sm:text-sm text-textMuted mt-1 mb-6'>
+              Connect your wallet to manage your profile
+            </p>
+            <div className='rounded-xl border border-borderSubtle p-5 sm:p-6 bg-gradient-to-b from-cardTop to-cardBottom'>
+              <p className='text-textMuted text-sm text-center py-8'>
+                Please connect your wallet to view and edit your profile
+                settings.
+              </p>
+            </div>
+          </div>
+        </>
+      ) : (
+        <>
+          <div
+            className='
       w-full
       min-h-screen
       bg-[#020A09]
@@ -208,35 +232,38 @@ const WalletSettings: React.FC = () => {
       px-4
       py-10
       '
-    >
-      <div className='w-full max-w-4xl flex flex-col gap-6'>
-        {/* title */}
-        <div>
-          <h1 className='text-xl font-semibold tracking-wide'>
-            CONNECTED WALLETS
-          </h1>
+          >
+            <div className='w-full max-w-4xl flex flex-col gap-6'>
+              {/* title */}
+              <div>
+                <h1 className='text-xl font-semibold tracking-wide'>
+                  CONNECTED WALLETS
+                </h1>
 
-          <p className='text-sm text-[#7A9E9A] mt-1'>
-            Manage your wallet connections and primary wallet
-          </p>
-        </div>
+                <p className='text-sm text-[#7A9E9A] mt-1'>
+                  Manage your wallet connections and primary wallet
+                </p>
+              </div>
 
-        {/* cards */}
-        <WalletCard
-          name='alphatrader.sol'
-          address='8Kx7a9R...658tau'
-          type='SOLANA'
-          primary
-        />
+              {/* cards */}
+              <WalletCard
+                name='alphatrader.sol'
+                address='8Kx7a9R...658tau'
+                type='SOLANA'
+                primary
+              />
 
-        <WalletCard address='0x7413f5...69b8cb' type='ETHEREUM' />
+              <WalletCard address='0x7413f5...69b8cb' type='ETHEREUM' />
 
-        {/* connect */}
-        <ConnectWallet />
+              {/* connect */}
+              <ConnectWallet />
 
-        {/* hardware */}
-        <HardwareSupport />
-      </div>
+              {/* hardware */}
+              <HardwareSupport />
+            </div>
+          </div>
+        </>
+      )}
     </div>
   )
 }

@@ -1,4 +1,3 @@
-
 import { RiShieldCheckLine } from 'react-icons/ri'
 import type { StepProps } from '../Types'
 
@@ -8,7 +7,7 @@ const wallets = [
     badge: 'Popular',
     name: 'Phantom',
     desc: 'The most trusted wallet for Solana and Ethereum assets.',
-    icon: "/images/phantom.jpg",
+    icon: '/images/phantom.jpg',
     iconBg: 'bg-[rgba(171,159,242,0.12)] border-[rgba(171,159,242,0.28)]'
   },
   {
@@ -16,7 +15,7 @@ const wallets = [
     badge: 'Universal',
     name: 'WalletConnect',
     desc: 'Connect to hundreds of wallets via secure QR code scanning.',
-     icon: "/images/wallfive.jpg",
+    icon: '/images/wallfive.jpg',
     iconBg: 'bg-[rgba(59,153,252,0.12)] border-[rgba(59,153,252,0.28)]'
   }
 ]
@@ -35,8 +34,8 @@ export default function Step5ConnectWallet ({ onNext, onBack }: StepProps) {
         </h1>
 
         <p className='text-xs text-[#7a8fa0]  leading-relaxed w-full lg:w-1/2'>
-          Unlock the full potential of the Ethereal Exchange by linking your
-          preferred digital asset vault. Secure, decentralized, and seamless.
+          Unlock the full potential of Zephyr by connecting your Solana wallet.
+          Secure, seamless, and fully on-chain.
         </p>
         <div className='w-full flex  flex-col lg:flex-row gap-8 mt-5'>
           {wallets.map(w => (
@@ -48,11 +47,9 @@ export default function Step5ConnectWallet ({ onNext, onBack }: StepProps) {
                 {w.badge}
               </span>
               <span
-              style={{backgroundImage:`url(${w.icon})`}}
+                style={{ backgroundImage: `url(${w.icon})` }}
                 className={`w-11 h-11 rounded-xl border flex items-center justify-center ${w.iconBg} bg-center bg-cover`}
-              >
-       
-              </span>
+              ></span>
               <p className='font-display font-bold text-sm text-[#DEE3EA]'>
                 {w.name}
               </p>

@@ -13,6 +13,8 @@ import { useGeneralContext } from '../../Context/GeneralContext'
 import { useTradingModeStore } from '../../features/dashboard/useTradingModeStore'
 import { useWalletBalance } from '../../features/wallet/useWalletQuery'
 import { useSolPrice } from '../../core/hooks/usePrice'
+import { useAuthStore } from '../../features/auth/auth.store'
+import { Link } from 'react-router-dom'
 
 const Navbar = () => {
   const [walletMenuOpen, setWalletMenuOpen] = useState(false)
@@ -26,7 +28,7 @@ const Navbar = () => {
   const { masterMode, toggleMasterMode } = useTradingModeStore()
   const { publicKey, connected } = useWallet()
   const { setWallet } = useWalletStore()
-  // const { authenticated, hydrated } = useAuthStore() // get auth state
+  const { user } = useAuthStore() // get auth state
 
   const [copied, setCopied] = useState(false)
   const [showUsdc, setShowUsdc] = useState(false)
@@ -41,6 +43,10 @@ const Navbar = () => {
     if (connected) {
       setWallet(publicKey.toBase58(), true)
     }
+
+    // if (user) {
+    //   console.log('user:', user)
+    // }
   }, [connected, publicKey, setWallet])
   const handleCopy = async (e: React.MouseEvent) => {
     e.stopPropagation()
@@ -81,7 +87,9 @@ const Navbar = () => {
                   >
                     <span
                       style={{
-                        backgroundImage: `url("/images/${showUsdc ? 'usdc.svg' : 'solana.svg'}")`
+                        backgroundImage: `url("/images/${
+                          showUsdc ? 'usdc.svg' : 'solana.svg'
+                        }")`
                       }}
                       className='inline-block bg-enter bg-cover h-[16px] w-[16px]'
                     ></span>
@@ -192,15 +200,22 @@ const Navbar = () => {
               </div>
               {connected && (
                 <div className='flex justify-between items-center gap-3 '>
-                  <div className='h-[36px] w-[36px] rounded-full p-[1px]  border-[1.5px] border-[#f5e2d9] flex justify-center items-center'>
-                    <span
-                      style={{
-                        backgroundImage: `url("/images/mode.png")`
-                      }}
-                      className='inline-block bg-center bg-cover h-[30px] w-[30px] rounded-full '
-                    ></span>
-                  </div>
-
+                  
+                  <Link
+                    to={'/profile'}
+                    className='h-[36px] w-[36px] rounded-full p-[1px] border-[1.5px] border-[#f5e2d9] flex justify-center items-center'
+                  >
+                    {user?.avatar ? (
+                      <span
+                        style={{ backgroundImage: `url(${user.avatar})` }}
+                        className='inline-block bg-center bg-cover h-[30px] w-[30px] rounded-full'
+                      />
+                    ) : (
+                      <span className='flex items-center justify-center h-[30px] w-[30px] rounded-full bg-[#102221] text-white text-sm font-bold'>
+                        {user?.displayName?.charAt(0).toUpperCase() || '?'}
+                      </span>
+                    )}
+                  </Link>
                   <span
                     onClick={() => setOpenNotifications(true)}
                     style={{
@@ -263,7 +278,9 @@ const Navbar = () => {
                 >
                   <span
                     style={{
-                      backgroundImage: `url("/images/${showUsdc ? 'usdc.svg' : 'solana.svg'}")`
+                      backgroundImage: `url("/images/${
+                        showUsdc ? 'usdc.svg' : 'solana.svg'
+                      }")`
                     }}
                     className='inline-block bg-enter bg-cover h-[14px] w-[14px] md:h-[16px] md:w-[16px]'
                   ></span>

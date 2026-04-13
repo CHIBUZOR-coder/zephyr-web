@@ -12,12 +12,11 @@ export default function Step3ChooseRole ({ onNext, onBack }: StepProps) {
     <div className='relative flex flex-col items-center text-center gap-8 animate-fade-up w-full'>
       <div className='flex gap-1 flex-col text-center'>
         <h1 className='font-display  text-[18px] lg:text-[22px] grok font-extrabold text-[#e8edf2] '>
-          Choose Your Role
+         How Zephyr works for you
         </h1>
         <div className='flex justify-center items-center'>
           <p className='text-xs text-[#BCC9C4] w-[80%] leading-relaxed'>
-            Define your journey in the Ethereal Exchange. Select the path that
-            aligns with your trading expertise.
+           Explore how Zephyr fits your trading style from copying top performance to managing your own trade
           </p>
         </div>
       </div>
@@ -57,14 +56,14 @@ export default function Step3ChooseRole ({ onNext, onBack }: StepProps) {
             strategies and match their performance automatically.
           </p>
           <div className='flex justify-between items-center'>
-            <div className='flex'>
+            {/* <div className='flex'>
               <div className='circle bg-[#334155]'></div>
               <div className='circle bg-[#475569] z-10 right-4'></div>
               <div className='circle bg-[#64748B] z-20 right-8'></div>
               <div className='circle bg-[#1B2025] z-30 right-12 text-white flex justify-center items-center text-xs'>
                 +12k
               </div>
-            </div>
+            </div> */}
             {selected === 'copy' && (
               <BsCheckCircleFill className='text-[#2de8c8] text-base' />
             )}

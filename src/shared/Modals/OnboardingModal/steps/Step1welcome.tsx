@@ -34,9 +34,9 @@ export default function Step1Welcome ({ onNext }: StepProps) {
             Get Started →
           </button>
           {/* Footnote */}
-          <p className='text-[9px] tracking-widest uppercase text-[#BCC9C499]'>
+          {/* <p className='text-[9px] tracking-widest uppercase text-[#BCC9C499]'>
             Press start &amp; browse while we sync it
-          </p>
+          </p> */}
         </div>
       </div>
     </div>
