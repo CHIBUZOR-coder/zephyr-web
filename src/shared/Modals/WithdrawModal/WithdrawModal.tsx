@@ -46,7 +46,9 @@ export const WithdrawModal = ({ open, onClose }: Props) => {
   const vaultBalance = balanceData?.balance ?? 0
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
   const [syncing, setSyncing] = useState(false)
+  const isProcessing = useRef(false)
   const [localError, setLocalError] = useState<string | null>(null)
+  const [successMessage, setSuccessMessage] = useState<string | null>(null)
   const [onChainBalance, setOnChainBalance] = useState<number | null>(null)
   const [balanceMismatch, setBalanceMismatch] = useState(false)
 
@@ -62,11 +64,12 @@ export const WithdrawModal = ({ open, onClose }: Props) => {
       setAmount('')
       setStatus('idle')
       setLocalError(null)
+      setSuccessMessage(null)
       setSyncing(false)
       // Small timeout to ensure the modal animation has started and element is focusable
       setTimeout(() => {
         inputRef.current?.focus()
-      }, 100)
+      }, 150)
     }
   }, [open])
 
@@ -113,45 +116,50 @@ export const WithdrawModal = ({ open, onClose }: Props) => {
     try {
       await loginMutation.mutateAsync({ publicKey: publicKey.toBase58(), signMessage })
       setLocalError(null)
-    } catch (err: any) {
-      setLocalError('Sign in failed: ' + err.message)
+    } catch (err: unknown) {
+      setLocalError('Sign in failed: ' + (err instanceof Error ? err.message : 'Unknown error'))
     }
   }
 
   const handleWithdraw = async () => {
-    if (!selectedVaultPda) {
-      setLocalError('No vault selected.')
-      return
-    }
+    if (status === 'loading' || !selectedVaultPda) return
+    if (isProcessing.current) return
+    isProcessing.current = true
 
     const withdrawAmount = parseFloat(amount);
     if (!amount || withdrawAmount <= 0) {
       setLocalError('Please enter a valid amount to withdraw.')
+      isProcessing.current = false
       return
     }
 
-    const freshOnChain = await checkOnChainBalance()
-    setOnChainBalance(freshOnChain)
-
-    if (withdrawAmount > freshOnChain) {
-      setBalanceMismatch(true)
-      setLocalError(
-        `Insufficient on-chain balance. On-chain: ${freshOnChain.toFixed(4)} SOL, Requested: ${withdrawAmount.toFixed(4)} SOL. ` +
-        `This may happen if the vault was manually funded or if there's a sync issue. ` +
-        `Try syncing your vault or contact support.`
-      )
-      return
-    }
-
-    if (!isCopier && !isMaster) {
-      setLocalError('Vault not found in your portfolio.')
-      return
-    }
-    
     setStatus('loading')
     setLocalError(null)
+    setSuccessMessage(null)
 
     try {
+      const freshOnChain = await checkOnChainBalance()
+      setOnChainBalance(freshOnChain)
+
+      if (withdrawAmount > freshOnChain) {
+        setBalanceMismatch(true)
+        setLocalError(
+          `Insufficient on-chain balance. On-chain: ${freshOnChain.toFixed(4)} SOL, Requested: ${withdrawAmount.toFixed(4)} SOL. ` +
+          `This may happen if the vault was manually funded or if there's a sync issue. ` +
+          `Try syncing your vault or contact support.`
+        )
+        setStatus('idle')
+        isProcessing.current = false
+        return
+      }
+
+      if (!isCopier && !isMaster) {
+        setLocalError('Vault not found in your portfolio.')
+        setStatus('idle')
+        isProcessing.current = false
+        return
+      }
+
       if (isCopier) {
         await withdrawFromCopierVault(selectedVaultPda, withdrawAmount)
       } else {
@@ -163,12 +171,35 @@ export const WithdrawModal = ({ open, onClose }: Props) => {
         onClose()
         setStatus('idle')
         setAmount('')
+        setSuccessMessage(null)
+        isProcessing.current = false
       }, 2000)
     } catch (err: unknown) {
+      isProcessing.current = false
+      const errorMsg = err instanceof Error ? err.message : 'Transaction failed'
+      
+      // If the error indicates the transaction already landed, treat as success
+      if (
+        errorMsg.includes('Transaction confirmed') || 
+        errorMsg.includes('already processed') || 
+        errorMsg.includes('already been processed')
+      ) {
+        setStatus('success')
+        setLocalError(null)
+        setSuccessMessage(errorMsg) // Show the friendly confirmation message in green
+        refetchAll()
+        setTimeout(() => {
+          onClose()
+          setStatus('idle')
+          setAmount('')
+          setSuccessMessage(null)
+        }, 4000)
+        return
+      }
+
       console.error('Withdraw flow failed:', err)
       setStatus('error')
       
-      const errorMsg = err instanceof Error ? err.message : 'Transaction failed'
       const errorCode = extractErrorCode(errorMsg)
       
       switch (errorCode) {
@@ -347,6 +378,13 @@ export const WithdrawModal = ({ open, onClose }: Props) => {
                 <div className="bg-red-900/20 border border-red-500/50 p-3 rounded-lg flex items-start gap-2">
                   <FiAlertTriangle className="text-red-500 shrink-0 mt-0.5" size={14} />
                   <p className="text-[11px] text-red-200 leading-tight whitespace-pre-line">{localError}</p>
+                </div>
+              )}
+
+              {successMessage && (
+                <div className="bg-green-900/20 border border-green-500/50 p-3 rounded-lg flex items-start gap-2">
+                  <FiInfo className="text-green-500 shrink-0 mt-0.5" size={14} />
+                  <p className="text-[11px] text-green-200 leading-tight whitespace-pre-line">{successMessage}</p>
                 </div>
               )}
 

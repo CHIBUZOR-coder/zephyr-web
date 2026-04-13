@@ -49,10 +49,6 @@ function parseSolanaError(err: unknown): string {
         if (logsStr.includes('would exceed max compute budget')) {
           return 'Transaction requires too much compute. Please try again later.';
         }
-        
-        // If it's a SendTransactionError but we don't recognize the specific log, 
-        // return the message if it's descriptive, else a better default.
-        return error.message || 'Transaction failed. Please check the logs or try again.';
       }
     } catch {
       // Fall through to default
@@ -60,6 +56,10 @@ function parseSolanaError(err: unknown): string {
   }
   
   const message = error?.message || String(err);
+  
+  if (message.includes('already processed') || message.includes('already been processed')) {
+    return 'Transaction confirmed successfully. Your transaction has landed on-chain.';
+  }
   
   if (message.includes('User rejected') || message.includes('user rejected')) {
     return 'Transaction was rejected in your wallet. No action was taken.';

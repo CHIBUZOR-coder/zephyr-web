@@ -133,19 +133,31 @@ interface TraderProfileResponse {
 }
 
 export function useTraderProfile(vaultAddress: string | undefined) {
-  return useQuery({
+  const query = useQuery({
     queryKey: ["trader-profile", vaultAddress],
     queryFn: async () => {
       if (!vaultAddress) return null;
-      const response = await authFetch<TraderProfileResponse>(
-        `/api/leaderboard/trader/${vaultAddress}`
-      );
-      if (!response.success || !response.data) {
-        throw new Error(response.error || "Trader not found");
+      try {
+        const response = await authFetch<TraderProfileResponse>(
+          `/api/leaderboard/trader/${vaultAddress}`
+        );
+        if (!response.success || !response.data) {
+          throw new Error(response.error || "Trader not found");
+        }
+        return mapLeaderboardEntryToTrader(response.data);
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
+        if (msg.includes("Trader not found")) return null;
+        throw err;
       }
-      return mapLeaderboardEntryToTrader(response.data);
     },
     enabled: !!vaultAddress,
     staleTime: 60000,
   });
+
+  return {
+    trader: query.data,
+    loading: query.isLoading,
+    error: query.error instanceof Error ? query.error.message : null,
+  };
 }

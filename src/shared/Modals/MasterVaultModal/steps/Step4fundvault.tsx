@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useRef } from 'react'
 import { motion } from 'framer-motion'
 import { FiArrowRight } from 'react-icons/fi'
 import { MdOutlineAccountBalanceWallet } from 'react-icons/md'
@@ -132,6 +132,7 @@ const Step4FundVault: React.FC<Props> = ({ onNext, vaultAddress }) => {
   const [success, setSuccess] = useState(false)
   const [loading, setLoading] = useState(false)
   const [showUsdc, setShowUsdc] = useState(false)
+  const isProcessing = useRef(false)
 
   const { data: balanceData } = useWalletBalance(publicKey?.toBase58())
   const balance = balanceData?.balance ?? null
@@ -150,6 +151,8 @@ const Step4FundVault: React.FC<Props> = ({ onNext, vaultAddress }) => {
 
   const handleDeposit = async () => {
     if (!vaultAddress || !amount || parseFloat(amount) <= 0) return
+    if (isProcessing.current) return;
+    isProcessing.current = true;
 
     setLoading(true) // ✅ START loading
 
@@ -176,10 +179,12 @@ const Step4FundVault: React.FC<Props> = ({ onNext, vaultAddress }) => {
         setAmount('')
         setSuccess(false)
         setLoading(false) // ✅ STOP loading here
+        isProcessing.current = false;
         onNext()
       }, 2000)
     } catch (err: unknown) {
       setLoading(false) // ✅ STOP loading on error
+      isProcessing.current = false;
 
       console.error('Deposit flow failed:', err)
 

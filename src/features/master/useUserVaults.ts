@@ -39,6 +39,7 @@ export interface MasterVault {
   positionCounter?: number;
   currentPosition?: PositionData;
   totalRealizedProfit?: string; // <-- Added missing property
+  createdAt: string;
   updatedAt: string;
   _count?: {
     copierVaults: number;
@@ -52,6 +53,7 @@ export interface CopierVault {
   masterExecutionVaultPda: string;
   balance: string; // BigInt from backend
   totalDeposited: string; // BigInt from backend
+  totalRealizedProfit?: string;
   isPaused: boolean;
   actualBalance?: number; // In SOL (on-chain)
   updatedAt: string;

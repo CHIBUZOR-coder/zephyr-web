@@ -1,11 +1,27 @@
-import { useRef, useState } from 'react'
+import { useRef, useState, useEffect } from 'react'
 import { HiArrowUpTray } from 'react-icons/hi2'
 
-export default function AvatarUpload () {
-  const fileInputRef = useRef<HTMLInputElement | null>(null)
+interface AvatarUploadProps {
+  avatar?: string | null
+  seed?: string
+  onAvatarChange?: (url: string) => void
+}
 
-  const [preview, setPreview] = useState<string | null>(null)
+export default function AvatarUpload({ avatar, seed, onAvatarChange }: AvatarUploadProps) {
+  const fileInputRef = useRef<HTMLInputElement | null>(null)
+  const [preview, setPreview] = useState<string | null>(avatar || null)
   const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (avatar) {
+        setPreview(avatar)
+      } else {
+        setPreview(null)
+      }
+    }, 0)
+    return () => clearTimeout(timer)
+  }, [avatar])
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -23,9 +39,12 @@ export default function AvatarUpload () {
     }
 
     const imageUrl = URL.createObjectURL(file)
-
     setPreview(imageUrl)
     setError(null)
+
+    if (onAvatarChange) {
+      onAvatarChange(imageUrl)
+    }
   }
 
   const openFilePicker = () => {
@@ -37,8 +56,8 @@ export default function AvatarUpload () {
       {/* Avatar */}
       <div
         className='
-        w-12 h-12
-        rounded-lg
+        w-20 h-20
+        rounded-xl
         bg-accent
         flex items-center justify-center
         font-semibold
@@ -52,8 +71,14 @@ export default function AvatarUpload () {
             alt='avatar'
             className='w-full h-full object-cover'
           />
+        ) : seed ? (
+          <img
+            src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${seed}`}
+            alt='avatar'
+            className='w-full h-full object-cover'
+          />
         ) : (
-          'AK'
+          '?'
         )}
       </div>
 

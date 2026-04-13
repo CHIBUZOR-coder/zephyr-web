@@ -5,24 +5,35 @@ import RiskCard from './Components/RiskCard'
 import StatCard from './Components/StatCard'
 import TierProgression from './Components/TierProgression/TierProgression'
 import { useWallet } from '@solana/wallet-adapter-react'
-import {
-  useMasterRoiChart,
-  useMasterTierState
-} from '../features/master/useMasterTier'
+import { useMasterRoiChart, useMasterTierState } from '../features/master/useMasterTier'
 import { useUserVaults } from '../features/master/useUserVaults'
+import { useUserProfile } from '../features/users/useUserProfile'
+import { useTradingModeStore } from '../features/dashboard/useTradingModeStore'
 
 export default function Profile () {
   const { publicKey } = useWallet()
-  const { masterVault } = useUserVaults()
+  const { masterMode } = useTradingModeStore()
+  const { masterVault, copierVaults } = useUserVaults()
   const masterWalletAddress = publicKey?.toBase58()
+  const { data: userProfile } = useUserProfile(masterWalletAddress)
   const { data: tierState } = useMasterTierState(masterWalletAddress)
   const { data: roiChartData } = useMasterRoiChart(masterWalletAddress)
+
+  const copierTotalPnL = (copierVaults?.reduce((acc, vault) => acc + parseFloat(vault.totalRealizedProfit?.toString() ?? '0'), 0) ?? 0) / 1_000_000
+
+  const allTimePnlValue = masterMode 
+    ? parseFloat(masterVault?.totalRealizedProfit?.toString() ?? '0') / 1_000_000 
+    : copierTotalPnL;
+
+  const joinedDateCalculated = userProfile?.createdAt 
+    ? `Since ${new Date(userProfile.createdAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}` 
+    : 'Since ...';
 
   const tier_stats = [
     {
       time: 'All-Time PnL',
-      value: parseFloat(masterVault?.totalRealizedProfit ?? '0') / 1_000_000,
-      duration: 'Since Jan 2023',
+      value: allTimePnlValue,
+      duration: joinedDateCalculated,
       unit: '$'
     },
     {

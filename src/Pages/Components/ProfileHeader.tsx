@@ -83,8 +83,7 @@ export default function ProfileHeader () {
           <div className='flex items-center gap-3'>
             <div>
               <h2 className=' text-[24px] font-[900] leading-[32px]'>
-                {userProfile?.displayName ||
-                  (masterMode ? 'Master Trader' : 'Copier Account')}
+                {userProfile?.displayName || addressSnippet}
               </h2>
             </div>
 

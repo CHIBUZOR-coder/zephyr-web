@@ -53,9 +53,14 @@ function App () {
   
   const authReady = useAuthReady()
   const mismatch = useWalletMismatch()
- const { accessToken, logout } = useAuthStore()
-// const { accessToken, logout, user: authUser } = useAuthStore()
+  const { accessToken, logout, user: authUser } = useAuthStore()
 
+  if (authUser && profile && authUser.id !== profile.id) {
+    console.warn(`⚠️ Wallet mismatch detected: Auth user ID does not match profile user ID. 
+      This may indicate a session issue. {
+        Auth User ID: ${authUser.id},
+        Profile User ID: ${profile.id}}`)
+  }
 
   const [showOnboarding, setShowOnboarding] = useState(() => {
     return !localStorage.getItem('onboarding_done')

@@ -7,6 +7,10 @@ export interface UserProfile {
   displayName: string | null;
   bio: string | null;
   avatar: string | null;
+  twitter?: string | null;
+  discord?: string | null;
+  telegram?: string | null;
+  lastSocialsUpdate?: string | null;
   createdAt: string;
   isVerified: boolean;
   updatedAt: string;
@@ -16,7 +20,7 @@ export function useUserProfile(address?: string) {
   return useQuery({
     queryKey: ["user-profile", address],
     queryFn: async () => {
-      if (!address) return null;
+      if (!address || address.length < 32) return null;
       try {
         const res = await authFetch<{ success: boolean; user: UserProfile }>(
           `/api/users/${address}`
@@ -27,7 +31,7 @@ export function useUserProfile(address?: string) {
         return null;
       }
     },
-    enabled: !!address,
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    enabled: !!address && address.length >= 32,
+    staleTime: 5 * 60 * 1000,
   });
 }

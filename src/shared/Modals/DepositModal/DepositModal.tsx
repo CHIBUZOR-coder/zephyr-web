@@ -1,6 +1,6 @@
 import { AnimatePresence, motion } from 'framer-motion'
 import { useState, useMemo, useEffect, useRef } from 'react'
-import { FiX, FiAlertTriangle } from 'react-icons/fi'
+import { FiX, FiAlertTriangle, FiInfo } from 'react-icons/fi'
 import { useGeneralContext } from '../../../Context/GeneralContext'
 import { useVaultOperations } from '../../../features/master/useVaultOperations'
 import { useUserVaults } from '../../../features/master/useUserVaults'
@@ -43,15 +43,19 @@ export const DepositModal = ({ open, onClose }: Props) => {
   
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
   const [localError, setLocalError] = useState<string | null>(null)
+  const [successMessage, setSuccessMessage] = useState<string | null>(null)
+  const isProcessing = useRef(false)
 
   useEffect(() => {
     if (open) {
-      setAmount('')
-      setStatus('idle')
-      setLocalError(null)
-      setTimeout(() => {
+      const timer = setTimeout(() => {
+        setAmount('')
+        setStatus('idle')
+        setLocalError(null)
+        setSuccessMessage(null)
         inputRef.current?.focus()
-      }, 100)
+      }, 0)
+      return () => clearTimeout(timer)
     }
   }, [open])
 
@@ -87,10 +91,13 @@ export const DepositModal = ({ open, onClose }: Props) => {
   }, [amount, targetVault])
 
   const handleDeposit = async () => {
-    if (!selectedVaultPda || !amount || parseFloat(amount) <= 0) return
+    if (status === 'loading' || !selectedVaultPda || !amount || parseFloat(amount) <= 0) return
+    if (isProcessing.current) return;
+    isProcessing.current = true;
     
     setStatus('loading')
     setLocalError(null)
+    setSuccessMessage(null)
 
     try {
       // Check if it's a copier vault
@@ -118,11 +125,36 @@ export const DepositModal = ({ open, onClose }: Props) => {
         setDepositConfirm(true)
         setStatus('idle')
         setAmount('')
+        setSuccessMessage(null)
+        isProcessing.current = false
       }, 2000)
     } catch (err: unknown) {
+      isProcessing.current = false
+      const errorMsg = err instanceof Error ? err.message : 'Transaction failed'
+
+      // If the error indicates the transaction already landed, treat as success
+      if (
+        errorMsg.includes('Transaction confirmed') || 
+        errorMsg.includes('already processed') || 
+        errorMsg.includes('already been processed')
+      ) {
+        setStatus('success')
+        setLocalError(null)
+        setSuccessMessage(errorMsg) // Show the friendly confirmation message in green
+        refetchAll()
+        setTimeout(() => {
+          onClose()
+          setDepositConfirm(true)
+          setStatus('idle')
+          setAmount('')
+          setSuccessMessage(null)
+        }, 4000)
+        return
+      }
+
       console.error('Deposit flow failed:', err)
       setStatus('error')
-      setLocalError(err instanceof Error ? err.message : 'Transaction failed')
+      setLocalError(errorMsg)
     }
   }
 
@@ -280,11 +312,21 @@ export const DepositModal = ({ open, onClose }: Props) => {
               </div>
 
               {/* ERROR MESSAGE */}
-              {(localError || opError) && (
+              {((localError || opError) && !successMessage) && (
                 <div className="bg-red-900/20 border border-red-500/50 p-3 rounded-lg flex items-start gap-2">
                   <FiAlertTriangle className="text-red-500 shrink-0 mt-0.5" size={14} />
                   <p className="text-[11px] text-red-200 leading-tight">
                     {localError || opError}
+                  </p>
+                </div>
+              )}
+
+              {/* SUCCESS MESSAGE */}
+              {successMessage && (
+                <div className="bg-green-900/20 border border-green-500/50 p-3 rounded-lg flex items-start gap-2">
+                  <FiInfo className="text-green-500 shrink-0 mt-0.5" size={14} />
+                  <p className="text-[11px] text-green-200 leading-tight">
+                    {successMessage}
                   </p>
                 </div>
               )}

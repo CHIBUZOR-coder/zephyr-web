@@ -34,6 +34,10 @@ export type Trader = {
   follows: number;
   followsDisplay: string;
   sol: string;
+  bio?: string | null;
+  twitter?: string | null;
+  discord?: string | null;
+  telegram?: string | null;
   address?: string;
   vaultAddress?: string;
   createdAt?: string;

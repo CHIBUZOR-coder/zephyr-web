@@ -25,6 +25,12 @@ type StepTwoProps = {
   setForm: React.Dispatch<React.SetStateAction<StepTwoProps['form']>>
 }
 
+type CreateCopierVaultResponse = {
+  vault?: { vaultPda: string }
+  data?: { vaultPda: string }
+  vaultPda?: string
+}
+
 export const StepTwo = ({ onBack, onNext, form, setForm }: StepTwoProps) => {
   const { connected } = useWallet()
   const { selectedTrader } = useGeneralContext()
@@ -67,7 +73,7 @@ export const StepTwo = ({ onBack, onNext, form, setForm }: StepTwoProps) => {
         dailyLossLimitBps: (parseInt(String(form.maxVaultDrawdown ?? '20'), 10) || 20) * 100,
       })
 
-      const vaultPda = (res as any)?.vault?.vaultPda ?? (res as any)?.data?.vaultPda ?? (res as any)?.vaultPda;
+      const vaultPda = (res as CreateCopierVaultResponse)?.vault?.vaultPda ?? (res as CreateCopierVaultResponse)?.data?.vaultPda ?? (res as CreateCopierVaultResponse)?.vaultPda;
       if (vaultPda) {
         setForm((prev: StepTwoProps['form']) => ({ ...prev, vaultPda }));
         onNext();
