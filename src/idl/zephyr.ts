@@ -3333,6 +3333,19 @@ export type Zephyr = {
       ]
     },
     {
+      "name": "feeClaimedEvent",
+      "discriminator": [
+        42,
+        25,
+        34,
+        217,
+        30,
+        24,
+        89,
+        139
+      ]
+    },
+    {
       "name": "feeCollectedEvent",
       "discriminator": [
         142,
@@ -4346,6 +4359,37 @@ export type Zephyr = {
               "Whether an open position existed at time of withdrawal"
             ],
             "type": "bool"
+          },
+          {
+            "name": "timestamp",
+            "type": "i64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "feeClaimedEvent",
+      "docs": [
+        "Event emitted when fees are claimed from master vault"
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "masterVault",
+            "type": "pubkey"
+          },
+          {
+            "name": "masterWallet",
+            "type": "pubkey"
+          },
+          {
+            "name": "amountClaimed",
+            "type": "u64"
+          },
+          {
+            "name": "remainingFees",
+            "type": "u64"
           },
           {
             "name": "timestamp",
@@ -5863,6 +5907,15 @@ export type Zephyr = {
                 "name": "tradeType"
               }
             }
+          },
+          {
+            "name": "jupiterInstructionData",
+            "docs": [
+              "Serialized Jupiter swap instruction data (base64-decoded).",
+              "Populated from Jupiter's /v6/swap-instructions response.",
+              "Empty vec signals mock/devnet mode — no real swap is executed."
+            ],
+            "type": "bytes"
           },
           {
             "name": "daysActive",

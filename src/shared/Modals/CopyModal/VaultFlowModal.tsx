@@ -5,7 +5,7 @@ import { useGeneralContext } from '../../../Context/GeneralContext'
 
 import { FiX } from 'react-icons/fi'
 
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { StepOne } from './Steps/Stepone/StepOne'
 import { StepTwo } from './Steps/StepTwo'
 import { StepThree } from './Steps/StepThree'
@@ -74,9 +74,19 @@ const VaultFlowModal = () => {
                   {vaultStep === 4 && 'Active Copy Enabled'}
                 </h2>
 
-                <button onClick={closeVaultFlow}>
-                  <FiX className='text-gray-400' size={18} />
-                </button>
+                <div className='flex items-center gap-2  justify-center'>
+                
+                    
+                    <Link 
+                    to={"https://t.me/ZephyrAssist"}
+                      style={{ backgroundImage: `url("/images/support.svg")` }}
+                      className='bg-center bg-cover h-3 w-3 block'
+                    ></Link>
+                  
+                  <button onClick={closeVaultFlow}>
+                    <FiX className='text-gray-400' size={18} />
+                  </button>
+                </div>
               </div>
               {/* ================= PROGRESS BAR ================= */}
 
@@ -115,7 +125,6 @@ const VaultFlowModal = () => {
                       exit='exit'
                       transition={{ duration: 0.3 }}
                     >
-                
                       <StepOne
                         onNext={() => setVaultStep(2)}
                         form={form}

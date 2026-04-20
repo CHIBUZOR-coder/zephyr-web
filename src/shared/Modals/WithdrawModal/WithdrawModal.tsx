@@ -440,9 +440,12 @@ export const WithdrawModal = ({ open, onClose }: Props) => {
                     className='bg-transparent outline-none text-white text-[14px] w-full placeholder:font-[900] placeholder:text-[20px] placeholder:text-[#FFFFFF0D]'
                   />
                   <button
-                    onClick={() =>
-                      onChainBalance && setAmount(onChainBalance.toString())
-                    }
+                    onClick={() => {
+                      if (onChainBalance !== null) {
+                        const avail = onChainBalance - 0.003;
+                        setAmount((avail > 0 ? avail : 0).toFixed(4));
+                      }
+                    }}
                     disabled={onChainBalance === null}
                     className='ml-3 text-[10px] px-2 py-1 rounded bg-[#09221f] text-[#6ef3d6] border-[1px] border-[#1f4d47] cursor-pointer disabled:opacity-50'
                   >
@@ -463,14 +466,14 @@ export const WithdrawModal = ({ open, onClose }: Props) => {
                 </div>
               )}
 
-              {successMessage && (
+              {(status === 'success' || successMessage) && (
                 <div className='bg-green-900/20 border border-green-500/50 p-3 rounded-lg flex items-start gap-2'>
                   <FiInfo
                     className='text-green-500 shrink-0 mt-0.5'
                     size={14}
                   />
                   <p className='text-[11px] text-green-200 leading-tight whitespace-pre-line'>
-                    {successMessage}
+                    {successMessage || 'Withdrawal successful!'}
                   </p>
                 </div>
               )}

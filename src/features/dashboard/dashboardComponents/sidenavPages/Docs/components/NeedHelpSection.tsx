@@ -1,4 +1,5 @@
 import { FiBookOpen } from 'react-icons/fi'
+import { Link } from 'react-router-dom'
 
 export default function NeedHelpSection () {
   return (
@@ -60,7 +61,8 @@ export default function NeedHelpSection () {
 
           {/* Buttons */}
           <div className='flex flex-col sm:flex-row gap-3 sm:gap-4 mt-6 justify-center lg:justify-start'>
-            <button
+            <Link
+              to={'https://t.me/zephyrlabscommunity'}
               className='
               px-6
               py-3
@@ -77,9 +79,10 @@ export default function NeedHelpSection () {
               '
             >
               CONTACT SUPPORT
-            </button>
+            </Link>
 
-            <button
+            <Link
+            to={"https://t.me/zephyrlabscommunity"}
               className='
               px-6
               py-3
@@ -96,7 +99,7 @@ export default function NeedHelpSection () {
               '
             >
               JOIN COMMUNITY
-            </button>
+            </Link>
           </div>
         </div>
       </div>

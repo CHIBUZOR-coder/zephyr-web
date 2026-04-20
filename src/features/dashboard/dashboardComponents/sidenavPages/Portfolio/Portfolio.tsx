@@ -169,13 +169,13 @@ export default function Portfolio () {
   const { setWalletModal } = useGeneralContext()
   const { masterMode } = useTradingModeStore()
 
-  const { masterVault, copierVaults, isLoading, refetchAll } = useUserVaults()
+  const { masterVault, copierVaults, managedCopierVaults, isLoading, refetchAll } = useUserVaults()
   const { data: solPrice } = useSolPrice()
   const [activeTab, setActiveTab] = useState<'vaults' | 'activity'>('vaults')
   const [showModal, setShowModal] = useState(false)
   const lastWalletState = useRef<string | null>(null)
 
-  const currentPrice = solPrice?.price ?? 79
+  const currentPrice = solPrice?.price ?? 150
 
   // ─── Handle viewing a vault (same as "View Vault" button) ───
   const handleViewVault = useCallback(async () => {
@@ -255,8 +255,25 @@ export default function Portfolio () {
   const totalBalance =
     strategies.reduce((s, v) => s + v.balanceUsd, 0) +
     (pinnedVaults[0]?.totalBalanceUsd || 0)
-  const total24hChange = 0
+  
+  const solChange24h = solPrice?.change24h ?? 0
+  const total24hChange = totalBalance * (solChange24h / 100)
   const changePositive = total24hChange >= 0
+
+  const totalAum = useMemo(() => {
+    if (masterMode) {
+      // For Master: AUM = Master Vault Balance + All active copiers' balances
+      const masterBalanceUsd = (masterVault?.balance || 0) * currentPrice;
+      const managedCopiersBalanceUsd = (managedCopierVaults || []).reduce(
+        (sum, v) => sum + (v.actualBalance || 0) * currentPrice, 
+        0
+      );
+      return masterBalanceUsd + managedCopiersBalanceUsd;
+    } else {
+      // For Copier: AUM is the total value they are managing across their copy vaults
+      return strategies.reduce((sum, s) => sum + s.balanceUsd, 0);
+    }
+  }, [masterMode, masterVault, managedCopierVaults, strategies, currentPrice]);
 
   const stats = [
     {
@@ -286,7 +303,7 @@ export default function Portfolio () {
     {
       tittle: 'Total AUM',
       icon: '/images/totalAum.svg',
-      value: 0,
+      value: totalAum,
       type: 'compactCurrency'
     }
   ]
@@ -340,7 +357,7 @@ export default function Portfolio () {
                   <span
                     className={`text-[22px] font-bold ${
                       item.tittle === '24h Change'
-                        ? 'text-[#00C0A8]'
+                        ? item.positive ? 'text-[#00C0A8]' : 'text-red-500'
                         : item.tittle === 'Claimable Fees'
                         ? 'text-[#FE9A00]'
                         : 'text-white'
@@ -352,7 +369,7 @@ export default function Portfolio () {
                   <span
                     className={`text-[22px] font-bold ${
                       item.tittle === '24h Change'
-                        ? 'text-[#00C0A8]'
+                        ? item.positive ? 'text-[#00C0A8]' : 'text-red-500'
                         : item.tittle === 'Claimable Fees'
                         ? 'text-[#FE9A00]'
                         : 'text-white'
@@ -453,10 +470,11 @@ export default function Portfolio () {
           </>
         ) : (
           <AllVaultsActivity
-            masterVaultPda={masterMode ? masterVault?.vaultPda : undefined}
-            copierVaultsPdas={!masterMode ? (copierVaults?.map(v => v.vaultPda) ?? []) : []}
+          masterVaultPda={masterMode ? masterVault?.vaultPda : undefined}
+          copierVaultsPdas={!masterMode ? (copierVaults?.map(v => v.vaultPda) ?? []) : []}
           />
         )}
+        
 
         <div className='flex justify-center gap-3 items-center flex-col md:flex-row mt-10'>
           <div

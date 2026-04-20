@@ -18,7 +18,11 @@ type TimeRange = 'ALL' | '24H' | '7D' | '30D'
 
 const DashboardView = () => {
   const { openVaultFlow } = useGeneralContext()
-  const { leaders, loading: leadersLoading, error: leadersError } = useDashboardLeaderboard()
+  const {
+    leaders,
+    loading: leadersLoading,
+    error: leadersError
+  } = useDashboardLeaderboard()
   const {
     solPrice,
     solChange,
@@ -44,15 +48,24 @@ const DashboardView = () => {
 
   const getStatValue = (title: string, value?: number | string) => {
     if (title === 'Trending Token') return value ?? '...'
-    if (title === 'SOL/USD') return typeof value === 'number' ? `$${value.toFixed(2)}` : '...'
+    if (title === 'SOL/USD')
+      return typeof value === 'number' ? `$${value.toFixed(2)}` : '...'
     return formatVolume(typeof value === 'number' ? value : undefined)
   }
 
   const marketStats = [
     { title: 'SOL/USD' as const, value: solPrice, change: solChange },
-    { title: 'Protocol Volume' as const, value: networkVolumeAllTime, change: 0 },
+    {
+      title: 'Protocol Volume' as const,
+      value: networkVolumeAllTime,
+      change: 0
+    },
     { title: 'SOL Volume (24h)' as const, value: solVolume, change: solChange },
-    { title: 'Trending Token' as const, value: trendingToken, change: trendingChange },
+    {
+      title: 'Trending Token' as const,
+      value: trendingToken,
+      change: trendingChange
+    }
   ]
 
   const toggleRow = (index: number) => {
@@ -190,7 +203,9 @@ const DashboardView = () => {
                         transition={{ duration: 0.3 }}
                         className='text-xl font-semibold text-white absolute inset-0'
                       >
-                        {marketLoading ? '...' : getStatValue(stat.title, stat.value)}
+                        {marketLoading
+                          ? '...'
+                          : getStatValue(stat.title, stat.value)}
                       </motion.span>
                     </AnimatePresence>
                   </div>
@@ -250,7 +265,9 @@ const DashboardView = () => {
 
                 {leadersLoading ? (
                   <div className='flex items-center justify-center h-44 text-gray-500'>
-                    <div className='animate-pulse uppercase text-[10px] tracking-widest font-bold'>Loading Leaders...</div>
+                    <div className='animate-pulse uppercase text-[10px] tracking-widest font-bold'>
+                      Loading Leaders...
+                    </div>
                   </div>
                 ) : leadersError ? (
                   <div className='flex items-center justify-center h-44 text-red-500 text-xs'>
@@ -260,53 +277,53 @@ const DashboardView = () => {
                   <div className='flex items-center justify-center h-44 text-gray-500 text-xs'>
                     No traders found
                   </div>
-                  ) : (
-                    leaders.map((item, i) => (
-                      <SwiperSlide
-                        key={i}
-                        className='rounded-xl flex flex-col items-center gap-3 overflow-hidden border-[#23483B] border-[1px] w-[100%]'
+                ) : (
+                  leaders.map((item, i) => (
+                    <SwiperSlide
+                      key={i}
+                      className='rounded-xl flex flex-col items-center gap-3 overflow-hidden border-[#23483B] border-[1px] w-[100%]'
+                    >
+                      <Link
+                        to={`/profile/${item.vaultAddress}`}
+                        className='h-80 lg:h-44 w-full flex flex-col justify-end p-4 bg-center bg-cover relative cursor-pointer hover:opacity-90 transition-opacity'
+                        style={{ backgroundImage: `url(${item.image})` }}
                       >
-                        <Link
-                          to={`/profile/${item.vaultAddress}`}
-                          className='h-80 lg:h-44 w-full flex flex-col justify-end p-4 bg-center bg-cover relative cursor-pointer hover:opacity-90 transition-opacity'
-                          style={{ backgroundImage: `url(${item.image})` }}
-                        >
-                          <div className='absolute top-0 left-0 w-full h-full bg-gradient-to-tr from-lead to-transparent'></div>
-                          <div className='relative z-10'>
-                            <span className='text-sm font-medium text-[12px] text-white'>
-                              @{item.name}
-                            </span>
-                            <p className='text-[10px] font-[900] text-[#22C55E]'>
-                              ROI: {item.rio}%
+                        <div className='absolute top-0 left-0 w-full h-full bg-gradient-to-tr from-lead to-transparent'></div>
+                        <div className='relative z-10'>
+                          <span className='text-sm font-medium text-[12px] text-white'>
+                            @{item.name}
+                          </span>
+                          <p className='text-[10px] font-[900] text-[#22C55E]'>
+                            ROI: {item.rio}%
+                          </p>
+                        </div>
+                      </Link>
+                      <div className='bg-[#0f1a18] w-full p-4'>
+                        <div className='flex gap-6 lg:gap-2'>
+                          <div className='flex flex-col gap-3 w-[50%]'>
+                            <p className='text-[#B0E4DD] text-[9px] font-[400]'>
+                              Win Rate: {item.winRate}
                             </p>
+                            <button
+                              onClick={() => openVaultFlow(1, item)}
+                              className='bg-teal-500 px-3 py-2 rounded text-xs text-white border border-transparent hover:border-teal-500 hover:text-teal-500 hover:bg-transparent transition ease-in-out duration-500 cursor-pointer'
+                            >
+                              Copy
+                            </button>
                           </div>
-                        </Link>
-                        <div className='bg-[#0f1a18] w-full p-4'>
-                          <div className='flex gap-6 lg:gap-2'>
-                            <div className='flex flex-col gap-3 w-[50%]'>
-                              <p className='text-[#B0E4DD] text-[9px] font-[400]'>
-                                Win Rate: {item.winRate}
-                              </p>
-                              <button
-                                onClick={() => openVaultFlow(1, item)}
-                                className='bg-teal-500 px-3 py-2 rounded text-xs text-white border border-transparent hover:border-teal-500 hover:text-teal-500 hover:bg-transparent transition ease-in-out duration-500 cursor-pointer'
-                              >
-                                Copy
-                              </button>
-                            </div>
-                            <div className='flex flex-col gap-3 w-[50%]'>
-                              <p className='text-[#B0E4DD] text-[9px] font-[400] text-end'>
-                                Followers: {item.followsDisplay}
-                              </p>
-                              <button className='border border-teal-500 text-teal-400 px-3 py-2 rounded text-xs hover:bg-teal-500 transition ease-in-out duration-500 cursor-pointer hover:text-white'>
-                                Follow
-                              </button>
-                            </div>
+                          <div className='flex flex-col gap-3 w-[50%]'>
+                            <p className='text-[#B0E4DD] text-[9px] font-[400] text-end'>
+                              Followers: {item.followsDisplay}
+                            </p>
+                            <button className='border border-teal-500 text-teal-400 px-3 py-2 rounded text-xs hover:bg-teal-500 transition ease-in-out duration-500 cursor-pointer hover:text-white'>
+                              Follow
+                            </button>
                           </div>
                         </div>
-                      </SwiperSlide>
-                    ))
-                  )}
+                      </div>
+                    </SwiperSlide>
+                  ))
+                )}
               </Swiper>
 
               {/* Hot Performers */}
@@ -520,9 +537,9 @@ const DashboardView = () => {
             <div className=' bg-[#0f1a18] rounded-xl'>
               <div className=' p-4 flex flex-col mt-4 gap-8'>
                 {socials.map((item, i) => {
-                    if (item.action.toLocaleLowerCase().includes('swapped')) {
-                      return (
-                        <div key={i} className='flex justify-between '>
+                  if (item.action.toLocaleLowerCase().includes('swapped')) {
+                    return (
+                      <div key={i} className='flex justify-between '>
                         <div className='flex justify-center items-center h-[28px] w-[28px] border-[1px] border-[#112968] rounded-full'>
                           <span
                             style={{
@@ -804,13 +821,19 @@ const DashboardView = () => {
                       Comprehensive Alpha Discovery History
                     </p>
                   </div>
-
-                  <button
-                    onClick={() => setShowModal(false)}
-                    className='text-[#9fd5cc] text-xl cursor-pointer'
-                  >
-                    ✕
-                  </button>
+                  <div className='flex items-center gap-3'>
+                    <Link
+                      to={'https://t.me/ZephyrAssist'}
+                      style={{ backgroundImage: `url("/images/support.svg")` }}
+                      className='bg-center bg-cover h-4 w-4 block'
+                    ></Link>
+                    <button
+                      onClick={() => setShowModal(false)}
+                      className='text-[#9fd5cc] text-xl cursor-pointer'
+                    >
+                      ✕
+                    </button>
+                  </div>
                 </div>
 
                 {/* BODY */}

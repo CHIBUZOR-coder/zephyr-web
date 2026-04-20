@@ -1,12 +1,14 @@
-import { useState } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
+import { Link } from 'react-router-dom'
 import { useLiveTradeStore } from './useLiveTradeStore'
 import { ExitPositionModal } from './ExitPositionModal'
 import { useWallet } from '@solana/wallet-adapter-react'
 import { useGeneralContext } from '../../../../../Context/GeneralContext'
 import { TierBadge } from '../../../../../Pages/Components/TierBadge'
-// import { useAuthStore } from '../../../../auth/auth.store'
-// import { p } from 'framer-motion/client'
-// import { useTradingModeStore } from './useTradingModeStore'
+import { useRecentTrades, useCopierTrades, type Trade, getTierLabel } from '../../../../trades/useTrades'
+import { useSolPrice } from '../../../../../core/hooks/usePrice'
+
+const SOLSCAN_BASE_URL = `https://solscan.io/tx`
 
 type Stat = {
   label: string
@@ -15,20 +17,12 @@ type Stat = {
   green?: boolean
 }
 
-type Trader = {
-  name: string
-  tyter: string
-  trade: string
-  amout: string
-  wallet: string
-  action: 'BUY' | 'SELL'
-  time: string
-}
-
 type CallTradeMeta = {
   active: boolean
   openedAt: string
   masterTrader?: string
+  masterVaultPda?: string
+  vaultPda?: string
   protectionActive: boolean
 }
 
@@ -47,194 +41,185 @@ type Position = {
   opened: string
   mode: 'copier' | 'master'
   callTrade: CallTradeMeta
+  tokenInAddress: string
+  tokenOutAddress: string
+  masterVaultPda?: string
+  vaultPda: string
 }
 
-// const totalAllocation = positions.length
-
-// const totalPNL = positions.reduce((acc, pos) => {
-//   const number = parseFloat(pos.pnl.replace('$', ''))
-//   return acc + number
-// }, 0)
-
-// const totalDrawdown = Math.max(
-//   ...positions.map(pos => parseFloat(pos.drawdown))
-// )
-
 const LiveTrade = () => {
-  const { connected } = useWallet()
+  const { connected, publicKey } = useWallet()
   const { setWalletModal } = useGeneralContext()
-  // const authenticated = useAuthStore(state => state.authenticated)
+  const { data: solPriceData } = useSolPrice()
+  const solPrice = solPriceData?.price ?? 150
 
   const { activeTab, setActiveTab } = useLiveTradeStore()
   const [selectedPosition, setSelectedPosition] = useState<Position | null>(
     null
   )
 
-  const stats: Stat[] = [
+  const { trades: recentTrades, refetch: refetchRecent } = useRecentTrades(20)
+  const { trades: copierTrades, refetch: refetchCopier } = useCopierTrades(
+    publicKey?.toBase58() || '',
+    50
+  )
+
+  const refreshTrades = useCallback(() => {
+    refetchRecent()
+    if (publicKey) {
+      refetchCopier()
+    }
+  }, [refetchRecent, refetchCopier, publicKey])
+
+  useEffect(() => {
+    const interval = setInterval(refreshTrades, 10000)
+    return () => clearInterval(interval)
+  }, [refreshTrades])
+
+  const formatWallet = (wallet: string) => {
+    if (!wallet || wallet.length < 10) return wallet
+    return `${wallet.slice(0, 4)}...${wallet.slice(-4)}`
+  }
+
+  const formatTimeAgo = (dateString: string) => {
+    const date = new Date(dateString)
+    const now = new Date()
+    const seconds = Math.floor((now.getTime() - date.getTime()) / 1000)
+    if (seconds < 60) return `${seconds}s ago`
+    if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`
+    if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`
+    return `${Math.floor(seconds / 86400)}d ago`
+  }
+
+  const getTokenSymbol = (tokenAddress: string) => {
+    const symbols: Record<string, string> = {
+      'So11111111111111111111111111111111111111112': 'SOL',
+      '11111111111111111111111111111111': 'SOL',
+      'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v': 'USDC',
+      'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1': 'USDC',
+      'Gh9ZwEmdLJ8DscKNTkTqPbNwLNNBjuSzaG9Vp2KGtKJr': 'USDC',
+      '7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU': 'JUP',
+      'DezXAZ8z7Pnrn9vzct4XVkMHeJ3wi8SscLXvS9UfC5u' : 'BONK',
+      'hB9S95635Fve9feyVdvyYqG9Fv6xK6Jd3Zf7UuHuzmY' : 'BONK',
+      'HZ1JovZp2Vp87KqW2K7xS76KU2tV1PqH3MvM3Y7h6G7' : 'PYTH',
+    }
+    return symbols[tokenAddress] || tokenAddress.slice(0, 4) + '..' + tokenAddress.slice(-4)
+  }
+
+  const toNumber = (val: unknown): number => {
+    if (typeof val === 'number') return val
+    if (typeof val === 'string') return parseFloat(val)
+    return 0
+  }
+
+  const formatAmount = (val: unknown) => toNumber(val).toFixed(2)
+
+  const liveTraders = useMemo(() => recentTrades.map((trade: Trade) => {
+    const isMaster = trade.vaultType === 'MASTER'
+    const trader = isMaster
+      ? trade.masterExecutionVault?.user?.displayName || formatWallet(trade.masterExecutionVault?.masterWallet || '')
+      : trade.copierVault?.copier?.displayName || formatWallet(trade.copierVault?.copier?.walletAddress || '')
+    
+    const tierLabel = getTierLabel(trade.masterExecutionVault?.currentTier)
+    const pair = `${getTokenSymbol(trade.tokenIn)}/${getTokenSymbol(trade.tokenOut)}`
+    
+    const action = trade.status === 'CONFIRMED' 
+      ? (getTokenSymbol(trade.tokenOut) === 'SOL' ? 'BUY' : 'SELL')
+      : 'PENDING'
+    
+    const tokenInSymbol = getTokenSymbol(trade.tokenIn)
+    const amountStr = `${formatAmount(trade.amountInDecimal)} ${tokenInSymbol}`
+    
+    return {
+      name: trader,
+      tier: tierLabel,
+      pair,
+      action: action as 'BUY' | 'SELL' | 'PENDING',
+      amount: amountStr,
+      status: trade.status === 'CONFIRMED' ? 'EXECUTED' : trade.status === 'PENDING' ? 'PENDING' : 'FAILED',
+      time: formatTimeAgo(trade.executedAt),
+      signature: trade.signature,
+    }
+  }), [recentTrades])
+
+  const positions: Position[] = useMemo(() => copierTrades.map((trade: Trade) => {
+    const tokenInSymbol = getTokenSymbol(trade.tokenIn)
+    const tokenOutSymbol = getTokenSymbol(trade.tokenOut)
+    
+    const amountIn = toNumber(trade.amountInDecimal)
+    const amountOut = toNumber(trade.amountOutDecimal)
+    
+    // Simple PnL calculation if both are present and we are comparing tokens
+    // For now, if amountOut > 0, we can show realized PnL of that trade
+    // let pnl = 0
+    // let pnlPct = 0
+    if (amountOut > 0 && amountIn > 0) {
+      // This is simplified; assumes tokenIn/tokenOut value parity for calculation if symbols match? 
+      // Usually, it's tokenIn value vs tokenOut value.
+      // If trade was SOL -> USDC, amountIn is SOL, amountOut is USDC.
+      // If we assume SOL was $150, then pnl = amountOut - (amountIn * 150).
+      // But we don't know the price at execution time easily here.
+    }
+
+    return {
+      pair: `${tokenInSymbol}/${tokenOutSymbol}`,
+      type: tokenOutSymbol === 'SOL' ? 'BUY' as const : 'SELL' as const,
+      mirror: trade.masterExecutionVault?.user?.displayName || 
+             formatWallet(trade.masterExecutionVault?.masterWallet || ''),
+      entry: trade.tokenIn.includes('EPjFWdd5') ? `$${amountIn.toFixed(2)}` : `${amountIn.toFixed(2)} ${tokenInSymbol}`,
+      current: trade.tokenOut.includes('EPjFWdd5') ? `$${amountOut.toFixed(2)}` : `${amountOut.toFixed(2)} ${tokenOutSymbol}`,
+      allocation: `${formatAmount(trade.amountInDecimal)} ${tokenInSymbol}`,
+      pnl: '+$0.00', // Still simplified until we have historic price context
+      pnlPercent: '0.0%',
+      drawdown: '0.0%',
+      tp: 'N/A',
+      sl: 'N/A',
+      opened: formatTimeAgo(trade.executedAt),
+      mode: 'copier' as const,
+      callTrade: {
+        active: false,
+        openedAt: formatTimeAgo(trade.executedAt),
+        masterTrader: trade.masterTradeId || '',
+        protectionActive: false
+      },
+      tokenInAddress: trade.tokenIn,
+      tokenOutAddress: trade.tokenOut,
+      masterVaultPda: trade.masterExecutionVault?.vaultPda,
+      vaultPda: trade.vaultPda
+    }
+  }), [copierTrades])
+
+  const activeAllocation = useMemo(() => copierTrades.reduce((acc, t) => {
+    // Sum up SOL allocation specifically for the stat
+    if (getTokenSymbol(t.tokenIn) === 'SOL') return acc + Number(t.amountInDecimal)
+    return acc
+  }, 0), [copierTrades])
+
+  const totalPnl = 0
+  
+  const stats: Stat[] = useMemo(() => [
     {
       label: 'ACTIVE ALLOCATION',
-      value: '4.25 SOL',
-      sub: '~$612.50 USD'
+      value: `${activeAllocation.toFixed(2)} SOL`,
+      sub: `~$${(activeAllocation * solPrice).toFixed(2)} USD`
     },
     {
       label: 'UNREALIZED PNL',
-      value: '+$32.40',
-      sub: '+1.2% Total',
-      green: true
+      value: totalPnl >= 0 ? `+$${totalPnl.toFixed(2)}` : `-$${Math.abs(totalPnl).toFixed(2)}`,
+      sub: '0.0% Total',
+      green: totalPnl >= 0
     },
     {
       label: 'MAX DRAWDOWN',
-      value: '3.2%',
+      value: '0.0%',
       sub: 'Current Session'
     },
-
     {
       label: 'ACTIVE POSITIONS',
-      value: '2',
+      value: String(copierTrades.length),
       sub: '0 Pending Exits'
     }
-  ]
-
-  const positions: Position[] = [
-    {
-      pair: 'SOL / USDC',
-      type: 'BUY',
-      mirror: '@sol_whale',
-      entry: '$142.20',
-      current: '$148.50',
-      allocation: '2.50 SOL',
-      pnl: '+$15.75',
-      pnlPercent: '+4.4%',
-      drawdown: '0.0%',
-      tp: '160.00',
-      sl: '135.00',
-      opened: '14m ago',
-      mode: 'copier',
-      callTrade: {
-        active: false,
-        openedAt: '14m ago',
-        masterTrader: '@sol_whale',
-        protectionActive: true
-      }
-    },
-    {
-      pair: 'JUP / USDC',
-      type: 'BUY',
-      mirror: ' @alpha_seeker',
-      entry: '$1.12',
-      current: '$1.09',
-      allocation: '500.00 JUP',
-      pnl: '-$15.00',
-      pnlPercent: '-2.6%',
-      drawdown: '3.2%',
-      tp: '1.45',
-      sl: '1.05',
-      opened: '6m ago',
-      mode: 'master',
-      callTrade: {
-        active: false,
-        openedAt: '6m ago',
-        masterTrader: '@you',
-        protectionActive: false
-      }
-    },
-    {
-      pair: 'JUP / USDC',
-      type: 'BUY',
-      mirror: '@ 212k Market Cap',
-      entry: '$1.12',
-      current: '$1.09',
-      allocation: '500.00 JUP',
-      pnl: '-$15.00',
-      pnlPercent: '-2.6%',
-      drawdown: '3.2%',
-      tp: '1.45',
-      sl: '1.05',
-      opened: '6m ago',
-      mode: 'master',
-      callTrade: {
-        active: true,
-        openedAt: '6m ago',
-        masterTrader: '@you',
-        protectionActive: false
-      }
-    }
-  ]
-
-  const liveTraders: Trader[] = [
-    {
-      name: '@sol_whale',
-      tyter: 'Elite',
-      trade: 'SOL/USDC',
-      amout: '142.50 SOL',
-      wallet: '5K2b...9zL1',
-      action: 'BUY',
-      time: '12s ago'
-    },
-    {
-      name: '@alpha_seeker',
-      tyter: 'Verified',
-      trade: 'SOL/USDC',
-      amout: '25,000 JUP',
-      wallet: '2A7x...4mP9',
-      action: 'BUY',
-      time: '45s ago'
-    },
-    {
-      name: '@zephyr_mod',
-      tyter: 'Rising',
-      trade: 'BONK/SOL',
-      amout: '4.2B BONK',
-      wallet: '9L1v...2qW8',
-      action: 'SELL',
-      time: '1m ago'
-    },
-    {
-      name: '@degenslayer',
-      tyter: 'Community',
-      trade: 'BONK/SOL',
-      amout: '1,200 PYTH',
-      wallet: '3H5b...7fR4',
-      action: 'SELL',
-      time: '2m ago'
-    },
-    {
-      name: '@macro_king',
-      tyter: 'Elite',
-      trade: 'SOL/USDC',
-      amout: '85.00 SOL',
-      wallet: '8M2k...1tY3',
-      action: 'BUY',
-      time: '3m ago'
-    },
-    {
-      name: '@onchain_guru',
-      tyter: 'Institutional',
-      trade: 'WIF/SOL',
-      amout: '450.20 WIF',
-      wallet: '8M2k...1tY3',
-      action: 'BUY',
-      time: '5m ago'
-    },
-    {
-      name: '@smart_money',
-      tyter: 'Verified',
-      trade: 'DRIFT/USDC',
-      amout: '15,000 DRIFT',
-      wallet: '1Z3m...5uI9',
-      action: 'SELL',
-      time: '8m ago'
-    },
-    {
-      name: '@velocity_cap',
-      tyter: 'Elite',
-      trade: 'SOL/USDC',
-      amout: '200.00 SOL',
-      wallet: '1Z3m...5uI9',
-      action: 'BUY',
-      time: '8m ago'
-    }
-  ]
+  ], [activeAllocation, solPrice, totalPnl, copierTrades.length])
 
   // 🔥 Filter based on active tab
   // const filteredTrades =
@@ -323,7 +308,7 @@ const LiveTrade = () => {
                         <p className='font-semibold text-sm md:text-base'>
                           {trader.name}
                         </p>
-                        <TierBadge tierLabel={trader.tyter} size='sm' />
+                        <TierBadge tierLabel={trader.tier} size='sm' />
                       </div>
                     </div>
 
@@ -331,31 +316,43 @@ const LiveTrade = () => {
                     <div>
                       <div className='flex items-center gap-2'>
                         <span className='font-semibold text-sm'>
-                          {trader.trade}
+                          {trader.pair}
                         </span>
                         <span
                           className={`text-[10px] px-2 py-1 rounded ${
                             trader.action === 'BUY'
                               ? 'bg-green-600/20 text-green-400'
-                              : 'bg-red-600/20 text-red-400'
+                              : trader.action === 'SELL'
+                              ? 'bg-red-600/20 text-red-400'
+                              : 'bg-yellow-600/20 text-yellow-400'
                           }`}
                         >
                           {trader.action}
                         </span>
                       </div>
-                      <p className='text-sm text-gray-400'>{trader.amout}</p>
+                      <p className='text-sm text-gray-400'>{trader.amount}</p>
                     </div>
 
                     {/* Execution */}
                     <div>
-                      <div className='text-green-400 font-semibold text-sm flex items-center gap-2'>
+                      <div className={`font-semibold text-sm flex items-center gap-2 ${
+                        trader.status === 'EXECUTED' 
+                          ? 'text-green-400' 
+                          : trader.status === 'FAILED'
+                          ? 'text-red-400'
+                          : 'text-yellow-400'
+                      }`}>
                         <span
                           className='bg-center bg-cover h-[16px] w-[16px]'
                           style={{
-                            backgroundImage: `url("/images/greencheck.svg")`
+                            backgroundImage: trader.status === 'EXECUTED' 
+                              ? `url("/images/greencheck.svg")` 
+                              : trader.status === 'FAILED'
+                              ? `url("/images/redx.svg")`
+                              : `url("/images/pending.svg")`
                           }}
                         ></span>
-                        <span className='italic'>EXECUTED</span>
+                        <span className='italic capitalize'>{trader.status}</span>
                       </div>
 
                       <div className='text-xs text-gray-400 flex items-center gap-2'>
@@ -369,21 +366,24 @@ const LiveTrade = () => {
                       </div>
                     </div>
 
-                    {/* Wallet */}
+                    {/* Verification */}
                     <div className='flex justify-end'>
-                      <div
+                      <a
+                        href={`${SOLSCAN_BASE_URL}/${trader.signature}?cluster=devnet`}
+                        target='_blank'
+                        rel='noopener noreferrer'
                         className='flex items-center gap-3 px-3 py-1 
               bg-[#00000066] rounded-lg text-xs text-gray-300 
-              border border-teal-800 whitespace-nowrap'
+              border border-teal-800 whitespace-nowrap hover:text-teal-400 transition'
                       >
-                        <p>{trader.wallet}</p>
+                        <p>{formatWallet(trader.signature)}</p>
                         <span
                           className='bg-center bg-cover h-[12px] w-[12px] cursor-pointer'
                           style={{
                             backgroundImage: `url("/images/redirectlive.svg")`
                           }}
                         ></span>
-                      </div>
+                      </a>
                     </div>
                   </div>
                 ))}
@@ -414,13 +414,7 @@ const LiveTrade = () => {
                     </div>
 
                     <h3 className='text-lg font-bold text-white'>
-                      {stat.label === 'ACTIVE ALLOCATION'
-                        ? '0.00 SOL'
-                        : stat.label === 'MAX DRAWDOWN'
-                        ? '0.0%'
-                        : stat.label === 'UNREALIZED PNL'
-                        ? '$0.00'
-                        : '0'}
+                      {stat.value}
                     </h3>
 
                     <p className='text-xs text-[#B0E4DD80]'>{stat.sub}</p>
@@ -511,10 +505,20 @@ const LiveTrade = () => {
                             </span>
                           </div>
                           <p className='text-sm text-[#B0E4DD66]'>
-                            {pos.callTrade.active ? `Called ` : 'Mirroring '}
+                            {pos.callTrade.active ? `Called ` : 'Mirroring: '}
 
-                            <span className='text-[#B0E4DD]'>{pos.mirror}</span>
+                            {pos.masterVaultPda ? (
+                              <Link 
+                                to={`/profile/${pos.masterVaultPda}`}
+                                className="text-[#B0E4DD] hover:text-teal-400 transition-colors"
+                              >
+                                {pos.mirror}
+                              </Link>
+                            ) : (
+                              <span className='text-[#B0E4DD]'>{pos.mirror}</span>
+                            )}
                           </p>
+
                         </div>
                       </div>
 
@@ -635,7 +639,7 @@ const LiveTrade = () => {
                       <p className='text-[10px] lg:text-xs'>{stat.label}</p>
                     </div>
 
-                    <h3 className='text-lg font-bold text-white'>0.00 SOL</h3>
+                    <h3 className='text-lg font-bold text-white'>{stat.value}</h3>
 
                     <p className='text-xs text-[#B0E4DD80]'>{stat.sub}</p>
                   </div>

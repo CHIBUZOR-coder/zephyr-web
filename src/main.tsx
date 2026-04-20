@@ -18,6 +18,7 @@ import { WalletProviders } from './features/wallet/WalletProviders.tsx'
 import Loader from './shared/Loader.tsx'
 import { GeneralProvider } from './Context/GeneralContext.tsx'
 import VisitorProfile from './Pages/Visistorview/VisitorProfile.tsx'
+import How from './Pages/How_it_works/How.tsx'
 
 // import DashboardView from './features/dashboard/dashboardComponents/sidenavPages/DashboardView/DashboardView.tsx'
 
@@ -90,7 +91,8 @@ const router = createBrowserRouter([
       { path: '/support', element: <Support /> },
       { path: '/docs', element: <Docs /> },
       { path: '/profile', element: <Profile /> },
-      { path: '/profile/:address', element: <VisitorProfile /> }
+      { path: '/profile/:address', element: <VisitorProfile /> },
+      { path: '/how_it_works', element: <How /> }
       // { index: true, element: <Dashboard /> },
 
       // 🔐 PROTECTED ROUTES

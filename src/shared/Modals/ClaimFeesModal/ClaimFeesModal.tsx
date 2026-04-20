@@ -24,7 +24,7 @@ const modal = {
 
 export const ClaimFeesModal = ({ open, onClose }: Props) => {
   const { selectedVaultPda } = useGeneralContext()
-  const { claimPerformanceFees, error: opError } = useVaultOperations()
+  const { claimPerformanceFees } = useVaultOperations()
   const { refetchAll } = useUserVaults()
   
   const [amount, setAmount] = useState('')
@@ -32,6 +32,9 @@ export const ClaimFeesModal = ({ open, onClose }: Props) => {
   const vaultBalance = balanceData?.balance ?? 0
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
   const [localError, setLocalError] = useState<string | null>(null)
+  const [successMessage, setSuccessMessage] = useState<string | null>(null)
+  
+  const claimable = Math.max(0, vaultBalance - 0.003)
 
   const handleClaim = async () => {
     if (!selectedVaultPda) {
@@ -46,6 +49,7 @@ export const ClaimFeesModal = ({ open, onClose }: Props) => {
 
     setStatus('loading')
     setLocalError(null)
+    setSuccessMessage(null)
 
     try {
       await claimPerformanceFees(parseFloat(amount))
@@ -57,9 +61,29 @@ export const ClaimFeesModal = ({ open, onClose }: Props) => {
         setAmount('')
       }, 2500)
     } catch (err: unknown) {
+      const errorMsg = err instanceof Error ? err.message : 'Transaction failed'
+      
+      if (
+        errorMsg.includes('Transaction confirmed') ||
+        errorMsg.includes('already processed') ||
+        errorMsg.includes('already been processed')
+      ) {
+        setStatus('success')
+        setLocalError(null)
+        setSuccessMessage(errorMsg)
+        refetchAll()
+        setTimeout(() => {
+          onClose()
+          setStatus('idle')
+          setAmount('')
+          setSuccessMessage(null)
+        }, 4000)
+        return
+      }
+
       console.error('Fee claim flow failed:', err)
       setStatus('error')
-      setLocalError((err as Error).message || 'Transaction failed')
+      setLocalError(errorMsg)
     }
   }
 
@@ -131,9 +155,16 @@ export const ClaimFeesModal = ({ open, onClose }: Props) => {
               <div className='flex flex-col gap-1'>
                 <div className='flex justify-between'>
                   <p className='text-[10px] text-[#B0E4DD4D] tracking-[1px] uppercase font-black'>AMOUNT</p>
-                  <p className='text-[10px] text-[#FE9A00] tracking-[1px] font-bold'>
-                    Available: {(vaultBalance - 0.003 > 0 ? vaultBalance - 0.003 : 0).toFixed(4)} SOL
-                  </p>
+                  <div className='flex flex-col items-end'>
+                    <div className='flex flex-col items-end'>
+                    <p className='text-[10px] text-[#FE9A00] tracking-[1px] font-bold'>
+                      Available to claim: {claimable.toFixed(4)} SOL
+                    </p>
+                    <p className='text-[9px] text-[#607572]'>
+                      (Vault balance - rent exempt)
+                    </p>
+                  </div>
+                  </div>
                 </div>
 
                 <div className='bg-[#081a1a] border border-[#1c3535] rounded-lg px-3 py-3 flex items-center justify-between group focus-within:border-[#FE9A0066] transition-colors'>
@@ -146,8 +177,11 @@ export const ClaimFeesModal = ({ open, onClose }: Props) => {
                   />
                   <button
                     onClick={() => {
-                      const avail = vaultBalance - 0.003;
-                      setAmount((avail > 0 ? avail : 0).toString());
+                      if (claimable <= 0) {
+                        setLocalError('Vault balance too low');
+                      } else {
+                        setAmount(claimable.toFixed(4));
+                      }
                     }}
                     className='ml-3 text-[10px] font-bold px-3 py-1.5 rounded bg-[#FE9A0022] text-[#FE9A00] border border-[#FE9A0044] cursor-pointer hover:bg-[#FE9A0033] transition'
                   >
@@ -157,18 +191,18 @@ export const ClaimFeesModal = ({ open, onClose }: Props) => {
               </div>
 
               {/* ERROR/SUCCESS MESSAGES */}
-              {(localError || opError) && (
+              {localError && (
                 <div className="bg-red-900/20 border border-red-500/50 p-3 rounded-lg flex items-start gap-2">
                   <FiAlertTriangle className="text-red-500 shrink-0 mt-0.5" size={14} />
-                  <p className="text-[11px] text-red-200 leading-tight">{localError || opError}</p>
+                  <p className="text-[11px] text-red-200 leading-tight">{localError}</p>
                 </div>
               )}
 
-              {status === 'success' && (
+              {(status === 'success' || successMessage) && (
                 <div className="bg-green-900/20 border border-green-500/50 p-3 rounded-lg flex items-start gap-2">
                   <FiCheckCircle className="text-green-500 shrink-0 mt-0.5" size={14} />
                   <p className="text-[11px] text-green-200 leading-tight font-bold uppercase tracking-wider">
-                    Transaction successful! Your fees have been claimed.
+                    {successMessage || 'Transaction successful! Your fees have been claimed.'}
                   </p>
                 </div>
               )}

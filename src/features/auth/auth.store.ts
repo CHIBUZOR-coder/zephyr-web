@@ -58,15 +58,25 @@ export const useAuthStore = create<AuthState>()(
     }),
     {
       name: "auth-storage",
-      // Persist user and token to maintain session across refreshes
+      // Only persist user data - NOT accessToken (stored in httpOnly cookie)
+      // Also NOT authenticated - we'll determine this on rehydration based on user presence
       partialize: (state) => ({
         user: state.user,
-        authenticated: state.authenticated,
-        accessToken: state.accessToken,
       }),
       onRehydrateStorage: () => (state) => {
         if (state) {
           state.hydrated = true;
+
+          // If no user exists, auth is "resolved" (we're just not logged in)
+          if (!state.user) {
+            state.authResolved = true;
+          }
+
+          // Determine authenticated based on whether user exists
+          if (state.user && !state.accessToken) {
+            // User exists but no token - needs refresh
+            state.authenticated = false;
+          }
         }
       },
     },

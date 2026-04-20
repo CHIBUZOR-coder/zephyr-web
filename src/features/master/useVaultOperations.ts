@@ -7,6 +7,19 @@ import { BN } from '@coral-xyz/anchor';
 import { authFetch } from '../../core/query/authClient';
 import type { TierState } from './useMasterTier';
 
+type ApiAccount = {
+  pubkey: string;
+  isSigner: boolean;
+  isWritable: boolean;
+};
+
+type ApiInstruction = {
+  programId: string;
+  accounts: ApiAccount[];
+  data: string; // base64
+};
+
+
 function parseSolanaError(err: unknown): string {
   const error = err as Error & { logs?: string[] };
   
@@ -87,7 +100,7 @@ function parseSolanaError(err: unknown): string {
 
 export const useVaultOperations = () => {
   const { program } = useProgram();
-  const { publicKey } = useWallet();
+  const { publicKey, signTransaction } = useWallet();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -107,17 +120,29 @@ export const useVaultOperations = () => {
 
       console.log(`Depositing ${amountSol} SOL to vault ${vaultPda}...`);
 
-      const tx = await (program.methods
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        .deposit(amountLamports) as any)
-        .accounts({
-          copier: publicKey,
-          vault: vaultPubkey,
-          config: configPda,
-          riskConfig: riskConfigPda,
-          systemProgram: SystemProgram.programId,
-        })
-        .rpc();
+      let tx: string | null = null;
+      try {
+        tx = await (program.methods
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          .deposit(amountLamports) as any)
+          .accounts({
+            copier: publicKey,
+            vault: vaultPubkey,
+            config: configPda,
+            riskConfig: riskConfigPda,
+            systemProgram: SystemProgram.programId,
+          })
+          .rpc();
+      } catch (txErr: unknown) {
+        if (txErr instanceof Error) {
+          const msg = txErr?.message || String(txErr);
+          if (msg.includes('already processed') || msg.includes('already been processed')) {
+            console.log('Deposit transaction was already processed. Treating as success.');
+          } else {
+            throw txErr;
+          }
+        }
+      }
 
       console.log('Deposit successful:', tx);
       return tx;
@@ -353,47 +378,284 @@ export const useVaultOperations = () => {
         program.programId
       );
 
-      // Get fee wallet from config (we might need to fetch this first or hardcode for now)
-      // For now, let's fetch config account
+      // Get fee wallet from config
       const configAccount = await program.account.config.fetch(configPda);
       const platformFeeWallet = configAccount.feeWallet;
+      const atomicThreshold = Number(configAccount.atomicThreshold) || 0;
 
-      console.log('Executing callTrade on-chain...');
+      // Fetch master vault to get on-chain activeCopierCount
+      const masterVaultAccount = await program.account.masterExecutionVault.fetch(masterVaultPda);
+      const onChainActiveCopierCount = Number(masterVaultAccount.activeCopierCount) || 0;
+
+      // Decide execution path based on on-chain state
+      let remainingAccounts: { pubkey: PublicKey; isWritable: boolean; isSigner: boolean }[] = [];
+
+      if (onChainActiveCopierCount > 0 && onChainActiveCopierCount <= atomicThreshold) {
+        console.log(`Fetching ${onChainActiveCopierCount} copiers for atomic fan-out via RPC...`);
+        
+        // Fetch directly from on-chain to ensure perfect synchronisation 
+        const allCopiers = await program.account.copierVault.all([
+          {
+            memcmp: {
+              offset: 40, // 8 byte discriminator + 32 byte copier pubkey
+              bytes: masterVaultPda.toBase58(),
+            },
+          },
+        ]);
+        
+        // Filter out paused copiers exactly as the smart contract does
+        const activeCopiers = allCopiers.filter(c => !c.account.isPaused);
+        
+        remainingAccounts = activeCopiers.map(c => ({
+          pubkey: c.publicKey,
+          isWritable: true,
+          isSigner: false,
+        }));
+        
+        console.log(`Prepared ${remainingAccounts.length} copier accounts for atomic fan-out (Found ${allCopiers.length} total)`);
+      } else {
+        console.log(`Slot-based execution: ${onChainActiveCopierCount} copiers > threshold (${atomicThreshold}) or no copiers`);
+      }
+
+      // ── Jupiter integration ────────────────────────────────────────────
+      //
+      // Jupiter v6 requires versioned transactions + address lookup tables (ALTs)
+      // to fit the large number of accounts into a single transaction.
+      // Anchor's .rpc() builds legacy (non-versioned) transactions, so we build
+      // the VersionedTransaction manually.
+      //
+      // Network detection:
+      //   devnet / testnet → mock mode (no real swap, empty jupiterInstructionData)
+      //   mainnet-beta / localnet fork → real Jupiter swap
+
+      // const rpcUrl = program.provider.connection.rpcEndpoint;
+      const rpcUrl = import.meta.env.VITE_SOLANA_RPC_URL || 'https://api.devnet.solana.com';
+
+      const isMockNetwork = 
+        rpcUrl.includes('devnet') || 
+        rpcUrl.includes('testnet') ||
+        rpcUrl.includes('localhost') ||
+        rpcUrl.includes('127.0.0.1') ||
+        rpcUrl.includes('api.devnet.solana.com');
+
+      // Note: Real Jupiter swaps require mainnet-only (not fork) due to program cloning limitations
+
+      console.log(`🌐 Network Check: RPC=${rpcUrl}, MockMode=${isMockNetwork}`);
+
+      // Correct mint addresses for Jupiter:
+      //   Native SOL uses the wSOL mint (Jupiter wraps/unwraps automatically)
+      const WSOL_MINT = 'So11111111111111111111111111111111111111112';
+      const resolvedTokenIn  = params.tokenIn  === '11111111111111111111111111111111' ? WSOL_MINT : params.tokenIn;
+      const resolvedTokenOut = params.tokenOut === '11111111111111111111111111111111' ? WSOL_MINT : params.tokenOut;
+
+      let quoteInAmount  = params.amountIn.toString();
+      let quoteOutAmount = Math.floor(params.amountIn * 0.99).toString();
+      let jupiterSwapAccounts: { pubkey: PublicKey; isWritable: boolean; isSigner: boolean }[] = [];
+      let jupiterInstructionData: Buffer = Buffer.alloc(0); // empty = mock mode
+      const setupInstructions: import('@solana/web3.js').TransactionInstruction[] = [];
+      let cleanupInstruction: import('@solana/web3.js').TransactionInstruction | null = null;
+      let lookupTableAccounts: import('@solana/web3.js').AddressLookupTableAccount[] = [];
+
+      const JUPITER_API_KEY = import.meta.env.VITE_JUPITER_API_KEY || '';
+
+      if (isMockNetwork) {
+        console.log('MOCK MODE: devnet/testnet detected — skipping real Jupiter swap');
+      } else {
+        console.log('Fetching Jupiter quote...');
+
+        const quoteUrl =
+          `https://api.jup.ag/swap/v1/quote` +
+          `?inputMint=${resolvedTokenIn}` +
+          `&outputMint=${resolvedTokenOut}` +
+          `&amount=${params.amountIn}` +
+          `&slippageBps=100`;
+
+        const quoteRes = await fetch(quoteUrl, {
+          headers: JUPITER_API_KEY ? { 'x-api-key': JUPITER_API_KEY } : {},
+        });
+        if (!quoteRes.ok) throw new Error(`Jupiter quote failed: ${quoteRes.status}`);
+        const quote = await quoteRes.json();
+        if (!quote?.inAmount) throw new Error('Jupiter quote returned no inAmount');
+
+        quoteInAmount  = quote.inAmount;
+        quoteOutAmount = quote.outAmount;
+
+        console.log('Fetching Jupiter swap instructions...');
+
+        const swapRes = await fetch('https://api.jup.ag/swap/v1/swap-instructions', {
+          method: 'POST',
+          headers: { 
+            'Content-Type': 'application/json',
+            ...(JUPITER_API_KEY ? { 'x-api-key': JUPITER_API_KEY } : {}),
+          },
+          body: JSON.stringify({
+            quoteResponse: quote,
+            userPublicKey: publicKey.toBase58(),
+            wrapAndUnwrapSol: true,
+            // computeUnitPriceMicroLamports: 'auto', // optional priority fee
+          }),
+        });
+        if (!swapRes.ok) throw new Error(`Jupiter swap-instructions failed: ${swapRes.status}`);
+        const swapIxResponse = await swapRes.json();
+        if (swapIxResponse.error) throw new Error(`Jupiter error: ${swapIxResponse.error}`);
+
+        const { TransactionInstruction: JupTxIx } = await import('@solana/web3.js');
+
+        // Helper: deserialise one Jupiter instruction object → TransactionInstruction
+        const deserializeJupiterIx = (ix: ApiInstruction) => new JupTxIx({
+          programId: new PublicKey(ix.programId),
+          keys: ix.accounts.map((a: ApiAccount) => ({
+            pubkey:     new PublicKey(a.pubkey),
+            isSigner:   a.isSigner,
+            isWritable: a.isWritable,
+          })),
+          data: Buffer.from(ix.data, 'base64'),
+        });
+
+        // Setup instructions (create ATAs, etc.) run BEFORE call_trade
+        if (swapIxResponse.setupInstructions?.length) {
+          for (const ix of swapIxResponse.setupInstructions) {
+            setupInstructions.push(deserializeJupiterIx(ix));
+          }
+        }
+
+        // Cleanup instruction (close wSOL ATA) runs AFTER call_trade
+        if (swapIxResponse.cleanupInstruction) {
+          cleanupInstruction = deserializeJupiterIx(swapIxResponse.cleanupInstruction);
+        }
+
+        // Swap instruction accounts go into remaining_accounts on the Zephyr program
+        const swapIx = swapIxResponse.swapInstruction;
+        jupiterSwapAccounts = swapIx.accounts.map((a: ApiAccount) => ({
+          pubkey:     new PublicKey(a.pubkey),
+          isWritable: a.isWritable,
+          isSigner:   a.isSigner,
+        }));
+        jupiterInstructionData = Buffer.from(swapIx.data, 'base64');
+
+        // Fetch address lookup tables so the versioned tx can compress account indices
+        if (swapIxResponse.addressLookupTableAddresses?.length) {
+          const connection = program.provider.connection;
+          const results = await Promise.all(
+            swapIxResponse.addressLookupTableAddresses.map((addr: string) =>
+              connection.getAddressLookupTable(new PublicKey(addr))
+            )
+          );
+          lookupTableAccounts = results
+            .map((r) => r.value)
+            .filter((v): v is import('@solana/web3.js').AddressLookupTableAccount => v !== null);
+        
+          // Use lookupTableAccounts here
+          for (const account of lookupTableAccounts) {
+            console.log(account);
+          }
+        }
+      }
+
+      // ── Build call_trade instruction
+      console.log('Building call_trade instruction...');
+
+      const tradeTypeEnum = {
+        'Buy':         'buy',
+        'Sell':        'sell',
+        'PartialSell': 'partialSell',
+      } as const;
+
+      const rollingAumUsd = metrics.rollingAumUsd ? parseFloat(metrics.rollingAumUsd) : 0;
 
       const tradeParams = {
-        tokenIn: new PublicKey(params.tokenIn),
-        tokenOut: new PublicKey(params.tokenOut),
-        amountIn: new BN(params.amountIn),
-        minAmountOut: new BN(params.minAmountOut),
-        oraclePrice: new BN(params.oraclePrice),
-        tradeType: { [params.tradeType.toLowerCase()]: {} },
-        daysActive: metrics.daysActive,
-        winRateBps: metrics.winRateBps,
-        maxDrawdownBps: metrics.maxDrawdownBps,
-        rollingAumUsd: new BN(metrics.rollingAumUsd),
-        copierRetentionBps: metrics.copierRetentionBps,
+        tokenIn:               new PublicKey(resolvedTokenIn),
+        tokenOut:              new PublicKey(resolvedTokenOut),
+        amountIn:              new BN(quoteInAmount),
+        minAmountOut:          new BN(quoteOutAmount),
+        oraclePrice:           new BN(params.oraclePrice),
+        tradeType:             { [tradeTypeEnum[params.tradeType]]: {} },
+        jupiterInstructionData: jupiterInstructionData, // new field
+        daysActive:            metrics.daysActive || 0,
+        winRateBps:            metrics.winRateBps || 0,
+        maxDrawdownBps:        metrics.maxDrawdownBps || 0,
+        rollingAumUsd:         new BN(Math.floor(rollingAumUsd)),
+        copierRetentionBps:    metrics.copierRetentionBps || 0,
       };
 
-      const tx = await (program.methods
+      // All remaining accounts: copier vaults (atomic path) first, then Jupiter swap accounts
+      const allRemainingAccounts = [
+        ...remainingAccounts,
+        ...jupiterSwapAccounts,
+      ];
+
+      // Build the Anchor instruction object (don't .rpc() — we need VersionedTransaction)
+      const callTradeIx = await (program.methods
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         .callTrade(tradeParams) as any)
         .accounts({
-          master: publicKey,
-          config: configPda,
-          masterVault: masterVaultPda,
-          masterTrade: masterTradePda,
+          master:            publicKey,
+          config:            configPda,
+          masterVault:       masterVaultPda,
+          masterTrade:       masterTradePda,
           platformFeeWallet: platformFeeWallet,
-          tierConfig: tierConfigPda,
-          systemProgram: SystemProgram.programId,
-          jupiterProgram: new PublicKey('JUP6LkbZbjS1jKKccwgwsS1iUCszzuSps7is8Z9vpk7'),
+          tierConfig:        tierConfigPda,
+          systemProgram:     SystemProgram.programId,
+          jupiterProgram:    new PublicKey('JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4'),
         })
-        .rpc();
+        .remainingAccounts(allRemainingAccounts)
+        .instruction();
 
-      console.log('Trade execution successful:', tx);
-      return tx;
+      console.log('callTradeIx built:', !!callTradeIx);
+
+      // ── Build and send Transaction ────────────────────────────
+      const { Transaction } = await import('@solana/web3.js');
+
+      const connection = program.provider.connection;
+      const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash('confirmed');
+
+      // Use legacy transaction (works with all wallets)
+      const transaction = new Transaction({
+        feePayer: publicKey,
+        recentBlockhash: blockhash,
+      });
+
+      if (setupInstructions.length > 0) {
+        transaction.add(...setupInstructions);
+      }
+      if (callTradeIx) {
+        transaction.add(callTradeIx);
+      }
+      if (cleanupInstruction) {
+        transaction.add(cleanupInstruction);
+      }
+
+      console.log('Transaction instructions count:', transaction.instructions.length);
+
+      if (transaction.instructions.length === 0) {
+        throw new Error('No instructions - setupInstructions empty, callTradeIx may be undefined');
+      }
+
+      const signedTx = await signTransaction!(transaction);
+
+      const rawTx = signedTx.serialize();
+      const signature = await connection.sendRawTransaction(rawTx, {
+        skipPreflight: false,
+        preflightCommitment: 'confirmed',
+      });
+
+      await connection.confirmTransaction(
+        { signature, blockhash, lastValidBlockHeight },
+        'confirmed',
+      );
+
+      console.log('Trade execution successful:', signature);
+      return signature;
     } catch (err: unknown) {
       console.error('Trade failed:', err);
       const friendlyError = parseSolanaError(err);
+      
+      // If the error indicates success (transaction confirmed on chain), treat it as success
+      if (friendlyError.includes('Transaction confirmed successfully')) {
+        console.log('Trade simulation error handled as success:', friendlyError);
+        return;
+      }
+      
       setError(friendlyError);
       throw new Error(friendlyError);
     } finally {
@@ -497,5 +759,45 @@ export const useVaultOperations = () => {
     }
   }, [program, publicKey]);
 
-  return { depositToCopierVault, transferToVault, depositToMasterVault, withdrawFromCopierVault, withdrawFromMasterVault, claimPerformanceFees, callTrade, initializeTierConfig, initializeRiskConfig, updateRiskConfig, loading, error };
+  const updateCopierRiskParams = useCallback(async (masterVaultAddress: string, newParams: { maxLossPct: number; maxTradeSizePct: number; maxDrawdownPct: number }) => {
+    if (!program || !publicKey) throw new Error('Program or wallet not initialized');
+    setLoading(true);
+    setError(null);
+    try {
+      const masterVault = new PublicKey(masterVaultAddress);
+      const [copierVaultPda] = PublicKey.findProgramAddressSync([
+        Buffer.from('vault'),
+        publicKey.toBuffer(),
+        masterVault.toBuffer(),
+      ], program.programId);
+
+      const [riskConfigPda] = PublicKey.findProgramAddressSync([Buffer.from('risk_config')], program.programId);
+
+      const tx = await (program.methods
+        .updateRiskParams(
+          { maxLossPct: newParams.maxLossPct, maxTradeSizePct: newParams.maxTradeSizePct, maxDrawdownPct: newParams.maxDrawdownPct },
+          null, // newStopLossTriggerBps
+          null, // newStopLossSellBps
+          null, // newDailyLossLimitBps
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        ) as any)
+        .accounts({
+          copier: publicKey,
+          copierVault: copierVaultPda,
+          riskConfig: riskConfigPda,
+        })
+        .rpc();
+      console.log('Copier risk params updated:', tx);
+      return tx;
+    } catch (err: unknown) {
+      console.error('Update risk params failed:', err);
+      const friendlyError = parseSolanaError(err);
+      setError(friendlyError);
+      throw new Error(friendlyError);
+    } finally {
+      setLoading(false);
+    }
+  }, [program, publicKey]);
+
+  return { depositToCopierVault, transferToVault, depositToMasterVault, withdrawFromCopierVault, withdrawFromMasterVault, claimPerformanceFees, callTrade, initializeTierConfig, initializeRiskConfig, updateRiskConfig, updateCopierRiskParams, loading, error };
 };

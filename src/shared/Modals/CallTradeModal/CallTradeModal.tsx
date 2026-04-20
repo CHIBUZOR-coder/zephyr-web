@@ -1,44 +1,133 @@
-import { useState, type FC } from 'react'
+import { useState, useEffect, type FC } from 'react'
 import { BsChevronDown } from 'react-icons/bs'
 import { HiLightningBolt, HiOutlineLightningBolt } from 'react-icons/hi'
 import { HiOutlineUsers } from 'react-icons/hi2'
 import { AnimatePresence, motion } from 'framer-motion'
 import { CiSearch } from 'react-icons/ci'
-import { FiAlertTriangle } from 'react-icons/fi'
+import { FiAlertTriangle, FiLoader } from 'react-icons/fi'
 import SolanaChart from './components/SolanaChart'
 import { useVaultOperations } from '../../../features/master/useVaultOperations'
 import { useUserVaults } from '../../../features/master/useUserVaults'
 import { useSolPrice } from '../../../core/hooks/usePrice'
 import { LAMPORTS_PER_SOL } from '@solana/web3.js'
+import { Link } from 'react-router-dom'
+
+const JUPITER_TOKEN_API = 'https://api.jup.ag/tokens/v2'
 
 type Props = {
   open: boolean
   onClose: () => void
 }
 
-const SOL_MINT = '11111111111111111111111111111111'
-const USDC_MINT = 'Gh9ZwEmdLJ8DscKNTkTqPbNwLNNBjuSzaG9Vp2KGtKJr' // Devnet USDC
+const SOL_MINT = 'So11111111111111111111111111111111111111112'  // wSOL mint
+const USDC_MINT = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v' // USDC mainnet
 
 const CallTradeModal: FC<Props> = ({ open, onClose }) => {
   const [timeframe, setTimeframe] = useState('15M')
   const [amountType, setAmountType] = useState('percent')
   const [slippage, setSlippage] = useState('0.5%')
   const [showImpact, setShowImpact] = useState(false)
-  
+
   const [amount, setAmount] = useState('10')
   const [tradeType, setTradeType] = useState<'Buy' | 'Sell'>('Buy')
-  const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
-  const [localError, setLocalError] = useState<string | null>(null)
+
+
+
   const [manualBootstrap, setManualBootstrap] = useState(false)
 
+
+
+
+
+
+
+  const [tokenAddress, setTokenAddress] = useState('')
+  const [tokenSymbol, setTokenSymbol] = useState<string | null>(null)
+  const [tokenPrice, setTokenPrice] = useState<number | null>(null)
+  const [tokenError, setTokenError] = useState<string | null>(null)
+  const [tokenLoading, setTokenLoading] = useState(false)
+  const [useCustomToken, setUseCustomToken] = useState(false)
+  const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
+  const [localError, setLocalError] = useState<string | null>(null)
+
+
   const { callTrade, initializeTierConfig, initializeRiskConfig, error: opError } = useVaultOperations()
-  const { masterVault, refetchAll } = useUserVaults()
+  const { masterVault, copierVaults, refetchAll } = useUserVaults()
   const { data: solPrice } = useSolPrice()
+
+  const copierCount = masterVault?._count?.copierVaults ?? 0
+  
+  const totalAumSol = copierVaults?.reduce((sum, v) => {
+    // useUserVaults hook provides actualBalance in SOL
+    const bal = v.actualBalance ?? 0
+    return sum + bal
+  }, 0) ?? 0
+  const totalAumUsd = totalAumSol * (solPrice?.price ?? 150)
+
+  const defaultChartPair = 'SOL/USDC'
+  const parsePairInput = (input: string) => {
+    const upper = input.toUpperCase().trim()
+    const parts = upper.split('/')
+    const symbol = parts[0].trim()
+    const quote = parts[1]?.trim() || 'USDC'
+    return { symbol, quote }
+  }
+  const { quote: inputQuote } = parsePairInput(tokenAddress)
+  const chartPair = useCustomToken && tokenSymbol && !tokenError ? `${tokenSymbol}/${inputQuote}` : defaultChartPair
+  const shouldShowChart = !useCustomToken || (useCustomToken && tokenSymbol && !tokenError)
+
+  useEffect(() => {
+    setTokenPrice(null)
+    setTokenError(null)
+    setTokenSymbol(null)
+    if (tokenAddress && tokenAddress.length >= 1) {
+      setTokenLoading(true)
+      const fetchToken = async () => {
+        const { symbol: querySymbol } = parsePairInput(tokenAddress)
+        try {
+          const res = await fetch(`${JUPITER_TOKEN_API}/search?query=${encodeURIComponent(querySymbol)}&limit=1`)
+          const data = await res.json()
+          if (data && data.length > 0) {
+            const jupiterSymbol = data[0].symbol?.toUpperCase() || data[0].name?.toUpperCase()
+            setTokenSymbol(jupiterSymbol || querySymbol.toUpperCase())
+            setTokenPrice(data[0].usdPrice || null)
+            setTokenError(null)
+          } else {
+            setTokenSymbol(null)
+            setTokenPrice(null)
+            setTokenError(`Token "${querySymbol}" not found on Jupiter`)
+          }
+        } catch {
+          setTokenSymbol(null)
+          setTokenPrice(null)
+          setTokenError('Search failed')
+        }
+        setTokenLoading(false)
+      }
+      const debounce = setTimeout(fetchToken, 500)
+      return () => clearTimeout(debounce)
+    } else {
+      setTokenSymbol(null)
+      setTokenPrice(null)
+    }
+  }, [tokenAddress])
+
+  // Reset state when modal opens
+  useEffect(() => {
+    if (open) {
+      setStatus('idle')
+      setLocalError(null)
+      setManualBootstrap(false)
+      setAmount('10')
+      setTradeType('Buy')
+    }
+  }, [open])
 
   const isTierConfigError = manualBootstrap || (opError?.includes('tier_config') && opError?.includes('3012')) || opError?.includes('initialize_tier_config');
   const isRiskConfigError = opError?.includes('risk_config') && opError?.includes('3012');
 
-  const currentPrice = solPrice?.price ?? 79
+
+  const currentPrice = tokenPrice ?? solPrice?.price ?? 150
 
   const timeframes = ['1M', '5M', '15M', '1H', '4H']
   const slippageOptions = ['0.3%', '0.5%', '1%']
@@ -54,7 +143,8 @@ const CallTradeModal: FC<Props> = ({ open, onClose }) => {
       }
       setStatus('idle')
     } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : 'Bootstrap failed'
+      const errorMessage =
+        err instanceof Error ? err.message : 'Bootstrap failed'
       setLocalError(errorMessage)
       setStatus('error')
     }
@@ -62,7 +152,7 @@ const CallTradeModal: FC<Props> = ({ open, onClose }) => {
 
   const handleExecuteTrade = async () => {
     if (!masterVault) return
-    
+
     setStatus('loading')
     setLocalError(null)
 
@@ -70,7 +160,9 @@ const CallTradeModal: FC<Props> = ({ open, onClose }) => {
       // Calculate amount in lamports
       let amountIn = 0
       if (amountType === 'percent') {
-        const vaultBalanceLamports = masterVault.balance ? masterVault.balance * LAMPORTS_PER_SOL : 0
+        const vaultBalanceLamports = masterVault.balance
+          ? masterVault.balance * LAMPORTS_PER_SOL
+          : 0
         amountIn = Math.floor((parseFloat(amount) / 100) * vaultBalanceLamports)
       } else {
         amountIn = Math.floor(parseFloat(amount) * LAMPORTS_PER_SOL)
@@ -78,27 +170,34 @@ const CallTradeModal: FC<Props> = ({ open, onClose }) => {
 
       if (amountIn <= 0) throw new Error('Invalid trade amount')
 
+      const tokenIn = useCustomToken && tokenAddress ? tokenAddress : (tradeType === 'Buy' ? USDC_MINT : SOL_MINT)
+      const tokenOut = useCustomToken && tokenAddress ? tokenAddress : (tradeType === 'Buy' ? SOL_MINT : USDC_MINT)
+
+      if (!tokenIn || !tokenOut) {
+        throw new Error('Please select a token to trade')
+      }
+
       const params = {
-        tokenIn: tradeType === 'Buy' ? USDC_MINT : SOL_MINT,
-        tokenOut: tradeType === 'Buy' ? SOL_MINT : USDC_MINT,
+        tokenIn,
+        tokenOut,
         amountIn,
         minAmountOut: Math.floor(amountIn * 0.99), // 1% slippage hardcoded for simplicity in params
-        oraclePrice: Math.floor(currentPrice * 1e6), 
-        tradeType: tradeType as 'Buy' | 'Sell',
+        oraclePrice: Math.floor(currentPrice * 1e6),
+        tradeType: tradeType as 'Buy' | 'Sell'
       }
 
       await callTrade(params)
-      
+
       setStatus('success')
-      
+
       // Immediate refresh for on-chain state
       refetchAll()
-      
+
       // Start polling for backend indexing (trade record, position state)
       const interval = setInterval(() => {
         refetchAll()
       }, 3000)
-      
+
       // Clear interval after 15 seconds
       setTimeout(() => clearInterval(interval), 15000)
 
@@ -109,7 +208,8 @@ const CallTradeModal: FC<Props> = ({ open, onClose }) => {
     } catch (err: unknown) {
       console.error('Trade flow failed:', err)
       setStatus('error')
-      const errorMessage = err instanceof Error ? err.message : 'Trade execution failed'
+      const errorMessage =
+        err instanceof Error ? err.message : 'Trade execution failed'
       setLocalError(errorMessage)
     }
   }
@@ -139,15 +239,23 @@ const CallTradeModal: FC<Props> = ({ open, onClose }) => {
             <div className='flex justify-between items-center mb-1'>
               <h2 className='text-[16px] font-[900] tracking-wide flex items-center gap-2'>
                 <HiLightningBolt className='text-[#FE9A00]' size={18} />
-                Call Trade {masterVault ? `(◎ ${masterVault.balance?.toFixed(2)})` : ''}
+                Call Trade{' '}
+                {masterVault ? `(◎ ${masterVault.balance?.toFixed(2)})` : ''}
               </h2>
 
-              <button
-                onClick={onClose}
-                className='text-[#7DAAA4] hover:text-white'
-              >
-                ✕
-              </button>
+              <div className='flex items-center gap-3'>
+                <Link
+                  to={'https://t.me/ZephyrAssist'}
+                  style={{ backgroundImage: `url("/images/support.svg")` }}
+                  className='bg-center bg-cover h-3 w-3 block'
+                ></Link>
+                <button
+                  onClick={onClose}
+                  className='text-[#7DAAA4] hover:text-white'
+                >
+                  ✕
+                </button>
+              </div>
             </div>
 
             <div className='flex flex-col gap-2 mb-4 p-3 bg-yellow-500/5 border border-yellow-500/20 rounded-xl'>
@@ -155,13 +263,16 @@ const CallTradeModal: FC<Props> = ({ open, onClose }) => {
                 <FiAlertTriangle /> Protocol Admin Controls
               </p>
               <p className='text-[10px] text-yellow-200/60'>
-                If you see "TierConfig" errors, the protocol needs to be initialized.
+                If you see "TierConfig" errors, the protocol needs to be
+                initialized.
               </p>
-              <button 
+              <button
                 onClick={() => setManualBootstrap(prev => !prev)}
-                className="text-[10px] bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-500 py-1 px-2 rounded border border-yellow-500/30 transition-colors w-fit"
+                className='text-[10px] bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-500 py-1 px-2 rounded border border-yellow-500/30 transition-colors w-fit'
               >
-                {manualBootstrap ? 'Hide Initialization' : 'Show Initialization Buttons'}
+                {manualBootstrap
+                  ? 'Hide Initialization'
+                  : 'Show Initialization Buttons'}
               </button>
             </div>
 
@@ -169,7 +280,7 @@ const CallTradeModal: FC<Props> = ({ open, onClose }) => {
             <div className='bg-[#0A2B27] rounded-xl p-4 mb-4'>
               <div className='flex justify-between items-center mb-3'>
                 <span className='text-[12px] text-white font-[900]'>
-                  USDC → SOL{' '}
+                  {chartPair}{' '}
                   <span className='text-[#22C55E] font-[700]'>
                     ${currentPrice.toFixed(2)}
                   </span>
@@ -193,7 +304,13 @@ const CallTradeModal: FC<Props> = ({ open, onClose }) => {
               </div>
 
               {/* ✅ BIGGER CHART */}
-              <SolanaChart />
+              {shouldShowChart ? (
+                <SolanaChart pair={chartPair} interval={timeframe} />
+              ) : (
+                <div className='w-full h-40 flex items-center justify-center bg-[#0A2B27] rounded-lg'>
+                  <span className='text-[#607572] text-[12px]'>Enter a valid token to view chart</span>
+                </div>
+              )}
             </div>
 
             <div className='flex justify-between items-center gap-5'>
@@ -201,16 +318,63 @@ const CallTradeModal: FC<Props> = ({ open, onClose }) => {
               <div className='relative w-full '>
                 <CiSearch className='absolute top-[40%] left-3 -translate-y-1/2 text-[#6B8F88] text-sm' />
 
-                <input
-                  readOnly
-                  value='Solana (SOL)'
-                  className='w-full bg-[#0a1414] border border-[#123F3A] pl-10 pr-3 py-3 rounded-2xl mb-3 text-[13px] outline-none text-[#E8F6F3]'
-                />
+                {useCustomToken ? (
+                  <>
+                    <input
+                      value={tokenAddress}
+                      onChange={(e) => setTokenAddress(e.target.value)}
+                      placeholder='BONK, BONK/USDC, WIF/SOL...'
+                      className='w-full bg-[#0a1414] border border-[#123F3A] pl-10 pr-3 py-3 rounded-xl mb-3 text-[13px] outline-none text-[#E8F6F3] font-mono text-[10px]'
+                    />
+                    {tokenLoading && (
+                      <span className='text-[10px] text-[#11C5A3] flex items-center gap-1'>
+                        <FiLoader className='animate-spin' size={10} />
+                        Searching...
+                      </span>
+                    )}
+                    {tokenError && (
+                      <span className='text-[10px] text-red-400'>{tokenError}</span>
+                    )}
+                    {tokenSymbol && !tokenLoading && !tokenError && (
+                      <span className='text-[10px] text-[#11C5A3]'>Chart: {chartPair}</span>
+                    )}
+                    <button
+                      onClick={() => {
+                        setUseCustomToken(false)
+                        setTokenAddress('')
+                        setTokenSymbol(null)
+                      }}
+                      className='text-[10px] text-[#607572] hover:text-white'
+                    >
+                      ← Back to SOL
+                    </button>
+                  </>
+                ) : (
+                  <input
+                    readOnly
+                    value='Solana (SOL)'
+                    className='w-full bg-[#0a1414] border border-[#123F3A] pl-10 pr-3 py-3 rounded-2xl mb-3 text-[13px] outline-none text-[#E8F6F3]'
+                  />
+                )}
+                {!useCustomToken && (
+                  <button
+                    onClick={() => setUseCustomToken(true)}
+                    className='text-[10px] text-[#11C5A3] hover:text-white'
+                  >
+                    + Search token
+                  </button>
+                )}
               </div>
               {/* DIRECTION */}
-              <button 
-                onClick={() => setTradeType(t => t === 'Buy' ? 'Sell' : 'Buy')}
-                className={`w-full ${tradeType === 'Buy' ? 'bg-dir text-[#00C896] border-dirborder' : 'bg-red-900/20 text-red-500 border-red-500/30'} border py-3 rounded-2xl mb-4 font-medium transition-colors`}
+              <button
+                onClick={() =>
+                  setTradeType(t => (t === 'Buy' ? 'Sell' : 'Buy'))
+                }
+                className={`w-full ${
+                  tradeType === 'Buy'
+                    ? 'bg-dir text-[#00C896] border-dirborder'
+                    : 'bg-red-900/20 text-red-500 border-red-500/30'
+                } border py-3 rounded-2xl mb-4 font-medium transition-colors`}
               >
                 <span className='text-[13px] font-[900] flex items-center justify-center gap-2'>
                   <HiLightningBolt size={16} />
@@ -257,7 +421,7 @@ const CallTradeModal: FC<Props> = ({ open, onClose }) => {
                 <input
                   type='number'
                   value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
+                  onChange={e => setAmount(e.target.value)}
                   className='w-full bg-[#062421] font-[900] border border-[#123F3A] p-3 rounded-lg text-[20px] outline-none'
                 />
               </div>
@@ -293,9 +457,12 @@ const CallTradeModal: FC<Props> = ({ open, onClose }) => {
 
             {/* ERROR MESSAGE */}
             {(localError || opError) && (
-              <div className="bg-red-900/20 border border-red-500/50 p-3 rounded-lg flex items-start gap-2 mb-4">
-                <FiAlertTriangle className="text-red-500 shrink-0 mt-0.5" size={14} />
-                <p className="text-[11px] text-red-200 leading-tight">
+              <div className='bg-red-900/20 border border-red-500/50 p-3 rounded-lg flex items-start gap-2 mb-4'>
+                <FiAlertTriangle
+                  className='text-red-500 shrink-0 mt-0.5'
+                  size={14}
+                />
+                <p className='text-[11px] text-red-200 leading-tight'>
                   {localError || opError}
                 </p>
               </div>
@@ -314,10 +481,10 @@ const CallTradeModal: FC<Props> = ({ open, onClose }) => {
 
                 <div className='flex items-center gap-4'>
                   <span className='text-[#607572] text-[10px] font-[700] leading-[15px]'>
-                    0 COPIERS
+                    {copierCount} COPIERS
                   </span>
                   <span className='text-[#607572] text-[10px] font-[700]'>
-                    $0 AUM
+                    ${totalAumUsd.toLocaleString(undefined, { maximumFractionDigits: 0 })} AUM
                   </span>
                   <BsChevronDown
                     className={`transition ${showImpact ? 'rotate-180' : ''}`}
@@ -371,27 +538,35 @@ const CallTradeModal: FC<Props> = ({ open, onClose }) => {
                 onClick={handleBootstrap}
                 className='mb-4 w-full bg-[#d4a800] text-black font-[900] py-3 rounded-xl shadow-[0_0_20px_rgba(212,168,0,0.35)] hover:brightness-110 transition-all text-[12px] tracking-[1px]'
               >
-                BOOTSTRAP PROGRAM {isTierConfigError ? 'TIERS' : 'RISK'} (ONE-TIME)
+                BOOTSTRAP PROGRAM {isTierConfigError ? 'TIERS' : 'RISK'}{' '}
+                (ONE-TIME)
               </button>
             )}
 
             {/* BUTTON */}
-            <button 
+            <button
               disabled={status === 'loading' || !masterVault}
               onClick={handleExecuteTrade}
               className={`mt-4 w-full py-3 rounded-xl shadow-[0_0_20px_rgba(249,115,22,0.35)] transition-all font-semibold
-                ${status === 'loading' ? 'bg-orange-900/50 cursor-not-allowed text-orange-200' : 
-                  status === 'success' ? 'bg-green-500 text-black' :
-                  'bg-gradient-to-r from-[#F59E0B] to-[#F97316] text-black hover:brightness-110'}`}
+                ${
+                  status === 'loading'
+                    ? 'bg-orange-900/50 cursor-not-allowed text-orange-200'
+                    : status === 'success'
+                    ? 'bg-green-500 text-black'
+                    : 'bg-gradient-to-r from-[#F59E0B] to-[#F97316] text-black hover:brightness-110'
+                }`}
             >
               <span className='flex items-center justify-center gap-2'>
-                {status === 'loading' ? 'EXECUTING TRADE...' : 
-                 status === 'success' ? 'TRADE SUCCESSFUL!' : 
-                 <>
-                   <HiOutlineLightningBolt size={16} />
-                   EXECUTE {tradeType.toUpperCase()} CALL
-                 </>
-                }
+                {status === 'loading' ? (
+                  'EXECUTING TRADE...'
+                ) : status === 'success' ? (
+                  'TRADE SUCCESSFUL!'
+                ) : (
+                  <>
+                    <HiOutlineLightningBolt size={16} />
+                    EXECUTE {tradeType.toUpperCase()} CALL
+                  </>
+                )}
               </span>
             </button>
 

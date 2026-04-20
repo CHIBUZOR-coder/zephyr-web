@@ -7,7 +7,7 @@ import { useAuthStore } from './features/auth/auth.store'
 import { useWalletAuthSync } from './core/hooks/useWalletAuthSync'
 import { useAuthRefresh } from './features/auth/useAuthRefresh' // ← NEW
 import ErrorBoundary from './shared/components/ErrorBoundary'
-import { NavLink, Outlet, useLocation } from 'react-router-dom'
+import { Link, NavLink, Outlet, useLocation } from 'react-router-dom'
 import { useWalletPersistSync } from './features/wallet/useWalletPersistSync'
 import { useTradingModeStore } from './features/dashboard/useTradingModeStore'
 
@@ -28,6 +28,7 @@ import { DepositModal } from './shared/Modals/DepositModal/DepositModal'
 import { WithdrawModal } from './shared/Modals/WithdrawModal/WithdrawModal'
 import NotificationPanel from './shared/components/NotificationPanel'
 import MobileBottomNav from './shared/Navigation/MobileBottomNav'
+import { ToastContainer } from './core/store/useToastStore'
 import MobileSideNav from './shared/Navigation/MobileSideNav'
 import RiskAlertModal from './shared/Modals/AlertModal/RiskAlertModal'
 import StopCopyModal from './shared/Modals/StopCopyModal/StopCopyModal'
@@ -38,6 +39,8 @@ import { TierConfigInitModal } from './shared/Modals/TierConfigInitModal'
 import { ClaimFeesModal } from './shared/Modals/ClaimFeesModal/ClaimFeesModal'
 import { useUserVaults } from './features/master/useUserVaults'
 import Onboarding from './shared/Modals/OnboardingModal/Onboarding'
+import { FaInstagram, FaTelegram } from 'react-icons/fa'
+import { FaXTwitter } from 'react-icons/fa6'
 
 function App () {
   const { connected } = useWallet()
@@ -50,7 +53,7 @@ function App () {
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  
+
   const authReady = useAuthReady()
   const mismatch = useWalletMismatch()
   const { accessToken, logout, user: authUser } = useAuthStore()
@@ -118,21 +121,30 @@ function App () {
 
       if (!res.ok) {
         const text = await res.text()
-        
+
         // Handling session expiration/invalid tokens
-        if (res.status === 401 || res.status === 403 || text.toLowerCase().includes('expired') || text.toLowerCase().includes('invalid')) {
-          console.warn('⚠️ Authentication check failed: Session expired or invalid token. Redirecting to login state.')
+        if (
+          res.status === 401 ||
+          res.status === 403 ||
+          text.toLowerCase().includes('expired') ||
+          text.toLowerCase().includes('invalid')
+        ) {
+          console.warn(
+            '⚠️ Authentication check failed: Session expired or invalid token. Redirecting to login state.'
+          )
           logout()
           return
         }
-        
+
         throw new Error(`Auth check failed: ${text || res.statusText}`)
       }
 
       const contentType = res.headers.get('content-type')
       if (!contentType?.includes('application/json')) {
         const text = await res.text()
-        throw new Error(`Expected JSON response, but received: ${text.slice(0, 100)}`)
+        throw new Error(
+          `Expected JSON response, but received: ${text.slice(0, 100)}`
+        )
       }
 
       const data = await res.json()
@@ -205,7 +217,9 @@ function App () {
   if (loading && !profile) {
     return (
       <div className='h-screen '>
-        <div className={`absolute top-0 left-0 bg-primary z-50 w-full h-full flex flex-col justify-center items-center gap-8`}>
+        <div
+          className={`absolute top-0 left-0 bg-primary z-50 w-full h-full flex flex-col justify-center items-center gap-8`}
+        >
           <div className='w-24 h-24 border-r-[4px] bg-primary border-white flex justify-center items-center rounded-full animate-spin'>
             <span className="bg-[url('/images/logo.png')] bg-cover bg-center h-16 w-16 animate-spin-slow animate-spin-reverse"></span>
           </div>
@@ -219,13 +233,7 @@ function App () {
 
   // If there's a fatal error (not auth-related), show it
   if (error && accessToken) {
-    return (
-      <StateScreen 
-        title='System Error' 
-        description={error} 
-        tone='error' 
-      />
-    )
+    return <StateScreen title='System Error' description={error} tone='error' />
   }
 
   return (
@@ -253,6 +261,25 @@ function App () {
       <ErrorBoundary>
         <div className='flex w-full'>
           <aside className='h-screen w-[16%] bg-[#102221] sticky top-0 left-0 hidden lg:block '>
+            {/* Social icons */};
+            <div className='flex items-start gap-2 self-center sm:self-start absolute bottom-[1rem]   left-4'>
+              {[
+                { Icon: FaInstagram, label: 'Instagram', path: '' },
+                { Icon: FaXTwitter, label: 'X / Twitter', path: '' },
+                { Icon: FaTelegram, label: 'Telegram', path: 'https://t.me/zephyrlabscommunity' }
+              ].map(({ Icon, label, path }) => (
+                <Link
+                  key={label}
+                 to={path}
+                  aria-label={label}
+                  className='flex items-center justify-center w-[34px] h-[34px] rounded-lg
+                                 bg-[#1a1a24] border border-[#2a2a38] text-[#c0c0d0]
+                                 hover:bg-[#222232] hover:text-white transition-colors duration-150'
+                >
+                  <Icon size={15} />
+                </Link>
+              ))}
+            </div>
             <div className='h-[70%] side p-3 lg:flex flex-col gap-6  w-full overflow-y-auto '>
               <div className='flex items-center gap-4'>
                 <span
@@ -285,7 +312,9 @@ function App () {
                     }
                   >
                     <img src={item.icon} alt={item.title} className='w-5 h-5' />
-                    <span className='uppercase tracking-widest text-[10px] font-bold'>{item.title}</span>
+                    <span className='uppercase tracking-widest text-[10px] font-bold'>
+                      {item.title}
+                    </span>
                   </NavLink>
                 ))}
               </nav>
@@ -341,6 +370,7 @@ function App () {
           open={claimFeesOpen}
           onClose={() => setClaimFeesOpen(false)}
         />
+
         {showOnboarding && (
           <Onboarding
             onComplete={() => {
@@ -350,6 +380,7 @@ function App () {
           />
         )}
       </ErrorBoundary>
+      <ToastContainer />
     </div>
   )
 }

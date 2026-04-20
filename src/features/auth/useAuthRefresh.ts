@@ -39,19 +39,20 @@ export function useAuthRefresh() {
       .then((data) => {
         console.log("✅ Token refreshed:", data);
 
-        // TODO: Adjust based on actual backend response
-        // If backend returns { accessToken, user }:
+        // Backend returns { accessToken, user }
         if (data.accessToken && data.user) {
           setAuth(data.user, data.accessToken);
         }
-        // If backend only returns { user } (token in cookie):
+        // Fallback: user data only (cookie handles session)
         else if (data.user) {
-          console.warn("Backend returned user but no accessToken");
           useAuthStore.setState({
             authenticated: true,
             user: data.user,
             authResolved: true,
           });
+        } else {
+          // Unexpected response format
+          useAuthStore.setState({ authResolved: true });
         }
       })
       .catch((err) => {

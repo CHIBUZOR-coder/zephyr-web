@@ -4,6 +4,7 @@ import { BiChevronDown } from 'react-icons/bi'
 // import { GiCheckedShield } from 'react-icons/gi'
 import { LuMessagesSquare } from 'react-icons/lu'
 import { MdMessage } from 'react-icons/md'
+import { Link } from 'react-router-dom'
 
 type FAQ = {
   question: string
@@ -73,7 +74,6 @@ const faqData: FAQ[] = [
 
 export default function Support () {
   const [open, setOpen] = useState<number | null>(null)
-  
 
   return (
     <div className='bg-supportBg min-h-screen text-supportText font-inter px-6 py-12'>
@@ -165,12 +165,13 @@ export default function Support () {
                   </div>
                 </div>
 
-                <button
+                <Link 
+                to={"https://t.me/zephyrlabscommunity"}
                   className='bg-[#009883n dev
                 ] text-white text-[14px] font-[600] text-xs px-4 py-2 rounded-md leading-[21px] bg-[#009883] '
                 >
                   START CHAT
-                </button>
+                </Link>
               </div>
 
               <div className='bg-supportCard border border-supportBorder rounded-lg p-4 flex justify-between items-center'>
@@ -200,7 +201,7 @@ export default function Support () {
 
                 <div>
                   <p className='text-sm text-white mb-2'>
-                    Join the Community Discord
+                    Join the Telegram Community
                   </p>
 
                   <p className='text-xs text-gray-400 mb-5'>
@@ -210,9 +211,12 @@ export default function Support () {
                 </div>
               </div>
 
-              <button className='w-full text-white bg-[#5865F2] hover:bg-indigo-600 transition text-sm py-3 rounded-md font-medium'>
+              <Link
+                to={'https://t.me/zephyrlabscommunity'}
+                className='w-full flex justify-center items-center text-white bg-[#5865F2] hover:bg-indigo-600 transition text-sm py-3 rounded-md font-medium'
+              >
                 JOIN DISCORD
-              </button>
+              </Link>
             </div>
           </div>
         </div>

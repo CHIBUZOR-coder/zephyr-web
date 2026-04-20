@@ -12,8 +12,6 @@ export const PositionState = {
   PartialClosed: "PartialClosed",
 } as const;
 
-
-
 export interface PositionData {
   id: number;
   assetMint: string;
@@ -78,6 +76,8 @@ export function useUserVaults() {
           const balance = await connection.getBalance(
             new PublicKey(res.data.vaultPda),
           );
+          // const result = { ...res.data, balance: balance / 1e9 };
+          // console.log("vaults:", result);
           return { ...res.data, balance: balance / 1e9 };
         }
         return null;
@@ -86,6 +86,7 @@ export function useUserVaults() {
       }
     },
     enabled: !!publicKey,
+    refetchInterval: 10000,
   });
 
   // Sync hasMaterVault state with context
@@ -123,6 +124,35 @@ export function useUserVaults() {
       }
     },
     enabled: !!publicKey,
+    refetchInterval: 10000,
+  });
+
+  const { data: managedCopierVaults, isLoading: loadingManaged } = useQuery({
+    queryKey: ["managed-copier-vaults", publicKey?.toBase58()],
+    queryFn: async () => {
+      if (!publicKey) return [];
+      try {
+        const res = await authFetch<{ success: boolean; data: CopierVault[] }>(
+          `/api/vaults/master/${publicKey.toBase58()}/copiers`,
+        );
+        if (res.success && res.data) {
+          const enrichedVaults = await Promise.all(
+            res.data.map(async (v) => {
+              const balance = await connection.getBalance(
+                new PublicKey(v.vaultPda),
+              );
+              return { ...v, actualBalance: balance / 1e9 };
+            }),
+          );
+          return enrichedVaults;
+        }
+        return [];
+      } catch {
+        return [];
+      }
+    },
+    enabled: !!publicKey,
+    refetchInterval: 10000,
   });
 
   const refetchAll = useCallback(async () => {
@@ -134,13 +164,17 @@ export function useUserVaults() {
       queryClient.invalidateQueries({
         queryKey: ["copier-vaults", publicKey.toBase58()],
       }),
+      queryClient.invalidateQueries({
+        queryKey: ["managed-copier-vaults", publicKey.toBase58()],
+      }),
     ]);
   }, [queryClient, publicKey]);
 
   return {
     masterVault,
     copierVaults,
-    isLoading: loadingMaster || loadingCopiers,
+    managedCopierVaults,
+    isLoading: loadingMaster || loadingCopiers || loadingManaged,
     refetchAll,
   };
 }

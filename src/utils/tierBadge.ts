@@ -58,7 +58,7 @@ const TIER_STYLES: Record<string, TierBadgeStyle> = {
 }
 
 export function getTierBadgeStyle(tierLabel: string): TierBadgeStyle {
-  return TIER_STYLES[tierLabel] || TIER_STYLES["Unranked"]
+  return TIER_STYLES[tierLabel] || TIER_STYLES["Community"]
 }
 
 export function getTierShortName(tierLabel: string): string {

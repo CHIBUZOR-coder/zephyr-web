@@ -89,30 +89,39 @@ export const useCopierVault = () => {
 
       console.log('Initializing copier vault on-chain...', copierVaultPda.toString());
 
-      const tx = await (program.methods
-        .initializeCopierVault(
-          {
-            maxLossPct: params.maxLossPct,
-            maxTradeSizePct: params.maxTradeSizePct,
-            maxDrawdownPct: params.maxDrawdownPct,
-          },
-          params.stopLossTriggerBps,
-          params.stopLossSellBps,
-          params.dailyLossLimitBps
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        ) as any)
-        .accounts({
-          copier: publicKey,
-          masterWallet: masterWallet,
-          vault: copierVaultPda,
-          config: configPda,
-          masterVault: masterVaultPubkey,
-          riskConfig: riskConfigPda,
-          systemProgram: SystemProgram.programId,
-        })
-        .rpc();
-
-      console.log('Solana transaction successful:', tx);
+      let tx: string | null = null;
+      try {
+        tx = await (program.methods
+          .initializeCopierVault(
+            {
+              maxLossPct: params.maxLossPct,
+              maxTradeSizePct: params.maxTradeSizePct,
+              maxDrawdownPct: params.maxDrawdownPct,
+            },
+            params.stopLossTriggerBps,
+            params.stopLossSellBps,
+            params.dailyLossLimitBps
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          ) as any)
+          .accounts({
+            copier: publicKey,
+            masterWallet: masterWallet,
+            vault: copierVaultPda,
+            config: configPda,
+            masterVault: masterVaultPubkey,
+            riskConfig: riskConfigPda,
+            systemProgram: SystemProgram.programId,
+          })
+          .rpc();
+        console.log('Solana transaction successful:', tx);
+      } catch (txErr: any) {
+        const msg = txErr?.message || String(txErr);
+        if (msg.includes('already processed') || msg.includes('already been processed')) {
+          console.log('Creation transaction was already processed. Continuing to sync.');
+        } else {
+          throw txErr;
+        }
+      }
 
       // 2. Sync with Backend
       console.log('Syncing copier vault with backend...');

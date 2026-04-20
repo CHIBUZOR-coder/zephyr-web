@@ -137,7 +137,7 @@ export const useMasterVault = () => {
           publicKey, // fee_wallet (set to self for now)
           publicKey, // admin (set to self for now)
           1000, // atomic_threshold
-          10, // slot_grace_window
+          50, // slot_grace_window (20 seconds)
           1, // protocol_version
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         ) as any)

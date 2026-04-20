@@ -10,13 +10,14 @@ import {
 // ✅ Point these at your local backend
 const INDEXER_API = 'http://localhost:3002/api'
 const INDEXER_WS = 'ws://localhost:3002/ws'
+const JUPITER_API = 'https://api.jup.ag/tokens/v2'
 
 const intervalMap: Record<string, string> = {
   '1M': 'M1',
   '5M': 'M5',
   '15M': 'M15',
   '1H': 'H1',
-  '4H': 'H4' // Note: Backend schema says H1 then D1, but usually H4 exists in these systems. Let's stick to M15/H1 for now if H4 is missing.
+  '4H': 'H1' // Backend schema doesn't have H4, falling back to H1
 }
 
 type Props = {
@@ -103,23 +104,54 @@ const SolanaChart = ({ interval = '15M', pair = 'SOL/USDC' }: Props) => {
         
         const data = res.data || []
 
-        const candles = data.map(
+        interface ChartCandle {
+          time: UTCTimestamp
+          open: number
+          high: number
+          low: number
+          close: number
+        }
+
+        const candles: ChartCandle[] = data.map(
           (c: {
-            timestamp: string | number
-            open: string | number
+            time?: number
+            timestamp?: string | number
+            open: string | number | number
             high: string | number
             low: string | number
             close: string | number
-          }) => ({
-            time: (typeof c.timestamp === 'string' ? Math.floor(new Date(c.timestamp).getTime() / 1000) : Math.floor(c.timestamp / 1000)) as UTCTimestamp,
-            open: Number(c.open),
-            high: Number(c.high),
-            low: Number(c.low),
-            close: Number(c.close)
-          })
-        )
+          }) => {
+            let timeVal: number
+            if (c.time) {
+              timeVal = c.time
+            } else if (typeof c.timestamp === 'string') {
+              timeVal = Math.floor(new Date(c.timestamp).getTime() / 1000)
+            } else if (typeof c.timestamp === 'number') {
+              timeVal = c.timestamp > 1000000000000 ? Math.floor(c.timestamp / 1000) : c.timestamp
+            } else {
+              timeVal = NaN
+            }
 
-        candleSeries.setData(candles)
+            return {
+              time: timeVal as UTCTimestamp,
+              open: Number(c.open),
+              high: Number(c.high),
+              low: Number(c.low),
+              close: Number(c.close)
+            }
+          }
+        ).filter((c: ChartCandle) => !isNaN(c.time as number) && !isNaN(c.open) && !isNaN(c.high) && !isNaN(c.low) && !isNaN(c.close))
+        .sort((a: ChartCandle, b: ChartCandle) => (a.time as number) - (b.time as number))
+
+        // Ensure strictly increasing timestamps for lightweight-charts
+        const uniqueCandles: ChartCandle[] = []
+        for (const c of candles) {
+          if (uniqueCandles.length === 0 || (c.time as number) > (uniqueCandles[uniqueCandles.length - 1].time as number)) {
+            uniqueCandles.push(c)
+          }
+        }
+
+        candleSeries.setData(uniqueCandles)
         chart.timeScale().fitContent()
         hideOverlays()
 
@@ -136,13 +168,36 @@ const SolanaChart = ({ interval = '15M', pair = 'SOL/USDC' }: Props) => {
 
           ws.onmessage = event => {
             const msg = JSON.parse(event.data)
-            candleSeries.update({
-              time: Math.floor(msg.timestamp / 1000) as UTCTimestamp,
-              open: Number(msg.open),
-              high: Number(msg.high),
-              low: Number(msg.low),
-              close: Number(msg.close)
-            })
+            
+            // The backend broadcasts events in { event: string, data: any } format
+            // We only care about CANDLE_UPDATE here.
+            if (msg.event && msg.event !== 'CANDLE_UPDATE') return;
+            
+            // If it's an event wrapper, use msg.data; otherwise assume raw candle data
+            const candle = msg.data || msg;
+            
+            // Safety check: ensure we have required fields to avoid NaN in chart
+            if (!(candle.timestamp || candle.time) || candle.open === undefined) return;
+
+            let time: number
+            if (candle.time) {
+              time = candle.time
+            } else if (typeof candle.timestamp === 'string') {
+              time = Math.floor(new Date(candle.timestamp).getTime() / 1000)
+            } else if (typeof candle.timestamp === 'number') {
+              time = candle.timestamp > 1000000000000 ? Math.floor(candle.timestamp / 1000) : candle.timestamp
+            } else {
+              time = NaN
+            }
+
+            const open = Number(candle.open);
+            const high = Number(candle.high);
+            const low = Number(candle.low);
+            const close = Number(candle.close);
+            
+            if (!isNaN(time) && !isNaN(open) && !isNaN(high) && !isNaN(low) && !isNaN(close)) {
+              candleSeries.update({ time: time as UTCTimestamp, open, high, low, close })
+            }
           }
 
           ws.onerror = (error) => {
@@ -156,24 +211,40 @@ const SolanaChart = ({ interval = '15M', pair = 'SOL/USDC' }: Props) => {
           console.warn('Failed to connect WebSocket', e)
         }
 
-        const fetchOraclePrice = () => {
-          fetch(`${INDEXER_API}/price?pair=${encodeURIComponent(pair)}`)
-            .then(res => res.json())
-            .then(res => {
-              if (cancelled) return
-              const data = res.data
-              if (data && data.price) {
-                oracleLine.update({
-                  time: Math.floor(Date.now() / 1000) as UTCTimestamp,
-                  value: Number(data.price)
-                })
+        const extractSymbol = (pairStr: string) => pairStr.replace('/USDC', '').replace('/SOL', '').replace('/', '')
+
+        const fetchOraclePrice = async () => {
+          let price = 0
+
+          try {
+            const res = await fetch(`${INDEXER_API}/price?pair=${encodeURIComponent(pair)}`)
+            const data = await res.json()
+            if (data?.data?.price && data.data.price > 0) {
+              price = data.data.price
+            }
+          } catch {}
+
+          if (price === 0) {
+            const symbol = extractSymbol(pair)
+            try {
+              const jupRes = await fetch(`${JUPITER_API}/search?query=${symbol}&limit=1`)
+              const jupData = await jupRes.json()
+              if (jupData && jupData[0]?.usdPrice) {
+                price = jupData[0].usdPrice
               }
+            } catch {}
+          }
+
+          if (!cancelled && price > 0) {
+            oracleLine.update({
+              time: Math.floor(Date.now() / 1000) as UTCTimestamp,
+              value: price
             })
-            .catch(() => {}) 
+          }
         }
 
         fetchOraclePrice()
-        oraclePoll = setInterval(fetchOraclePrice, 2000)
+        oraclePoll = setInterval(fetchOraclePrice, 5000)
       })
       .catch(err => {
         if (err.name === 'AbortError') return

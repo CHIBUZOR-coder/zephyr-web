@@ -3327,6 +3327,19 @@
       ]
     },
     {
+      "name": "FeeClaimedEvent",
+      "discriminator": [
+        42,
+        25,
+        34,
+        217,
+        30,
+        24,
+        89,
+        139
+      ]
+    },
+    {
       "name": "FeeCollectedEvent",
       "discriminator": [
         142,
@@ -4340,6 +4353,37 @@
               "Whether an open position existed at time of withdrawal"
             ],
             "type": "bool"
+          },
+          {
+            "name": "timestamp",
+            "type": "i64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "FeeClaimedEvent",
+      "docs": [
+        "Event emitted when fees are claimed from master vault"
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "master_vault",
+            "type": "pubkey"
+          },
+          {
+            "name": "master_wallet",
+            "type": "pubkey"
+          },
+          {
+            "name": "amount_claimed",
+            "type": "u64"
+          },
+          {
+            "name": "remaining_fees",
+            "type": "u64"
           },
           {
             "name": "timestamp",
@@ -5857,6 +5901,15 @@
                 "name": "TradeType"
               }
             }
+          },
+          {
+            "name": "jupiter_instruction_data",
+            "docs": [
+              "Serialized Jupiter swap instruction data (base64-decoded).",
+              "Populated from Jupiter's /v6/swap-instructions response.",
+              "Empty vec signals mock/devnet mode — no real swap is executed."
+            ],
+            "type": "bytes"
           },
           {
             "name": "days_active",

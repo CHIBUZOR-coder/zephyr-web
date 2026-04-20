@@ -1,9 +1,11 @@
 import { useWallet } from '@solana/wallet-adapter-react'
 import type { FC } from 'react'
 import { FiHeadphones, FiSettings, FiFileText, FiX } from 'react-icons/fi'
-import { NavLink } from 'react-router-dom'
+import { Link, NavLink } from 'react-router-dom'
 import { useTradingModeStore } from '../../features/dashboard/useTradingModeStore'
 import { useGeneralContext } from '../../Context/GeneralContext'
+import { FaInstagram, FaTelegram } from 'react-icons/fa'
+import { FaXTwitter } from 'react-icons/fa6'
 
 interface Props {
   isOpen: boolean
@@ -13,7 +15,8 @@ interface Props {
 const MobileSideNav: FC<Props> = ({ isOpen, onClose }) => {
   const { connected } = useWallet()
   const { masterMode, toggleMasterMode } = useTradingModeStore()
-  const { hasMaterVault, setMasterTraderOpen, setTierConfigInitOpen } = useGeneralContext()
+  const { hasMaterVault, setMasterTraderOpen, setTierConfigInitOpen } =
+    useGeneralContext()
   const navs = [
     {
       title: 'Support',
@@ -27,30 +30,52 @@ const MobileSideNav: FC<Props> = ({ isOpen, onClose }) => {
     },
     {
       title: 'Docs',
-      
+
       icon: <FiFileText size={16} />,
       path: '/docs'
     }
   ]
   return (
-    <>
+    <div className='relative '>
       {/* BACKDROP */}
       <div
         onClick={onClose}
         className={`fixed inset-0 bg-black/40 backdrop-blur-sm z-[90] transition-opacity
         ${isOpen ? 'opacity-100 visible' : 'opacity-0 invisible'}`}
       />
-
       {/* SIDENAV */}
       <div
         className={`fixed top-0 left-0 h-full w-[260px] bg-[#071d1a] border-r border-[#0f3b35]
         transform transition-transform duration-300 z-[100]
-        ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}
+        ${isOpen ? 'translate-x-0' : '-translate-x-full'} `}
       >
+        {/* Social icons */}
+        <div className='flex items-start gap-2 self-center sm:self-start absolute bottom-[8rem]   left-4'>
+          {[
+            { Icon: FaInstagram, label: 'Instagram', path: '' },
+            { Icon: FaXTwitter, label: 'X / Twitter', path: '' },
+            {
+              Icon: FaTelegram,
+              label: 'Telegram',
+              path: 'https://t.me/zephyrlabscommunity'
+            }
+          ].map(({ Icon, label, path }) => (
+            <Link
+              key={label}
+              to={path}
+              aria-label={label}
+              className='flex items-center justify-center w-[34px] h-[34px] rounded-lg
+                                         bg-[#1a1a24] border border-[#2a2a38] text-[#c0c0d0]
+                                         hover:bg-[#222232] hover:text-white transition-colors duration-150'
+            >
+              <Icon size={15} />
+            </Link>
+          ))}
+        </div>
         {/* HEADER */}
         <div className='flex items-center justify-between px-5 py-6'>
           <div className='flex items-center gap-2'>
-            <img src='/images/zeflogo.png' className='h-[30px] w-[30px]' />
+            <img src='/images/zeflogo.png' className='h-[40px] w-[50px]' />
             <span className='text-white text-[15px] font-semibold'>Zephyr</span>
           </div>
 
@@ -58,7 +83,6 @@ const MobileSideNav: FC<Props> = ({ isOpen, onClose }) => {
             <FiX size={18} />
           </button>
         </div>
-
         {/* MENU */}
         <div className='flex flex-col gap-6 px-5 mt-6 text-[#7FAAA2] text-[13px]'>
           {navs.map((item, i) => (
@@ -111,13 +135,12 @@ const MobileSideNav: FC<Props> = ({ isOpen, onClose }) => {
             </>
           )}
         </div>
-
         {/* FOOTER */}
         <div className='absolute bottom-5 left-0 w-full px-5 flex flex-col gap-2'>
           <button
             onClick={() => {
-              onClose();
-              setTierConfigInitOpen(true);
+              onClose()
+              setTierConfigInitOpen(true)
             }}
             className='w-full py-2 bg-[#009883]/20 border border-[#009883]/40 text-[#009883] rounded-lg text-[11px] font-semibold hover:bg-[#009883]/30 transition-colors'
           >
@@ -134,7 +157,7 @@ const MobileSideNav: FC<Props> = ({ isOpen, onClose }) => {
           </div>
         </div>
       </div>
-    </>
+    </div>
   )
 }
 

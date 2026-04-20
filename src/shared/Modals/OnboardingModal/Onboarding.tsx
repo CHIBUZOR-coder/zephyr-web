@@ -5,6 +5,7 @@ import Step2HowItWorks from './steps/Step2howitworks'
 import Step3ChooseRole from './steps/Step3chooserole'
 import Step4CopyTradingExplanation from './steps/Step4copytradingexplanation'
 import Step5ConnectWallet from './steps/Step5connectwallet'
+import { Link } from 'react-router-dom'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type StepNumber = 1 | 2 | 3 | 4 | 5
@@ -95,7 +96,6 @@ export default function Onboarding ({ onComplete }: OnboardingProps) {
         <div className='relative z-10 flex items-center justify-between border-b border-[rgba(255,255,255,0.07)] px-5 py-3 flex-shrink-0'>
           {/* Brand */}
           <div className='flex  items-center gap-2'>
-            
             <span
               className='inline-block bg-center bg-cover w-[40px] h-[40px]'
               style={{
@@ -113,12 +113,21 @@ export default function Onboarding ({ onComplete }: OnboardingProps) {
           </div>
 
           {/* Skip */}
-          <button
-            onClick={onComplete}
-            className='text-xs text-[#7a8fa0] hover:text-[#e8edf2] hover:bg-white/5 px-3 py-1.5 rounded-md transition-all duration-150 cursor-pointer'
-          >
-            Skip
-          </button>
+
+          <div className='flex items-center gap-3'>
+            <Link
+              to={'https://t.me/ZephyrAssist'}
+              style={{ backgroundImage: `url("/images/support.svg")` }}
+              className='bg-center bg-cover h-3 w-3 block'
+            ></Link>
+
+            <button
+              onClick={onComplete}
+              className='text-xs text-[#5c6f80] hover:text-[#e8edf2] hover:bg-white/5 px-3 py-1.5 rounded-md transition-all duration-150 cursor-pointer'
+            >
+              Skip
+            </button>
+          </div>
         </div>
 
         {/* ── Step body ── */}

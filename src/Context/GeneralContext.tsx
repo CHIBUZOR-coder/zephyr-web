@@ -89,6 +89,10 @@ type GeneralContextType = {
   // Claim Performance Fees
   claimFeesOpen: boolean
   setClaimFeesOpen: (val: boolean) => void
+
+  //EditRiskvisible
+  editRiskvisible: boolean
+  setEditRiskvisible: (val: boolean) => void
 }
 
 /* ------------------------------------------------ */
@@ -145,6 +149,7 @@ export const GeneralProvider = ({ children }: { children: ReactNode }) => {
   const [selectedVaultPda, setSelectedVaultPda] = useState<string | null>(null)
   const [tierConfigInitOpen, setTierConfigInitOpen] = useState(false)
   const [claimFeesOpen, setClaimFeesOpen] = useState(false)
+  const [editRiskvisible, setEditRiskvisible] = useState(false)
 
   return (
     <GeneralContext.Provider
@@ -193,7 +198,9 @@ export const GeneralProvider = ({ children }: { children: ReactNode }) => {
         tierConfigInitOpen,
         setTierConfigInitOpen,
         claimFeesOpen,
-        setClaimFeesOpen
+        setClaimFeesOpen,
+        editRiskvisible,
+        setEditRiskvisible
       }}
     >
       {children}

@@ -7,6 +7,7 @@ import Step3CreateVault from './steps/Step3CreateVault'
 import Step4FundVault from './steps/Step4fundvault'
 import Step5VaultLive from './steps/Step5vaultlive'
 import { useGeneralContext } from '../../../Context/GeneralContext'
+import { Link } from 'react-router-dom'
 
 // ─── COMPONENT ────────────────────────────────────────────────────────────────
 
@@ -53,8 +54,15 @@ const MasterTradingFlow: React.FC = () => {
             exit={{ scale: 0.92, opacity: 0, y: 20 }}
             transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
             onClick={e => e.stopPropagation()}
-            className='bg-[#0f2320] border border-[#1a3530] rounded-[18px] p-[clamp(20px,5vw,32px)] w-full max-w-[480px] max-h-[90vh] overflow-y-auto shadow-[0_24px_80px_rgba(0,0,0,0.6),0_0_0_1px_rgba(0,212,168,0.06)] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden side'
+            className='bg-[#0f2320] border border-[#1a3530] rounded-[18px] p-[clamp(20px,5vw,32px)] w-full max-w-[480px] max-h-[90vh] overflow-y-auto shadow-[0_24px_80px_rgba(0,0,0,0.6),0_0_0_1px_rgba(0,212,168,0.06)] 
+            [scrollbar-width:none] [&::-webkit-scrollbar]:hidden side relative'
           >
+            <Link
+              to={'https://t.me/ZephyrAssist'}
+              style={{ backgroundImage: `url("/images/support.svg")` }}
+              className='bg-center bg-cover h-5 w-5 block absolute right-5 top-8'
+            ></Link>
+
             <AnimatePresence mode='wait'>
               {step === 1 && <Step1HowItWorks key='step-1' {...stepProps} />}
               {step === 2 && (

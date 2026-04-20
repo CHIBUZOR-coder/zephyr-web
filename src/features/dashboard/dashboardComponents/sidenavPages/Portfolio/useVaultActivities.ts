@@ -7,6 +7,8 @@ export type VaultActivityType =
   | "DEPOSIT_MASTER"
   | "WITHDRAWAL"
   | "TRADE_EXECUTED"
+  | "TRADE_MIRRORED"
+  | "FEE_COLLECTED"
   | "STATUS_CHANGED";
 
 export interface VaultActivity {
@@ -39,7 +41,8 @@ export function useVaultActivities(vaultAddress: string | null, limit = 15) {
       }
     },
     enabled: !!vaultAddress,
-    staleTime: 30000,
+    staleTime: 5000,
+    refetchInterval: 10000,
   });
 
   return {
@@ -84,7 +87,8 @@ export function useAllVaultActivities(
       }
     },
     enabled: vaultAddresses.length > 0,
-    staleTime: 30000,
+    staleTime: 5000,
+    refetchInterval: 10000,
   });
 
   return {
@@ -140,6 +144,8 @@ function formatEventType(type: VaultActivityType): string {
     DEPOSIT_MASTER: "DEPOSIT",
     WITHDRAWAL: "WITHDRAWAL",
     TRADE_EXECUTED: "TRADE",
+    TRADE_MIRRORED: "MIRRORED TRADE",
+    FEE_COLLECTED: "FEE COLLECTED",
     STATUS_CHANGED: "STATUS CHANGE",
   };
   return typeMap[type] ?? type;
@@ -160,9 +166,20 @@ function extractTokenAndAmount(
     }
     case "TRADE_EXECUTED": {
       const tokenOut = (data?.tokenOut as string) ?? "TOKEN";
-      const amountOut = data?.amountOut as string | undefined;
-      const formattedAmount = amountOut ? formatAmount(amountOut) : "0";
+      const amountOut = (data?.minAmountOut as string) ?? (data?.amountOut as string) ?? "0";
+      const formattedAmount = formatAmount(amountOut, tokenOut);
       return { token: formatTokenSymbol(tokenOut), amount: `+${formattedAmount}` };
+    }
+    case "TRADE_MIRRORED": {
+      const tokenIn = (data?.tokenIn as string) ?? "TOKEN";
+      const amountIn = (data?.amountIn as string) ?? "0";
+      const formattedAmount = formatAmount(amountIn, tokenIn);
+      return { token: formatTokenSymbol(tokenIn), amount: `+${formattedAmount}` };
+    }
+    case "FEE_COLLECTED": {
+      const totalFee = (data?.totalFee as string) ?? (data?.traderFee as string) ?? "0";
+      const formattedAmount = formatAmount(totalFee);
+      return { token: "SOL", amount: `+${formattedAmount}` };
     }
     case "VAULT_CREATED":
       return { token: "N/A", amount: "N/A" };
@@ -173,22 +190,36 @@ function extractTokenAndAmount(
   }
 }
 
-function formatAmount(raw: string): string {
+function formatAmount(raw: string, mint?: string): string {
   try {
     const num = BigInt(raw);
-    const decimals = 9;
+    if (num === 0n) return "0.00";
+    
+    // Simple decimal handling: SOL = 9, USDC = 6, others default to 9
+    const isUSDC = mint === "Gh9ZwEmdLJ8DscKNTkTqPbNwLNNBjuSzaG9Vp2KGtKJr" || mint === "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v";
+    const decimals = isUSDC ? 6 : 9;
+    
     const divisor = BigInt(10 ** decimals);
     const wholePart = num / divisor;
     const fractionalPart = num % divisor;
-    const fractionalStr = fractionalPart.toString().padStart(decimals, "0").slice(0, 2);
-    return `${wholePart}.${fractionalStr}`;
+    const fractionalStr = fractionalPart.toString().padStart(decimals, "0").slice(0, 4);
+    
+    // Trim trailing zeros for cleaner display
+    let trimmedFractional = fractionalStr.replace(/0+$/, "");
+    if (trimmedFractional.length < 2) trimmedFractional = fractionalStr.slice(0, 2);
+    
+    return `${wholePart}.${trimmedFractional}`;
   } catch {
     return raw;
   }
 }
 
 function formatTokenSymbol(mint: string): string {
-  if (!mint || mint.length < 8) return mint;
+  if (!mint) return "TOKEN";
+  if (mint === "11111111111111111111111111111111" || mint === "So11111111111111111111111111111111111111112") return "SOL";
+  if (mint === "Gh9ZwEmdLJ8DscKNTkTqPbNwLNNBjuSzaG9Vp2KGtKJr" || mint === "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v") return "USDC";
+  
+  if (mint.length < 8) return mint;
   return mint.slice(0, 4).toUpperCase();
 }
 
