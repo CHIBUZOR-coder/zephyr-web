@@ -140,6 +140,7 @@ const LiveTrade = () => {
       time: formatTimeAgo(trade.executedAt),
       signature: trade.signature,
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }), [recentTrades])
 
   const positions: Position[] = useMemo(() => copierTrades.map((trade: Trade) => {
@@ -187,6 +188,7 @@ const LiveTrade = () => {
       masterVaultPda: trade.masterExecutionVault?.vaultPda,
       vaultPda: trade.vaultPda
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }), [copierTrades])
 
   const activeAllocation = useMemo(() => copierTrades.reduce((acc, t) => {
@@ -649,14 +651,14 @@ const LiveTrade = () => {
               {/* Empty Wallet Card */}
               <div className='w-full rounded-2xl p-10 md:p-16 bg-[#102221]  border border-teal-900/40 flex flex-col items-center justify-center text-center space-y-6'>
                 {/* Icon Circle */}
-                <div className='h-[72px] w-[72px] rounded-full bg-teal-500/10 flex items-center justify-center'>
+                {/* <div className='h-[72px] w-[72px] rounded-full bg-teal-500/10 flex items-center justify-center'>
                   <span
                     className='h-[32px] w-[32px] bg-center bg-cover'
                     style={{
                       backgroundImage: `url("/images/wallet.svg")`
                     }}
                   ></span>
-                </div>
+                </div> */}
 
                 {/* Title */}
                 <h2 className='text-lg md:text-xl font-bold text-white tracking-wide'>

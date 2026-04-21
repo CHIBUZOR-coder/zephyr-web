@@ -39,20 +39,20 @@ const Trading: React.FC = () => {
     if (isInvalid) {
       return { 
         level: 'blocked', 
-        reasons: ['❌ Invalid parameters - please enter numbers 0-100'] 
+        reasons: ['Invalid parameters - please enter numbers 0-100'] 
       }
     }
 
     if (maxTradeSize > 100) {
-      reasons.push(`⚠️ Max trade size capped at 100% (you entered ${maxTradeSize}%)`)
+      reasons.push(`Max trade size capped at 100% (you entered ${maxTradeSize}%)`)
       maxTradeSize = 100
     }
     if (maxLoss > 100) {
-      reasons.push(`⚠️ Max loss capped at 100% (you entered ${maxLoss}%)`)
+      reasons.push(`Max loss capped at 100% (you entered ${maxLoss}%)`)
       maxLoss = 100
     }
     if (maxDrawdown > 100) {
-      reasons.push(`⚠️ Max drawdown capped at 100% (you entered ${maxDrawdown}%)`)
+      reasons.push(`Max drawdown capped at 100% (you entered ${maxDrawdown}%)`)
       maxDrawdown = 100
     }
 
@@ -82,14 +82,14 @@ const Trading: React.FC = () => {
     }
 
     if (maxTradeSize >= 50 && maxDrawdown >= 20 && maxLoss >= 30) {
-      return { level: 'safe', reasons: ['✅ All limits are permissive'] }
+      return { level: 'safe', reasons: ['All limits are permissive'] }
     }
 
     if (maxTradeSize >= 20 && maxDrawdown >= 10) {
-      return { level: 'warning', reasons: reasons.length ? reasons : ['⚠️ Some limits are restrictive'] }
+      return { level: 'warning', reasons: reasons.length ? reasons : ['Some limits are restrictive'] }
     }
 
-    return { level: 'blocked', reasons: reasons.length ? reasons : ['🔴 Risk params too restrictive'] }
+    return { level: 'blocked', reasons: reasons.length ? reasons : ['Risk params too restrictive'] }
   }
 
   const riskAnalysis = useMemo(() => 

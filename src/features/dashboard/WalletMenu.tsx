@@ -84,7 +84,7 @@ export const WalletMenu = ({ open, onClose }: Props) => {
                   >
                     <p className='h-[10px] w-[10px] rounded-full bg-[#00A991] animate-pulse'></p>
                     <p className='text-[12px] font-[600]   leading-[9.875px] tracking-[0.988px] text-[#FE9A00]'>
-                      Master Mode
+                      MASTER MODE
                     </p>
                   </div>
                 ) : (
@@ -100,7 +100,7 @@ export const WalletMenu = ({ open, onClose }: Props) => {
                   >
                     <p className='h-[10px] w-[10px] rounded-full bg-[#00A991] animate-pulse'></p>
                     <p className='call_trade text-[12px] font-[600]  md:text-[12px] md:font-[700] leading-[9.875px] tracking-[0.988px] text-[#00a991]'>
-                      COPIER Mode
+                      COPIER MODE
                     </p>
                   </div>
                 )}

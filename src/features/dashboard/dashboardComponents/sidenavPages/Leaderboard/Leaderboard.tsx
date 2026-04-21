@@ -55,7 +55,7 @@ const Leaderboard: React.FC = () => {
     sort: activeSort,
     tier: activeTier,
     page,
-    limit: 20
+    limit: 10
   })
 
   const leaders = data?.traders ?? []

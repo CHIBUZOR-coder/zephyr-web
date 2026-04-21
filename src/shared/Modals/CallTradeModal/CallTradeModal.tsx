@@ -32,14 +32,7 @@ const CallTradeModal: FC<Props> = ({ open, onClose }) => {
   const [tradeType, setTradeType] = useState<'Buy' | 'Sell'>('Buy')
 
 
-
   const [manualBootstrap, setManualBootstrap] = useState(false)
-
-
-
-
-
-
 
   const [tokenAddress, setTokenAddress] = useState('')
   const [tokenSymbol, setTokenSymbol] = useState<string | null>(null)
@@ -324,7 +317,7 @@ const CallTradeModal: FC<Props> = ({ open, onClose }) => {
                       value={tokenAddress}
                       onChange={(e) => setTokenAddress(e.target.value)}
                       placeholder='BONK, BONK/USDC, WIF/SOL...'
-                      className='w-full bg-[#0a1414] border border-[#123F3A] pl-10 pr-3 py-3 rounded-xl mb-3 text-[13px] outline-none text-[#E8F6F3] font-mono text-[10px]'
+                      className='w-full bg-[#0a1414] border border-[#123F3A] pl-10 pr-3 py-3 rounded-xl mb-3  outline-none text-[#E8F6F3] font-mono text-[10px]'
                     />
                     {tokenLoading && (
                       <span className='text-[10px] text-[#11C5A3] flex items-center gap-1'>

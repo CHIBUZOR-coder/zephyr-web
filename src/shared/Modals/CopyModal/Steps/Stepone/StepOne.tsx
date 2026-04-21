@@ -1,5 +1,7 @@
 import type { Dispatch, SetStateAction } from 'react'
+import { useMemo } from 'react'
 import { FaArrowRight } from 'react-icons/fa'
+import { FiAlertTriangle, FiInfo, FiCheckCircle, FiXCircle } from 'react-icons/fi'
 
 import FooterButtons from '../../Components/FooterButtons'
 import Input from '../../Components/Input'
@@ -16,6 +18,76 @@ export interface VaultFormData {
   [key: string]: string; 
 }
 
+type RiskLevel = 'safe' | 'warning' | 'blocked'
+
+interface RiskAnalysisResult {
+  level: RiskLevel
+  reasons: string[]
+}
+
+// Enhanced Risk Analysis Logic (from Trading.tsx/Settings)
+const analyzeRisk = (form: VaultFormData, masterVaultAddress?: string): RiskAnalysisResult => {
+  let maxTradeSize = parseInt(form.maxTradeSize || '0') || 0
+  let maxDrawdown = parseInt(form.maxVaultDrawdown || '0') || 0
+  let maxEntrySlippage = parseFloat(form.maxEntrySlippage || '0') || 0
+
+  const reasons: string[] = []
+  
+  // Validate inputs
+  const isInvalid = maxTradeSize === 0 && maxDrawdown === 0
+  
+  if (isInvalid) {
+    return { 
+      level: 'blocked', 
+      reasons: ['Invalid parameters - please enter numbers 0-100'] 
+    }
+  }
+
+  // Cap values at 100
+  if (maxTradeSize > 100) {
+    reasons.push(`Max trade size capped at 100% (you entered ${maxTradeSize}%)`)
+    maxTradeSize = 100
+  }
+  if (maxDrawdown > 100) {
+    reasons.push(`Max drawdown capped at 100% (you entered ${maxDrawdown}%)`)
+    maxDrawdown = 100
+  }
+  if (maxEntrySlippage > 10) {
+    reasons.push(`Slippage capped at 10% (you entered ${maxEntrySlippage}%)`)
+    maxEntrySlippage = 10
+  }
+
+  // Check for restrictive values
+  if (maxTradeSize < 10) {
+    reasons.push(`Max trade size (${maxTradeSize}%) is too low - likely to block trades`)
+  } else if (maxTradeSize >= 10 && maxTradeSize < 50) {
+    reasons.push(`Max trade size (${maxTradeSize}%) may block larger trades`)
+  }
+
+  if (maxDrawdown < 10) {
+    reasons.push(`Max drawdown (${maxDrawdown}%) is tight - may pause during volatility`)
+  }
+
+  // Add master vault simulation if provided
+  if (masterVaultAddress) {
+    reasons.push(`Simulating with master: ${masterVaultAddress.slice(0, 6)}...${masterVaultAddress.slice(-4)}`)
+    if (maxTradeSize < 50) {
+      reasons.push(`If master executes large trades, you may be blocked with current ${maxTradeSize}% limit`)
+    }
+  }
+
+  // Determine risk level
+  if (maxTradeSize >= 50 && maxDrawdown >= 20) {
+    return { level: 'safe', reasons: reasons.length ? reasons : ['All limits are permissive'] }
+  }
+
+  if (maxTradeSize >= 20 && maxDrawdown >= 10) {
+    return { level: 'warning', reasons: reasons.length ? reasons : ['Some limits are restrictive'] }
+  }
+
+  return { level: 'blocked', reasons: reasons.length ? reasons : ['Risk params too restrictive'] }
+}
+
 // 2. Define the Props with proper React types
 type StepOneProps = {
   onNext: () => void
@@ -26,6 +98,23 @@ type StepOneProps = {
 export const StepOne = ({ onNext, form, setForm }: StepOneProps) => {
   const { selectedTrader, closeVaultFlow, setWalletModal } = useGeneralContext()
   const { connected } = useWallet()
+
+  // Get master vault address for risk simulation
+  const masterVaultAddress = selectedTrader?.vaultAddress
+
+  // Risk analysis
+  const riskAnalysis = useMemo(() => analyzeRisk(form, masterVaultAddress), [form, masterVaultAddress])
+
+  const getRiskBadge = (level: RiskLevel) => {
+    switch (level) {
+      case 'safe':
+        return <span className='flex items-center gap-1 text-green-400'><FiCheckCircle /> SAFE</span>
+      case 'warning':
+        return <span className='flex items-center gap-1 text-yellow-400'><FiAlertTriangle /> WARNING</span>
+      case 'blocked':
+        return <span className='flex items-center gap-1 text-red-400'><FiXCircle /> BLOCKED</span>
+    }
+  }
 
   // 3. Use the functional update pattern (prev => ...) to avoid stale state bugs
   const handleInputChange = (key: keyof VaultFormData | string, value: string) => {
@@ -111,12 +200,36 @@ export const StepOne = ({ onNext, form, setForm }: StepOneProps) => {
           />
 
           <div className='flex items-center gap-2 rounded-md border border-[#EAB308] md:h-[41px] mt-0 md:mt-[1.2rem] bg-mod px-3 py-2 h-auto'>
-            <span>⚠️</span>
+            <FiAlertTriangle className='text-[#EAB308] text-xs' />
             <p className='text-[10px] font-[400] text-[#EAB308]'>
               Setting slippage too low may cause missed trades on volatile pairs.
             </p>
           </div>
         </div>
+
+        {/* Risk Analysis Display */}
+        <div className='flex items-center justify-between p-3 bg-[#0d1f1f] border border-[#1c3535] rounded-lg'>
+          <div className='flex items-center gap-2 text-sm font-bold'>
+            <FiInfo className='text-[#7A9E9A]' />
+            <span className='text-white'>Risk Analysis</span>
+          </div>
+          <div className='text-xs font-bold uppercase'>
+            {getRiskBadge(riskAnalysis.level)}
+          </div>
+        </div>
+
+        {/* Risk Analysis Reasons */}
+        {riskAnalysis.reasons.length > 0 && (
+          <div className={`p-3 rounded-lg text-[10px] space-y-1 ${
+            riskAnalysis.level === 'safe' ? 'bg-green-900/20 border border-green-500/30 text-green-400' :
+            riskAnalysis.level === 'warning' ? 'bg-yellow-900/20 border border-yellow-500/30 text-yellow-400' :
+            'bg-red-900/20 border border-red-500/30 text-red-400'
+          }`}>
+            {riskAnalysis.reasons.map((reason, i) => (
+              <p key={i}>{reason}</p>
+            ))}
+          </div>
+        )}
 
         {/* 4. Pass the type-safe props down */}
         <OptionalProfitParameters 

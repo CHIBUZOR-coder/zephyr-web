@@ -108,7 +108,7 @@ const Navbar = () => {
                       >
                         <p className='h-[5px] w-[5px] rounded-full bg-[#00A991] animate-pulse'></p>
                         <p className='text-[9px] font-[900] leading-[9.875px] tracking-[0.988px] text-[#FE9A00]'>
-                          Master Mode
+                          MASTER MODE
                         </p>
                       </div>
                     ) : (
@@ -124,7 +124,7 @@ const Navbar = () => {
                       >
                         <p className='h-[5px] w-[5px] rounded-full bg-[#00A991] animate-pulse'></p>
                         <p className='text-[9px] font-[900] leading-[9.875px] tracking-[0.988px] text-[#00a991]'>
-                          COPIER Mode
+                          COPIER MODE
                         </p>
                       </div>
                     )}

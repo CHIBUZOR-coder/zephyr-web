@@ -1,10 +1,12 @@
-import { FaCopy, FaUserPlus, FaShareAlt } from 'react-icons/fa'
+import { FaCopy, FaUserPlus, FaShareAlt, FaTelegram } from 'react-icons/fa'
 import { FaCheck } from 'react-icons/fa'
 import type { ReactNode } from 'react'
 import type { Trader } from '../../../features/dashboard/dashboardComponents/sidenavPages/Leaderboard/leaderboar.types'
 import { useGeneralContext } from '../../../Context/GeneralContext'
 
 import { getTier, isCommunityTier } from '../../../utils/Gettiter'
+import { FaXTwitter } from 'react-icons/fa6'
+import { Link } from 'react-router-dom'
 
 type ProfileHeaderProps = {
   trader: Trader
@@ -17,13 +19,13 @@ type ActionBtnProps = {
   trader: Trader
 }
 
-function formatDate(dateStr: string | undefined): string {
+function formatDate (dateStr: string | undefined): string {
   if (!dateStr) return 'N/A'
   const date = new Date(dateStr)
   return date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
 }
 
-function formatRelativeTime(dateStr: string | undefined): string {
+function formatRelativeTime (dateStr: string | undefined): string {
   if (!dateStr) return 'N/A'
   const date = new Date(dateStr)
   const now = new Date()
@@ -94,13 +96,26 @@ export default function ProfileHeader ({ trader }: ProfileHeaderProps) {
           <div className='flex items-center gap-6 text-xs mt-2'>
             <div>
               <p className='text-gray-500'>JOINED</p>
-              <p className='text-white font-medium'>{formatDate(trader.createdAt)}</p>
+              <p className='text-white font-medium'>
+                {formatDate(trader.createdAt)}
+              </p>
             </div>
 
             <div>
               <p className='text-gray-500'>LAST ACTIVE</p>
-              <p className='text-green-400 font-medium'>{formatRelativeTime(trader.updatedAt)}</p>
+              <p className='text-green-400 font-medium'>
+                {formatRelativeTime(trader.updatedAt)}
+              </p>
             </div>
+          </div>
+          <div className='flex items-center gap-2'>
+            <Link to={"#"} className='w-7 h-7 flex items-center justify-center rounded-md bg-sky-500'>
+              <FaTelegram size={13} />
+            </Link>
+            
+            <Link to={"#"} className='w-7 h-7 flex items-center justify-center rounded-md bg-black'>
+              <FaXTwitter size={13} />
+            </Link>
           </div>
         </div>
       </div>

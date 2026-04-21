@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { FaXTwitter, FaDiscord, FaTelegram } from 'react-icons/fa6'
+import { FaXTwitter, FaTelegram } from 'react-icons/fa6'
 import { useWallet } from '@solana/wallet-adapter-react'
 import AvatarUpload from './Components/AvatarUpload'
 import { useUserProfile } from './hooks/useUserProfile'
@@ -238,7 +238,7 @@ export default function Account() {
             </div>
 
             {/* Discord */}
-            <div className='flex items-center gap-2'>
+            {/* <div className='flex items-center gap-2'>
               <div className='w-7 h-7 flex items-center justify-center rounded-md bg-indigo-500'>
                 <FaDiscord size={13} />
               </div>
@@ -261,7 +261,7 @@ export default function Account() {
                 '
                 disabled={isSocialCooldownActive}
               />
-            </div>
+            </div> */}
 
             {/* Telegram */}
             <div className='flex items-center gap-2'>

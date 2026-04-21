@@ -9,6 +9,8 @@ import { useGeneralContext } from '../../../../../Context/GeneralContext'
 import { useUserVaults } from '../../../../master/useUserVaults'
 import { useSolPrice } from '../../../../../core/hooks/usePrice'
 import { AllVaultsActivity } from './VaultActivity'
+import { authFetch } from '../../../../../core/query/authClient'
+import { useQuery } from '@tanstack/react-query'
 
 // ─── Helpers
 
@@ -252,8 +254,63 @@ export default function Portfolio () {
     }))
   }, [copierVaults, currentPrice])
 
+  // Get unique master vault PDAs from copier vaults
+  const uniqueMasterVaultPdas = useMemo(() => {
+    if (!copierVaults || copierVaults.length === 0) return [] as string[]
+    return [...new Set(copierVaults.map(v => v.masterExecutionVaultPda))]
+  }, [copierVaults])
+
+  // Fetch master vault user data for each unique master vault PDA
+  const { data: masterVaultsData } = useQuery({
+    queryKey: ['master-vaults-by-pda', uniqueMasterVaultPdas],
+    queryFn: async () => {
+      if (uniqueMasterVaultPdas.length === 0) return {}
+      const results: Record<string, { masterWallet: string; displayName: string | null; avatar: string | null }> = {}
+      await Promise.all(
+        uniqueMasterVaultPdas.map(async (pda) => {
+          try {
+            const res = await authFetch<{
+              success: boolean;
+              data: { masterWallet: string; user: { displayName: string | null; avatar: string | null } }
+            }>(`/api/leaderboard/trader/${pda}`)
+            if (res.success && res.data) {
+              results[pda] = {
+                masterWallet: res.data.masterWallet,
+                displayName: res.data.user.displayName,
+                avatar: res.data.user.avatar
+              }
+            }
+          } catch {
+            // ignore errors
+          }
+        })
+      )
+      return results
+    },
+    enabled: uniqueMasterVaultPdas.length > 0,
+    staleTime: 5 * 60 * 1000
+  })
+
+  // Map strategies with master vault user data
+  const strategiesWithMasterData: Strategy[] = useMemo(() => {
+    if (!strategies.length) return []
+    return strategies.map(s => {
+      const masterData = masterVaultsData?.[s.masterVaultAddress || '']
+      const name = masterData?.displayName && masterData.displayName.trim() !== ''
+        ? masterData.displayName 
+        : (masterData?.masterWallet ? `Trader ${masterData.masterWallet.slice(0, 4)}` : s.name)
+      return {
+        ...s,
+        name,
+        masterWalletAddress: masterData?.masterWallet,
+        masterVaultDisplayName: masterData?.displayName || undefined,
+        masterVaultAvatar: masterData?.avatar || undefined
+      }
+    })
+  }, [strategies, masterVaultsData])
+
   const totalBalance =
-    strategies.reduce((s, v) => s + v.balanceUsd, 0) +
+    strategiesWithMasterData.reduce((s, v) => s + v.balanceUsd, 0) +
     (pinnedVaults[0]?.totalBalanceUsd || 0)
   
   const solChange24h = solPrice?.change24h ?? 0
@@ -271,9 +328,9 @@ export default function Portfolio () {
       return masterBalanceUsd + managedCopiersBalanceUsd;
     } else {
       // For Copier: AUM is the total value they are managing across their copy vaults
-      return strategies.reduce((sum, s) => sum + s.balanceUsd, 0);
+      return strategiesWithMasterData.reduce((sum, s) => sum + s.balanceUsd, 0);
     }
-  }, [masterMode, masterVault, managedCopierVaults, strategies, currentPrice]);
+  }, [masterMode, masterVault, managedCopierVaults, strategiesWithMasterData, currentPrice]);
 
   const stats = [
     {
@@ -292,7 +349,7 @@ export default function Portfolio () {
     {
       tittle: 'Total Vaults',
       icon: '/images/total.svg',
-      value: strategies.length + pinnedVaults.length,
+      value: strategiesWithMasterData.length + pinnedVaults.length,
       type: 'number'
     },
     {
@@ -423,7 +480,7 @@ export default function Portfolio () {
                   <MasterMode
                     activeTab={activeTab}
                     pinnedVaults={pinnedVaults}
-                    strategies={strategies}
+                    strategies={strategiesWithMasterData}
                     removeStrategy={() => {}}
                     setShowModal={setShowModal}
                     solPrice={currentPrice}
@@ -432,7 +489,7 @@ export default function Portfolio () {
                 ) : (
                   <CopierMode
                     activeTab={activeTab}
-                    strategies={strategies}
+                    strategies={strategiesWithMasterData}
                     removeStrategy={() => {}}
                     setShowModal={setShowModal}
                     onViewVault={handleViewVault}

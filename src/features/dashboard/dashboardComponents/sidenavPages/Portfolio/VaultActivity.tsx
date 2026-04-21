@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom"
 import type { VaultActivityItem } from "./Portfolio"
 import { useVaultActivities, useAllVaultActivities, formatVaultActivity } from "./useVaultActivities"
 
@@ -107,8 +108,8 @@ export function AllVaultsActivity ({ masterVaultPda, copierVaultsPdas }: AllVaul
                   </td>
                   <td className='py-5 px-6 text-right'>
                     {item.signature && item.signature !== 'N/A' ? (
-                      <a
-                        href={`https://solscan.io/tx/${item.signature}?cluster=devnet`}
+                      <Link
+                        to={`https://solscan.io/tx/${item.signature}?cluster=devnet`}
                         target='_blank'
                         rel='noopener noreferrer'
                         className='inline-flex items-center gap-2 px-4 py-2 bg-[#0a1414] border border-[#23483b] rounded-lg hover:border-[#19d3c5]/40 hover:bg-[#0f2525] transition'
@@ -120,7 +121,7 @@ export function AllVaultsActivity ({ masterVaultPda, copierVaultsPdas }: AllVaul
                           className='bg-center bg-cover h-[12px] w-[12px]'
                           style={{ backgroundImage: `url("/images/redirr.svg")` }}
                         ></span>
-                      </a>
+                      </Link>
                     ) : (
                       <span className='text-[10px] font-[400] text-[#546462]/50'>
                         N/A

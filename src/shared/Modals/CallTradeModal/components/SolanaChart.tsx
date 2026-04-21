@@ -6,10 +6,12 @@ import {
   LineSeries,
   type UTCTimestamp
 } from 'lightweight-charts'
+import { API_BASE_URL } from '../../../../core/config/api'
 
-// ✅ Point these at your local backend
-const INDEXER_API = 'http://localhost:3002/api'
-const INDEXER_WS = 'ws://localhost:3002/ws'
+// ✅ Use environment variables for deployment (Render/Vercel)
+// const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3002'
+const INDEXER_API = `${API_BASE_URL}/api`
+const INDEXER_WS = API_BASE_URL.replace('http', 'ws') + '/ws'
 const JUPITER_API = 'https://api.jup.ag/tokens/v2'
 
 const intervalMap: Record<string, string> = {
@@ -222,7 +224,9 @@ const SolanaChart = ({ interval = '15M', pair = 'SOL/USDC' }: Props) => {
             if (data?.data?.price && data.data.price > 0) {
               price = data.data.price
             }
-          } catch {}
+          } catch {
+            console.error('Failed to fetch oracle price');
+          }
 
           if (price === 0) {
             const symbol = extractSymbol(pair)
@@ -232,7 +236,9 @@ const SolanaChart = ({ interval = '15M', pair = 'SOL/USDC' }: Props) => {
               if (jupData && jupData[0]?.usdPrice) {
                 price = jupData[0].usdPrice
               }
-            } catch {}
+            } catch {
+              console.error('Failed to fetch price from Jupiter API');
+            }
           }
 
           if (!cancelled && price > 0) {

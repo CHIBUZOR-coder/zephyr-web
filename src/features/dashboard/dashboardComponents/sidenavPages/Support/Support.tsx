@@ -165,8 +165,9 @@ export default function Support () {
                   </div>
                 </div>
 
-                <Link 
-                to={"https://t.me/zephyrlabscommunity"}
+                <Link
+                  to={'https://t.me/ZephyrAssist'}
+                  target='_blank'
                   className='bg-[#009883n dev
                 ] text-white text-[14px] font-[600] text-xs px-4 py-2 rounded-md leading-[21px] bg-[#009883] '
                 >
@@ -213,9 +214,10 @@ export default function Support () {
 
               <Link
                 to={'https://t.me/zephyrlabscommunity'}
+                target='_blank'
                 className='w-full flex justify-center items-center text-white bg-[#5865F2] hover:bg-indigo-600 transition text-sm py-3 rounded-md font-medium'
               >
-                JOIN DISCORD
+                JOIN TELEGRAM
               </Link>
             </div>
           </div>
@@ -261,7 +263,7 @@ export default function Support () {
             </p>
             <p>
               Security Reminder: Never share private keys, passwords, or
-              recovery phrases with anyone. Official Discord administrators will
+              recovery phrases with anyone. Official Telegram administrators will
               never ask for this information.
             </p>
           </div>

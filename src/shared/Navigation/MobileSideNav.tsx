@@ -74,8 +74,11 @@ const MobileSideNav: FC<Props> = ({ isOpen, onClose }) => {
         </div>
         {/* HEADER */}
         <div className='flex items-center justify-between px-5 py-6'>
-          <div className='flex items-center gap-2'>
-            <img src='/images/zeflogo.png' className='h-[40px] w-[50px]' />
+          <div className='flex  bg-red-400 items-center'>
+            <span
+              style={{ backgroundImage: `url("/images/zeflogo.png")` }}
+              className='bg-center bg-cover h-[40px] w-[60px] inline-block'
+            ></span>
             <span className='text-white text-[15px] font-semibold'>Zephyr</span>
           </div>
 
@@ -112,7 +115,7 @@ const MobileSideNav: FC<Props> = ({ isOpen, onClose }) => {
                 >
                   <p className='h-[10px] w-[10px] rounded-full bg-[#00A991] animate-pulse'></p>
                   <p className='text-[12px] font-[600]   leading-[9.875px] tracking-[0.988px] text-[#FE9A00]'>
-                    Master Mode
+                    MASTER MODE
                   </p>
                 </div>
               ) : (
@@ -128,7 +131,7 @@ const MobileSideNav: FC<Props> = ({ isOpen, onClose }) => {
                 >
                   <p className='h-[10px] w-[10px] rounded-full bg-[#00A991] animate-pulse'></p>
                   <p className='call_trade text-[12px] font-[600] leading-[9.875px] tracking-[0.988px] text-[#00a991]'>
-                    COPIER Mode
+                    COPIER MODE
                   </p>
                 </div>
               )}

@@ -30,6 +30,9 @@ export interface Strategy {
   walletSnippet: string;
   fullAddress: string;
   masterVaultAddress?: string;
+  masterWalletAddress?: string;
+  masterVaultDisplayName?: string;
+  masterVaultAvatar?: string;
   balanceSol: number;
   balanceUsd: number;
   unrealizedPnlUsd: number;
