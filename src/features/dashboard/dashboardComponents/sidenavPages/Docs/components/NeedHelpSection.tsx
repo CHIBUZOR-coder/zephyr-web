@@ -63,7 +63,7 @@ export default function NeedHelpSection () {
           <div className='flex flex-col sm:flex-row gap-3 sm:gap-4 mt-6 justify-center lg:justify-start'>
             <Link
               target='_blank'
-              to={'https://t.me/zephyrlabscommunity'}
+              to={'https://t.me/ZephyrAssist'}
               className='
               px-6
               py-3
