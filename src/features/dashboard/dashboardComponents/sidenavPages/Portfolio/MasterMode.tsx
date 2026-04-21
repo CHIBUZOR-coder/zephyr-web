@@ -58,25 +58,6 @@ const MasterMode = ({
     setClaimFeesOpen(true)
   }
 
-  const parameters = [
-    {
-      title: 'Total Volume',
-      val: 0
-    },
-    {
-      title: 'Realized Profit',
-      val: 0
-    },
-    {
-      title: 'AUM',
-      val: 0
-    },
-    {
-      title: 'Copiers Retention',
-      val: 0
-    }
-  ]
-
   const handleCopy = useCallback((text: string) => {
     navigator.clipboard.writeText(text)
     setCopiedId(text)
@@ -112,7 +93,26 @@ const MasterMode = ({
           Locked Index
         </span>
       </div>
-      {pinnedVaults.map((vault, i) => (
+      {pinnedVaults.map((vault, i) => {
+        const parameters = [
+          {
+            title: 'Total Volume',
+            val: vault.totalBalanceUsd ? `${fmt(vault.totalBalanceUsd)}` : '0'
+          },
+          {
+            title: 'Realized Profit',
+            val: vault.historicalClaimedSol ? `${fmtSol(vault.historicalClaimedSol)} SOL` : '0 SOL'
+          },
+          {
+            title: 'AUM',
+            val: vault.totalBalanceUsd ? `${fmt(vault.totalBalanceUsd)}` : '0'
+          },
+          {
+            title: 'Copiers Retention',
+            val: vault.connectedCopiers ? `${vault.connectedCopiers}` : '0'
+          }
+        ]
+        return (
         <div
           key={i}
           className='flex flex-col gap-8 overflow-x-auto mb-6 cursor-pointer hover:opacity-95 transition-opacity '
@@ -291,7 +291,8 @@ const MasterMode = ({
             </button>
           </div>
         </div>
-      ))}
+        )
+      })}
       
       <MirroringVaults 
         activeTab=""

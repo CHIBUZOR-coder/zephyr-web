@@ -265,7 +265,7 @@ function App () {
             <div className='flex items-start gap-2 self-center sm:self-start absolute bottom-[1rem]   left-4'>
               {[
                 { Icon: FaInstagram, label: 'Instagram', path: '' },
-                { Icon: FaXTwitter, label: 'X / Twitter', path: '' },
+                { Icon: FaXTwitter, label: 'X / Twitter', path: 'https://x.com/TryZephyr' },
                 { Icon: FaTelegram, label: 'Telegram', path: 'https://t.me/zephyrlabscommunity' }
               ].map(({ Icon, label, path }) => (
                 <Link

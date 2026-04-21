@@ -75,14 +75,13 @@ const VaultFlowModal = () => {
                 </h2>
 
                 <div className='flex items-center gap-2  justify-center'>
-                
-                    
-                    <Link 
-                    to={"https://t.me/ZephyrAssist"}
-                      style={{ backgroundImage: `url("/images/support.svg")` }}
-                      className='bg-center bg-cover h-3 w-3 block'
-                    ></Link>
-                  
+                  <Link
+                    to={'https://t.me/ZephyrAssist'}
+                    target='_blank'
+                    style={{ backgroundImage: `url("/images/support.svg")` }}
+                    className='bg-center bg-cover h-3 w-3 block'
+                  ></Link>
+
                   <button onClick={closeVaultFlow}>
                     <FiX className='text-gray-400' size={18} />
                   </button>

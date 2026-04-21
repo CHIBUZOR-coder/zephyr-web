@@ -19,7 +19,7 @@ type Props = {
   onClose: () => void
 }
 
-const SOL_MINT = 'So11111111111111111111111111111111111111112'  // wSOL mint
+const SOL_MINT = 'So11111111111111111111111111111111111111112' // wSOL mint
 const USDC_MINT = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v' // USDC mainnet
 
 const CallTradeModal: FC<Props> = ({ open, onClose }) => {
@@ -31,7 +31,6 @@ const CallTradeModal: FC<Props> = ({ open, onClose }) => {
   const [amount, setAmount] = useState('10')
   const [tradeType, setTradeType] = useState<'Buy' | 'Sell'>('Buy')
 
-
   const [manualBootstrap, setManualBootstrap] = useState(false)
 
   const [tokenAddress, setTokenAddress] = useState('')
@@ -40,21 +39,28 @@ const CallTradeModal: FC<Props> = ({ open, onClose }) => {
   const [tokenError, setTokenError] = useState<string | null>(null)
   const [tokenLoading, setTokenLoading] = useState(false)
   const [useCustomToken, setUseCustomToken] = useState(false)
-  const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
+  const [status, setStatus] = useState<
+    'idle' | 'loading' | 'success' | 'error'
+  >('idle')
   const [localError, setLocalError] = useState<string | null>(null)
 
-
-  const { callTrade, initializeTierConfig, initializeRiskConfig, error: opError } = useVaultOperations()
+  const {
+    callTrade,
+    initializeTierConfig,
+    initializeRiskConfig,
+    error: opError
+  } = useVaultOperations()
   const { masterVault, copierVaults, refetchAll } = useUserVaults()
   const { data: solPrice } = useSolPrice()
 
   const copierCount = masterVault?._count?.copierVaults ?? 0
-  
-  const totalAumSol = copierVaults?.reduce((sum, v) => {
-    // useUserVaults hook provides actualBalance in SOL
-    const bal = v.actualBalance ?? 0
-    return sum + bal
-  }, 0) ?? 0
+
+  const totalAumSol =
+    copierVaults?.reduce((sum, v) => {
+      // useUserVaults hook provides actualBalance in SOL
+      const bal = v.actualBalance ?? 0
+      return sum + bal
+    }, 0) ?? 0
   const totalAumUsd = totalAumSol * (solPrice?.price ?? 150)
 
   const defaultChartPair = 'SOL/USDC'
@@ -66,8 +72,12 @@ const CallTradeModal: FC<Props> = ({ open, onClose }) => {
     return { symbol, quote }
   }
   const { quote: inputQuote } = parsePairInput(tokenAddress)
-  const chartPair = useCustomToken && tokenSymbol && !tokenError ? `${tokenSymbol}/${inputQuote}` : defaultChartPair
-  const shouldShowChart = !useCustomToken || (useCustomToken && tokenSymbol && !tokenError)
+  const chartPair =
+    useCustomToken && tokenSymbol && !tokenError
+      ? `${tokenSymbol}/${inputQuote}`
+      : defaultChartPair
+  const shouldShowChart =
+    !useCustomToken || (useCustomToken && tokenSymbol && !tokenError)
 
   useEffect(() => {
     setTokenPrice(null)
@@ -78,10 +88,15 @@ const CallTradeModal: FC<Props> = ({ open, onClose }) => {
       const fetchToken = async () => {
         const { symbol: querySymbol } = parsePairInput(tokenAddress)
         try {
-          const res = await fetch(`${JUPITER_TOKEN_API}/search?query=${encodeURIComponent(querySymbol)}&limit=1`)
+          const res = await fetch(
+            `${JUPITER_TOKEN_API}/search?query=${encodeURIComponent(
+              querySymbol
+            )}&limit=1`
+          )
           const data = await res.json()
           if (data && data.length > 0) {
-            const jupiterSymbol = data[0].symbol?.toUpperCase() || data[0].name?.toUpperCase()
+            const jupiterSymbol =
+              data[0].symbol?.toUpperCase() || data[0].name?.toUpperCase()
             setTokenSymbol(jupiterSymbol || querySymbol.toUpperCase())
             setTokenPrice(data[0].usdPrice || null)
             setTokenError(null)
@@ -116,9 +131,12 @@ const CallTradeModal: FC<Props> = ({ open, onClose }) => {
     }
   }, [open])
 
-  const isTierConfigError = manualBootstrap || (opError?.includes('tier_config') && opError?.includes('3012')) || opError?.includes('initialize_tier_config');
-  const isRiskConfigError = opError?.includes('risk_config') && opError?.includes('3012');
-
+  const isTierConfigError =
+    manualBootstrap ||
+    (opError?.includes('tier_config') && opError?.includes('3012')) ||
+    opError?.includes('initialize_tier_config')
+  const isRiskConfigError =
+    opError?.includes('risk_config') && opError?.includes('3012')
 
   const currentPrice = tokenPrice ?? solPrice?.price ?? 150
 
@@ -163,8 +181,18 @@ const CallTradeModal: FC<Props> = ({ open, onClose }) => {
 
       if (amountIn <= 0) throw new Error('Invalid trade amount')
 
-      const tokenIn = useCustomToken && tokenAddress ? tokenAddress : (tradeType === 'Buy' ? USDC_MINT : SOL_MINT)
-      const tokenOut = useCustomToken && tokenAddress ? tokenAddress : (tradeType === 'Buy' ? SOL_MINT : USDC_MINT)
+      const tokenIn =
+        useCustomToken && tokenAddress
+          ? tokenAddress
+          : tradeType === 'Buy'
+          ? USDC_MINT
+          : SOL_MINT
+      const tokenOut =
+        useCustomToken && tokenAddress
+          ? tokenAddress
+          : tradeType === 'Buy'
+          ? SOL_MINT
+          : USDC_MINT
 
       if (!tokenIn || !tokenOut) {
         throw new Error('Please select a token to trade')
@@ -239,6 +267,7 @@ const CallTradeModal: FC<Props> = ({ open, onClose }) => {
               <div className='flex items-center gap-3'>
                 <Link
                   to={'https://t.me/ZephyrAssist'}
+                  target='_blank'
                   style={{ backgroundImage: `url("/images/support.svg")` }}
                   className='bg-center bg-cover h-3 w-3 block'
                 ></Link>
@@ -301,7 +330,9 @@ const CallTradeModal: FC<Props> = ({ open, onClose }) => {
                 <SolanaChart pair={chartPair} interval={timeframe} />
               ) : (
                 <div className='w-full h-40 flex items-center justify-center bg-[#0A2B27] rounded-lg'>
-                  <span className='text-[#607572] text-[12px]'>Enter a valid token to view chart</span>
+                  <span className='text-[#607572] text-[12px]'>
+                    Enter a valid token to view chart
+                  </span>
                 </div>
               )}
             </div>
@@ -315,7 +346,7 @@ const CallTradeModal: FC<Props> = ({ open, onClose }) => {
                   <>
                     <input
                       value={tokenAddress}
-                      onChange={(e) => setTokenAddress(e.target.value)}
+                      onChange={e => setTokenAddress(e.target.value)}
                       placeholder='BONK, BONK/USDC, WIF/SOL...'
                       className='w-full bg-[#0a1414] border border-[#123F3A] pl-10 pr-3 py-3 rounded-xl mb-3  outline-none text-[#E8F6F3] font-mono text-[10px]'
                     />
@@ -326,10 +357,14 @@ const CallTradeModal: FC<Props> = ({ open, onClose }) => {
                       </span>
                     )}
                     {tokenError && (
-                      <span className='text-[10px] text-red-400'>{tokenError}</span>
+                      <span className='text-[10px] text-red-400'>
+                        {tokenError}
+                      </span>
                     )}
                     {tokenSymbol && !tokenLoading && !tokenError && (
-                      <span className='text-[10px] text-[#11C5A3]'>Chart: {chartPair}</span>
+                      <span className='text-[10px] text-[#11C5A3]'>
+                        Chart: {chartPair}
+                      </span>
                     )}
                     <button
                       onClick={() => {
@@ -477,7 +512,11 @@ const CallTradeModal: FC<Props> = ({ open, onClose }) => {
                     {copierCount} COPIERS
                   </span>
                   <span className='text-[#607572] text-[10px] font-[700]'>
-                    ${totalAumUsd.toLocaleString(undefined, { maximumFractionDigits: 0 })} AUM
+                    $
+                    {totalAumUsd.toLocaleString(undefined, {
+                      maximumFractionDigits: 0
+                    })}{' '}
+                    AUM
                   </span>
                   <BsChevronDown
                     className={`transition ${showImpact ? 'rotate-180' : ''}`}

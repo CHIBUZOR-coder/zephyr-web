@@ -113,6 +113,10 @@ export function formatVaultActivity(item: VaultActivity): {
   const relativeTime = formatRelativeDate(item.timestamp);
   const typeLabel = formatEventType(item.type);
   const { token, amount } = extractTokenAndAmount(item.type, data);
+  
+  const sig = item.signature;
+  const hasSignature = sig && typeof sig === 'string' && sig.length > 0;
+  
   return {
     id: item.id,
     type: typeLabel,
@@ -120,8 +124,8 @@ export function formatVaultActivity(item: VaultActivity): {
     token,
     amount,
     status: "success" as const,
-    tx: item.signature ? formatAddress(item.signature) : "N/A",
-    signature: item.signature || "N/A",
+    tx: hasSignature ? formatAddress(sig) : "N/A",
+    signature: hasSignature ? sig : "N/A",
   };
 }
 
@@ -171,10 +175,10 @@ function extractTokenAndAmount(
       return { token: formatTokenSymbol(tokenOut), amount: `+${formattedAmount}` };
     }
     case "TRADE_MIRRORED": {
-      const tokenIn = (data?.tokenIn as string) ?? "TOKEN";
-      const amountIn = (data?.amountIn as string) ?? "0";
-      const formattedAmount = formatAmount(amountIn, tokenIn);
-      return { token: formatTokenSymbol(tokenIn), amount: `+${formattedAmount}` };
+      const assetMint = (data?.assetMint as string) ?? (data?.tokenIn as string) ?? "TOKEN";
+      const copierAmount = (data?.copierAmount as string) ?? (data?.amountIn as string) ?? (data?.filledAmount as string) ?? "0";
+      const formattedAmount = formatAmount(copierAmount, assetMint);
+      return { token: formatTokenSymbol(assetMint), amount: `+${formattedAmount}` };
     }
     case "FEE_COLLECTED": {
       const totalFee = (data?.totalFee as string) ?? (data?.traderFee as string) ?? "0";
