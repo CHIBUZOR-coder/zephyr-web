@@ -265,12 +265,21 @@ function App () {
             <div className='flex items-start gap-2 self-center sm:self-start absolute bottom-[1rem]   left-4'>
               {[
                 { Icon: FaInstagram, label: 'Instagram', path: '' },
-                { Icon: FaXTwitter, label: 'X / Twitter', path: 'https://x.com/TryZephyr' },
-                { Icon: FaTelegram, label: 'Telegram', path: 'https://t.me/zephyrlabscommunity' }
+                {
+                  Icon: FaXTwitter,
+                  label: 'X / Twitter',
+                  path: 'https://x.com/TryZephyr'
+                },
+                {
+                  Icon: FaTelegram,
+                  label: 'Telegram',
+                  path: 'https://t.me/zephyrlabscommunity'
+                }
               ].map(({ Icon, label, path }) => (
                 <Link
                   key={label}
-                 to={path}
+                  target='_blank'
+                  to={path}
                   aria-label={label}
                   className='flex items-center justify-center w-[34px] h-[34px] rounded-lg
                                  bg-[#1a1a24] border border-[#2a2a38] text-[#c0c0d0]

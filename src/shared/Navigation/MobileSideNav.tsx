@@ -61,6 +61,7 @@ const MobileSideNav: FC<Props> = ({ isOpen, onClose }) => {
             }
           ].map(({ Icon, label, path }) => (
             <Link
+              target='_blank'
               key={label}
               to={path}
               aria-label={label}
