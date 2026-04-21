@@ -824,6 +824,7 @@ const DashboardView = () => {
                   <div className='flex items-center gap-3'>
                     <Link
                       to={'https://t.me/ZephyrAssist'}
+                      target='_blank'
                       style={{ backgroundImage: `url("/images/support.svg")` }}
                       className='bg-center bg-cover h-4 w-4 block'
                     ></Link>
