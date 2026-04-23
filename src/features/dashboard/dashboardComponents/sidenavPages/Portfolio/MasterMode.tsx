@@ -283,11 +283,11 @@ const MasterMode = ({
               </div>
             </div>
 
-            <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4'>
+            <div className='grid grid-cols-1 md:grid-cols-2  gap-4'>
               {parameters.map((item, i) => (
                 <div
                   key={i}
-                  className='rounded-lg p-4 flex flex-col gap-2 text-white bg-[#102221]'
+                  className='rounded-lg p-4 flex flex-col gap-2 text-white bg-[#102221] w-full'
                 >
                   <p className='text-[#345253] font-semibold text-sm'>
                     {item?.title}
