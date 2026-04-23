@@ -93,6 +93,10 @@ type GeneralContextType = {
   //EditRiskvisible
   editRiskvisible: boolean
   setEditRiskvisible: (val: boolean) => void
+
+  //Marked as read for risk alert
+  markedAsRead: boolean
+  setMarkedAsRead: (val: boolean) => void
 }
 
 /* ------------------------------------------------ */
@@ -150,6 +154,8 @@ export const GeneralProvider = ({ children }: { children: ReactNode }) => {
   const [tierConfigInitOpen, setTierConfigInitOpen] = useState(false)
   const [claimFeesOpen, setClaimFeesOpen] = useState(false)
   const [editRiskvisible, setEditRiskvisible] = useState(false)
+  const [markedAsRead, setMarkedAsRead] = useState(false)
+
 
   return (
     <GeneralContext.Provider
@@ -200,7 +206,9 @@ export const GeneralProvider = ({ children }: { children: ReactNode }) => {
         claimFeesOpen,
         setClaimFeesOpen,
         editRiskvisible,
-        setEditRiskvisible
+        setEditRiskvisible,
+        markedAsRead,
+        setMarkedAsRead
       }}
     >
       {children}

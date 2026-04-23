@@ -21,15 +21,15 @@ export default function ArticlesGrid () {
       info: 'Get started with Zephyr in under 5 minutes. Connect your wallet, verify identity, and make your first copy trade.',
       time: '5 min read'
     },
-    {
-      id: 2,
-      level: 'Beginner',
-      icon: '/images/ship.svg',
-      label: 'Getting Started',
-      sub: 'Account Setup & Verification',
-      info: 'Complete KYC verification, enable 2FA, and configure security settings for institutional-grade account protection.',
-      time: '8 min read'
-    },
+    // {
+    //   id: 2,
+    //   level: 'Beginner',
+    //   icon: '/images/ship.svg',
+    //   label: 'Getting Started',
+    //   sub: 'Account Setup & Verification',
+    //   info: 'Complete KYC verification, enable 2FA, and configure security settings for institutional-grade account protection.',
+    //   time: '8 min read'
+    // },
     {
       id: 3,
       level: 'Beginner',
@@ -39,15 +39,15 @@ export default function ArticlesGrid () {
       info: 'Learn how copy trading works on Zephyr, from selecting masters to managing allocation and risk parameters.',
       time: '12 min read'
     },
-    {
-      id: 4,
-      level: 'Beginner',
-      icon: '/images/sheild.svg',
-      label: 'Vault Security',
-      sub: 'Emergency Withdrawal Procedures',
-      info: 'Step-by-step guide for emergency situations including circuit breakers and instant position exits.',
-      time: '7 min read'
-    },
+    // {
+    //   id: 4,
+    //   level: 'Beginner',
+    //   icon: '/images/sheild.svg',
+    //   label: 'Vault Security',
+    //   sub: 'Emergency Withdrawal Procedures',
+    //   info: 'Step-by-step guide for emergency situations including circuit breakers and instant position exits.',
+    //   time: '7 min read'
+    // },
     {
       id: 5,
       level: 'Beginner',
@@ -66,15 +66,15 @@ export default function ArticlesGrid () {
       info: 'How to withdraw funds, approval workflows, security checks, and settlement timeframes.',
       time: '8 min read'
     },
-    {
-      id: 7,
-      level: 'Intermediate',
-      icon: '/images/people.svg',
-      label: 'Copy Trading',
-      sub: 'Master Selection Criteria',
-      info: 'Deep dive into evaluating master traders using Sharpe Ratio, drawdown, consistency, and risk-adjusted metrics.',
-      time: '15 min read'
-    },
+    // {
+    //   id: 7,
+    //   level: 'Intermediate',
+    //   icon: '/images/people.svg',
+    //   label: 'Copy Trading',
+    //   sub: 'Master Selection Criteria',
+    //   info: 'Deep dive into evaluating master traders using Sharpe Ratio, drawdown, consistency, and risk-adjusted metrics.',
+    //   time: '15 min read'
+    // },
     {
       id: 8,
       level: 'Intermediate',
@@ -85,15 +85,15 @@ export default function ArticlesGrid () {
       time: '10 min read'
     },
 
-    {
-      id: 9,
-      level: 'Intermediate',
-      icon: '/images/round.svg',
-      label: 'On-chain',
-      sub: 'Reading Transaction History',
-      info: 'Navigate Solana explorers, verify transactions, and track on-chain trade execution.',
-      time: '10 min read'
-    },
+    // {
+    //   id: 9,
+    //   level: 'Intermediate',
+    //   icon: '/images/round.svg',
+    //   label: 'On-chain',
+    //   sub: 'Reading Transaction History',
+    //   info: 'Navigate Solana explorers, verify transactions, and track on-chain trade execution.',
+    //   time: '10 min read'
+    // },
     {
       id: 10,
       level: 'Intermediate',
@@ -103,15 +103,15 @@ export default function ArticlesGrid () {
       info: 'How high-water mark fees work, when fees are charged, and fee distribution mechanics',
       time: '9 min read'
     },
-    {
-      id: 11,
-      level: 'Intermediate',
-      icon: '/images/message.svg',
-      label: 'Compliance',
-      sub: 'Tax Reporting & Compliance',
-      info: 'Export transaction history, generate tax reports, and understand regulatory requirements.',
-      time: '11 min read'
-    },
+    // {
+    //   id: 11,
+    //   level: 'Intermediate',
+    //   icon: '/images/message.svg',
+    //   label: 'Compliance',
+    //   sub: 'Tax Reporting & Compliance',
+    //   info: 'Export transaction history, generate tax reports, and understand regulatory requirements.',
+    //   time: '11 min read'
+    // },
 
     {
       id: 12,
@@ -122,42 +122,42 @@ export default function ArticlesGrid () {
       info: 'Configure stop-loss, take-profit, position limits, and portfolio-level risk controls',
       time: '13 min read'
     },
-    {
-      id: 13,
-      level: 'Advanced',
-      icon: '/images/sheild.svg',
-      label: 'Vault Security',
-      sub: 'Multi-Signature Vaults',
-      info: 'Setup and manage multi-sig vaults for institutional custody with threshold signing and role-based access.',
-      time: '20 min read'
-    },
-    {
-      id: 14,
-      level: 'Advanced',
-      icon: '/images/docwall.svg',
-      label: 'On-chain',
-      sub: 'Smart Contract Interactions',
-      info: 'Understand program accounts, instruction data, and how Zephyr interacts with Solana runtime.',
-      time: '14 min read'
-    },
-    {
-      id: 15,
-      level: 'Advanced',
-      icon: '/images/docwall.svg',
-      label: 'Master Trading',
-      sub: 'Becoming a Master Trader',
-      info: 'Requirements, application process, and best practices for sharing your trading strategy.',
-      time: '16 min read'
-    },
-    {
-      id: 16,
-      level: 'Advanced',
-      icon: '/images/docwall.svg',
-      label: 'Developers',
-      sub: 'API Integration Guide',
-      info: 'Complete API documentation, authentication, endpoints, and code examples for developers.',
-      time: '25 min read'
-    }
+    // {
+    //   id: 13,
+    //   level: 'Advanced',
+    //   icon: '/images/sheild.svg',
+    //   label: 'Vault Security',
+    //   sub: 'Multi-Signature Vaults',
+    //   info: 'Setup and manage multi-sig vaults for institutional custody with threshold signing and role-based access.',
+    //   time: '20 min read'
+    // },
+    // {
+    //   id: 14,
+    //   level: 'Advanced',
+    //   icon: '/images/docwall.svg',
+    //   label: 'On-chain',
+    //   sub: 'Smart Contract Interactions',
+    //   info: 'Understand program accounts, instruction data, and how Zephyr interacts with Solana runtime.',
+    //   time: '14 min read'
+    // },
+    // {
+    //   id: 15,
+    //   level: 'Advanced',
+    //   icon: '/images/docwall.svg',
+    //   label: 'Master Trading',
+    //   sub: 'Becoming a Master Trader',
+    //   info: 'Requirements, application process, and best practices for sharing your trading strategy.',
+    //   time: '16 min read'
+    // },
+    // {
+    //   id: 16,
+    //   level: 'Advanced',
+    //   icon: '/images/docwall.svg',
+    //   label: 'Developers',
+    //   sub: 'API Integration Guide',
+    //   info: 'Complete API documentation, authentication, endpoints, and code examples for developers.',
+    //   time: '25 min read'
+    // }
   ]
 
   const { difficulty, category } = useGeneralContext()

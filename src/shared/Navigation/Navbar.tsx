@@ -15,6 +15,7 @@ import { useWalletBalance } from '../../features/wallet/useWalletQuery'
 import { useSolPrice } from '../../core/hooks/usePrice'
 import { useAuthStore } from '../../features/auth/auth.store'
 import { Link } from 'react-router-dom'
+import useRiskStore from '../../core/store/RiskStoreState'
 
 const Navbar = () => {
   const [walletMenuOpen, setWalletMenuOpen] = useState(false)
@@ -23,8 +24,12 @@ const Navbar = () => {
     setOpenMenu,
     visible,
     setMasterTraderOpen,
-    hasMaterVault
+    hasMaterVault,
+
   } = useGeneralContext()
+
+  const { markedAsRead, setMarkedAsRead } = useRiskStore()
+
   const { masterMode, toggleMasterMode } = useTradingModeStore()
   const { publicKey, connected } = useWallet()
   const { setWallet } = useWalletStore()
@@ -200,7 +205,6 @@ const Navbar = () => {
               </div>
               {connected && (
                 <div className='flex justify-between items-center gap-3 '>
-                  
                   <Link
                     to={'/profile'}
                     className='h-[36px] w-[36px] rounded-full p-[1px] border-[1.5px] border-[#f5e2d9] flex justify-center items-center'
@@ -217,13 +221,18 @@ const Navbar = () => {
                     )}
                   </Link>
                   <span
-                    onClick={() => setOpenNotifications(true)}
+                    onClick={() => {
+                      setOpenNotifications(true)
+                      setMarkedAsRead(true)
+                    }}
                     style={{
                       backgroundImage: `url("/images/bell.svg")`
                     }}
                     className='inline-block relative bg-center bg-cover w-[20px] h-[20px]'
                   >
-                    <span className='absolute right-[1.3px] top-1 bg-[#FB2C36] h-[6px] w-[6px] rounded-full'></span>
+                    {markedAsRead ? null : (
+                      <span className='absolute right-[1.3px] top-1 bg-[#FB2C36] h-[6px] w-[6px] rounded-full'></span>
+                    )}
                   </span>
                 </div>
               )}
