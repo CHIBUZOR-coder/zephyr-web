@@ -3,17 +3,16 @@ import { BsChevronDown } from 'react-icons/bs'
 import { HiLightningBolt, HiOutlineLightningBolt } from 'react-icons/hi'
 import { HiOutlineUsers } from 'react-icons/hi2'
 import { AnimatePresence, motion } from 'framer-motion'
-import { FiAlertTriangle } from 'react-icons/fi'
+import { CiSearch } from 'react-icons/ci'
+import { FiAlertTriangle, FiLoader } from 'react-icons/fi'
 import SolanaChart from './components/SolanaChart'
 import { useVaultOperations } from '../../../features/master/useVaultOperations'
 import { useUserVaults } from '../../../features/master/useUserVaults'
 import { useSolPrice } from '../../../core/hooks/usePrice'
 import { LAMPORTS_PER_SOL } from '@solana/web3.js'
 import { Link } from 'react-router-dom'
-import { formatPrice } from '../../../utils/formatters'
 
 const JUPITER_TOKEN_API = 'https://api.jup.ag/tokens/v2'
-const DEXSCREENER_API = 'https://api.dexscreener.com/latest/dex'
 
 type Props = {
   open: boolean
@@ -25,6 +24,7 @@ const USDC_MINT = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v' // USDC mainnet
 
 const CallTradeModal: FC<Props> = ({ open, onClose }) => {
   const [timeframe, setTimeframe] = useState('15M')
+  const [amountType, setAmountType] = useState('percent')
   const [slippage, setSlippage] = useState('0.5%')
   const [showImpact, setShowImpact] = useState(false)
 
@@ -34,9 +34,7 @@ const CallTradeModal: FC<Props> = ({ open, onClose }) => {
   const [manualBootstrap, setManualBootstrap] = useState(false)
 
   const [tokenAddress, setTokenAddress] = useState('')
-  const [resolvedMint, setResolvedMint] = useState('')
   const [tokenSymbol, setTokenSymbol] = useState<string | null>(null)
-  const [tokenQuote, setTokenQuote] = useState<string>('USDC')
   const [tokenPrice, setTokenPrice] = useState<number | null>(null)
   const [tokenError, setTokenError] = useState<string | null>(null)
   const [tokenLoading, setTokenLoading] = useState(false)
@@ -66,102 +64,63 @@ const CallTradeModal: FC<Props> = ({ open, onClose }) => {
   const totalAumUsd = totalAumSol * (solPrice?.price ?? 150)
 
   const defaultChartPair = 'SOL/USDC'
-  const chartPair = tokenSymbol && !tokenError
-    ? `${tokenSymbol}/${tokenQuote}`
-    : defaultChartPair
-  const shouldShowChart = tokenSymbol && !tokenError
+  const parsePairInput = (input: string) => {
+    const upper = input.toUpperCase().trim()
+    const parts = upper.split('/')
+    const symbol = parts[0].trim()
+    const quote = parts[1]?.trim() || 'USDC'
+    return { symbol, quote }
+  }
+  const { quote: inputQuote } = parsePairInput(tokenAddress)
+  const chartPair =
+    useCustomToken && tokenSymbol && !tokenError
+      ? `${tokenSymbol}/${inputQuote}`
+      : defaultChartPair
+  const shouldShowChart =
+    !useCustomToken || (useCustomToken && tokenSymbol && !tokenError)
 
   useEffect(() => {
     setTokenPrice(null)
     setTokenError(null)
     setTokenSymbol(null)
-    const trimmed = tokenAddress.trim()
-    
-    if (trimmed.length === 0) {
-      setTokenSymbol(null)
-      setTokenPrice(null)
-      return
-    }
-    
-    if (trimmed.length < 2) return
-    
-    let cancelled = false
-    let timeoutId: ReturnType<typeof setTimeout> | null = null
-    
-    if (trimmed.length >= 2) {
+    if (tokenAddress && tokenAddress.length >= 1) {
+      setTokenLoading(true)
       const fetchToken = async () => {
+        const { symbol: querySymbol } = parsePairInput(tokenAddress)
         try {
-          // Try DexScreener first (works for pool addresses like 5rCf1DM8...)
-          const dexRes = await fetch(
-            `${DEXSCREENER_API}/pairs/solana/${trimmed}`
+          const res = await fetch(
+            `${JUPITER_TOKEN_API}/search?query=${encodeURIComponent(
+              querySymbol
+            )}&limit=1`
           )
-          const dexData = await dexRes.json()
-          
-          if (cancelled) return
-          
-          if (dexData?.pairs && dexData.pairs.length > 0) {
-            const pair = dexData.pairs[0]
-            const baseToken = pair.baseToken
-            const quoteToken = pair.quoteToken
-            const priceUsd = pair.priceUsd
-            
-            setTokenSymbol(baseToken.symbol.toUpperCase())
-            setTokenQuote(quoteToken.symbol.toUpperCase())
-            setTokenPrice(parseFloat(priceUsd) || null)
-            setResolvedMint(baseToken.address)
+          const data = await res.json()
+          if (data && data.length > 0) {
+            const jupiterSymbol =
+              data[0].symbol?.toUpperCase() || data[0].name?.toUpperCase()
+            setTokenSymbol(jupiterSymbol || querySymbol.toUpperCase())
+            setTokenPrice(data[0].usdPrice || null)
             setTokenError(null)
           } else {
-            // Try Jupiter if DexScreener fails (works for mint addresses and token symbols)
-            const jupRes = await fetch(
-              `${JUPITER_TOKEN_API}/search?query=${encodeURIComponent(trimmed)}`
-            )
-            
-            if (cancelled) return
-            
-            const jupData = await jupRes.json()
-            
-            if (cancelled) return
-            
-            const bestJup = jupData && jupData.length > 0 ? jupData[0] : null
-            const jupAddress = bestJup?.id || bestJup?.address
-
-            if (bestJup && jupAddress) {
-              setTokenSymbol(bestJup.symbol?.toUpperCase() || bestJup.name?.toUpperCase())
-              setTokenQuote('USDC')
-              setTokenPrice(bestJup.usdPrice || null)
-              setResolvedMint(jupAddress)
-              setTokenError(null)
-            } else {
-              setTokenSymbol(null)
-              setTokenPrice(null)
-              setResolvedMint('')
-              setTokenError('Token not found')
-            }
+            setTokenSymbol(null)
+            setTokenPrice(null)
+            setTokenError(`Token "${querySymbol}" not found on Jupiter`)
           }
         } catch {
-          if (cancelled) return
           setTokenSymbol(null)
           setTokenPrice(null)
-          setResolvedMint('')
           setTokenError('Search failed')
         }
+        setTokenLoading(false)
       }
-      
-      // Debounce: wait 500ms after last keystroke before fetching
-      timeoutId = setTimeout(() => {
-        if (!cancelled) {
-          fetchToken()
-        }
-      }, 500)
-    }
-    
-    return () => {
-      cancelled = true
-      if (timeoutId) clearTimeout(timeoutId)
+      const debounce = setTimeout(fetchToken, 500)
+      return () => clearTimeout(debounce)
+    } else {
+      setTokenSymbol(null)
+      setTokenPrice(null)
     }
   }, [tokenAddress])
 
-// Reset state when modal opens
+  // Reset state when modal opens
   useEffect(() => {
     if (open) {
       setStatus('idle')
@@ -169,11 +128,6 @@ const CallTradeModal: FC<Props> = ({ open, onClose }) => {
       setManualBootstrap(false)
       setAmount('10')
       setTradeType('Buy')
-      setTokenAddress('')
-      setTokenSymbol(null)
-      setTokenQuote('USDC')
-      setTokenPrice(null)
-      setTokenError(null)
     }
   }, [open])
 
@@ -215,20 +169,30 @@ const CallTradeModal: FC<Props> = ({ open, onClose }) => {
 
     try {
       // Calculate amount in lamports
-      const amountIn = Math.floor(parseFloat(amount) * LAMPORTS_PER_SOL)
+      let amountIn = 0
+      if (amountType === 'percent') {
+        const vaultBalanceLamports = masterVault.balance
+          ? masterVault.balance * LAMPORTS_PER_SOL
+          : 0
+        amountIn = Math.floor((parseFloat(amount) / 100) * vaultBalanceLamports)
+      } else {
+        amountIn = Math.floor(parseFloat(amount) * LAMPORTS_PER_SOL)
+      }
 
       if (amountIn <= 0) throw new Error('Invalid trade amount')
 
-      const isCustomToken = resolvedMint && resolvedMint.length > 0 && tokenSymbol !== null
-      const isActuallyCustom = isCustomToken && resolvedMint !== SOL_MINT && resolvedMint !== USDC_MINT
-
-      const tokenIn = isActuallyCustom
-        ? (tradeType === 'Buy' ? SOL_MINT : resolvedMint)
-        : (tradeType === 'Buy' ? USDC_MINT : SOL_MINT)
-        
-      const tokenOut = isActuallyCustom
-        ? (tradeType === 'Buy' ? resolvedMint : SOL_MINT)
-        : (tradeType === 'Buy' ? SOL_MINT : USDC_MINT)
+      const tokenIn =
+        useCustomToken && tokenAddress
+          ? tokenAddress
+          : tradeType === 'Buy'
+          ? USDC_MINT
+          : SOL_MINT
+      const tokenOut =
+        useCustomToken && tokenAddress
+          ? tokenAddress
+          : tradeType === 'Buy'
+          ? SOL_MINT
+          : USDC_MINT
 
       if (!tokenIn || !tokenOut) {
         throw new Error('Please select a token to trade')
@@ -340,7 +304,7 @@ const CallTradeModal: FC<Props> = ({ open, onClose }) => {
                 <span className='text-[12px] text-white font-[900]'>
                   {chartPair}{' '}
                   <span className='text-[#22C55E] font-[700]'>
-                    {formatPrice(currentPrice)}
+                    ${currentPrice.toFixed(2)}
                   </span>
                 </span>
 
@@ -363,7 +327,7 @@ const CallTradeModal: FC<Props> = ({ open, onClose }) => {
 
               {/* ✅ BIGGER CHART */}
               {shouldShowChart ? (
-                <SolanaChart key={chartPair} pair={chartPair} interval={timeframe} />
+                <SolanaChart pair={chartPair} interval={timeframe} />
               ) : (
                 <div className='w-full h-40 flex items-center justify-center bg-[#0A2B27] rounded-lg'>
                   <span className='text-[#607572] text-[12px]'>
@@ -376,12 +340,58 @@ const CallTradeModal: FC<Props> = ({ open, onClose }) => {
             <div className='flex justify-between items-center gap-5'>
               {/* TARGET TOKEN */}
               <div className='relative w-full '>
-                <input
-                  value={tokenAddress}
-                  onChange={e => setTokenAddress(e.target.value)}
-                  placeholder='Enter token mint address'
-                  className='w-full bg-[#0a1414] border border-[#123F3A] pl-3 pr-3 py-3 rounded-xl mb-3  outline-none text-[#E8F6F3] font-mono text-[10px]'
-                />
+                <CiSearch className='absolute top-[40%] left-3 -translate-y-1/2 text-[#6B8F88] text-sm' />
+
+                {useCustomToken ? (
+                  <>
+                    <input
+                      value={tokenAddress}
+                      onChange={e => setTokenAddress(e.target.value)}
+                      placeholder='BONK, BONK/USDC, WIF/SOL...'
+                      className='w-full bg-[#0a1414] border border-[#123F3A] pl-10 pr-3 py-3 rounded-xl mb-3  outline-none text-[#E8F6F3] font-mono text-[10px]'
+                    />
+                    {tokenLoading && (
+                      <span className='text-[10px] text-[#11C5A3] flex items-center gap-1'>
+                        <FiLoader className='animate-spin' size={10} />
+                        Searching...
+                      </span>
+                    )}
+                    {tokenError && (
+                      <span className='text-[10px] text-red-400'>
+                        {tokenError}
+                      </span>
+                    )}
+                    {tokenSymbol && !tokenLoading && !tokenError && (
+                      <span className='text-[10px] text-[#11C5A3]'>
+                        Chart: {chartPair}
+                      </span>
+                    )}
+                    <button
+                      onClick={() => {
+                        setUseCustomToken(false)
+                        setTokenAddress('')
+                        setTokenSymbol(null)
+                      }}
+                      className='text-[10px] text-[#607572] hover:text-white'
+                    >
+                      ← Back to SOL
+                    </button>
+                  </>
+                ) : (
+                  <input
+                    readOnly
+                    value='Solana (SOL)'
+                    className='w-full bg-[#0a1414] border border-[#123F3A] pl-10 pr-3 py-3 rounded-2xl mb-3 text-[13px] outline-none text-[#E8F6F3]'
+                  />
+                )}
+                {!useCustomToken && (
+                  <button
+                    onClick={() => setUseCustomToken(true)}
+                    className='text-[10px] text-[#11C5A3] hover:text-white'
+                  >
+                    + Search token
+                  </button>
+                )}
               </div>
               {/* DIRECTION */}
               <button
@@ -405,11 +415,37 @@ const CallTradeModal: FC<Props> = ({ open, onClose }) => {
             <div className='mb-4 flex flex-col gap-1'>
               <div className='w-full flex justify-between items-center'>
                 <span className='font-[900] text-[10px] text-[#50706c]'>
-                  Trade Size (SOL)
+                  Trade Size
                 </span>
+
+                <div className='flex bg-[#062421] p-1 rounded-lg w-fit mb-2'>
+                  <button
+                    onClick={() => setAmountType('percent')}
+                    className={`px-3 py-1 text-[9px] font-[900] rounded-md ${
+                      amountType === 'percent'
+                        ? 'bg-[#11C5A3] text-white'
+                        : 'text-[#50706c]'
+                    }`}
+                  >
+                    % OF VAULT
+                  </button>
+                  <button
+                    onClick={() => setAmountType('fixed')}
+                    className={`px-3 py-1 text-[9px] font-[900]  rounded-md ${
+                      amountType === 'fixed'
+                        ? 'bg-[#11C5A3] text-white'
+                        : 'text-[#50706c]'
+                    }`}
+                  >
+                    FIXED AMOUNT
+                  </button>
+                </div>
               </div>
 
               <div className='w-full relative'>
+                <span className='absolute top-[38%] right-2 text-[14px] font-[900] text-[#3b4343]'>
+                  {amountType.toUpperCase()}
+                </span>
                 <input
                   type='number'
                   value={amount}

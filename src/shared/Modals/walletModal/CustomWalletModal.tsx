@@ -80,15 +80,16 @@ export const CustomWalletModal = ({ open, onClose }: Props) => {
   ])
 
   const handleWalletSelect = async (adapterName: WalletName) => {
-    if (connecting) {
-      await disconnect()
-    }
+    if (connecting) return
 
-    if (connected && wallet?.adapter.name !== adapterName) {
-      await disconnect()
+    try {
+      if (connected && wallet?.adapter.name !== adapterName) {
+        await disconnect()
+      }
+      select(adapterName)
+    } catch (error) {
+      console.error('Error selecting wallet:', error)
     }
-
-    select(adapterName)
   }
 
   // Force connection if selection didn't trigger auto-connect
@@ -187,7 +188,6 @@ export const CustomWalletModal = ({ open, onClose }: Props) => {
                     key={w.adapter.name}
                     onClick={() => handleWalletSelect(w.adapter.name)}
                     disabled={
-                      !connecting &&
                       w.readyState !== 'Installed' &&
                       w.readyState !== 'Loadable'
                     }

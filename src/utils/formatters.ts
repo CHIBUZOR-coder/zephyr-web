@@ -22,22 +22,6 @@ export function formatCurrency(value: number | string, options?: {
   return `$${num.toFixed(options?.decimals ?? 2)}`
 }
 
-export function formatPrice(value: number | string): string {
-  const num = typeof value === 'string' ? parseFloat(value) : value
-  if (isNaN(num)) return '$0.00'
-  if (num === 0) return '$0.00'
-  
-  if (num >= 1) {
-    return `$${num.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-  }
-  
-  if (num >= 0.0001) {
-    return `$${num.toLocaleString(undefined, { minimumFractionDigits: 4, maximumFractionDigits: 4 })}`
-  }
-  
-  return `$${num.toLocaleString(undefined, { minimumFractionDigits: 6, maximumFractionDigits: 8 })}`
-}
-
 export function formatPercentage(value: number | string, decimals = 1): string {
   const num = typeof value === 'string' ? parseFloat(value) : value
   if (isNaN(num)) return '0%'

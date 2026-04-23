@@ -19,7 +19,7 @@ const intervalMap: Record<string, string> = {
   '5M': 'M5',
   '15M': 'M15',
   '1H': 'H1',
-  '4H': 'H4'
+  '4H': 'H1' // Backend schema doesn't have H4, falling back to H1
 }
 
 type Props = {
@@ -153,8 +153,6 @@ const SolanaChart = ({ interval = '15M', pair = 'SOL/USDC' }: Props) => {
           }
         }
 
-        let lastUpdateTime = uniqueCandles.length > 0 ? (uniqueCandles[uniqueCandles.length - 1].time as number) : 0
-
         candleSeries.setData(uniqueCandles)
         chart.timeScale().fitContent()
         hideOverlays()
@@ -200,10 +198,7 @@ const SolanaChart = ({ interval = '15M', pair = 'SOL/USDC' }: Props) => {
             const close = Number(candle.close);
             
             if (!isNaN(time) && !isNaN(open) && !isNaN(high) && !isNaN(low) && !isNaN(close)) {
-              if (time >= lastUpdateTime) {
-                candleSeries.update({ time: time as UTCTimestamp, open, high, low, close })
-                lastUpdateTime = time
-              }
+              candleSeries.update({ time: time as UTCTimestamp, open, high, low, close })
             }
           }
 
@@ -247,16 +242,10 @@ const SolanaChart = ({ interval = '15M', pair = 'SOL/USDC' }: Props) => {
           }
 
           if (!cancelled && price > 0) {
-            const now = Math.floor(Date.now() / 1000)
-            if (now >= lastUpdateTime) {
-              oracleLine.update({
-                time: now as UTCTimestamp,
-                value: price
-              })
-              // We don't necessarily want to update lastUpdateTime here as oracleLine is a separate series,
-              // but if they share a timescale (which they do), some chart configs might be sensitive.
-              // However, candlestick updates are the primary ones that fail if time goes backwards.
-            }
+            oracleLine.update({
+              time: Math.floor(Date.now() / 1000) as UTCTimestamp,
+              value: price
+            })
           }
         }
 
