@@ -20,6 +20,25 @@ export default function PerformanceChart ({ roiChartData }: PerformanceChartProp
     value: item.roiPct, // Display ROI as a percentage
   })) || []
 
+  // Don't render if no data
+  if (formattedData.length === 0) {
+    return (
+      <Card>
+        <div className='flex justify-between items-center mb-4'>
+          <h3 className='text-sm font-semibold text-teal-100 tracking-wide'>
+            PERFORMANCE OVERVIEW
+          </h3>
+          <span className='text-xs bg-teal-500/20 text-teal-300 px-3 py-1 rounded-lg'>
+            30 Days
+          </span>
+        </div>
+        <div className='h-[260px] flex items-center justify-center text-[#50706c]'>
+          No performance data available
+        </div>
+      </Card>
+    )
+  }
+
   return (
     <Card>
       <div className='flex justify-between items-center mb-4'>

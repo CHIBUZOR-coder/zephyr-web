@@ -95,6 +95,9 @@ function App () {
 
   const location = useLocation()
 
+
+
+
   useEffect(() => {
     if (location.pathname === '/') {
       setVisible(true)

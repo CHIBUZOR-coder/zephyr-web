@@ -443,9 +443,11 @@ const Leaderboard: React.FC = () => {
                   <span>Performance History</span>
                   <span className='text-[#19d3c5]'>● Cumulative ROI</span>
                 </div>
-                <div className='h-44 mt-6'>
-                  <ResponsiveContainer width='100%' height='100%'>
-                    <AreaChart
+                <div className='h-44 mt-6 min-h-[100px]'>
+                  {/* Check container has valid dimensions before rendering */}
+                  {performanceData && performanceData.length > 0 ? (
+                    <ResponsiveContainer width='100%' height='100%'>
+                      <AreaChart
                       data={performanceData}
                       margin={{ top: 10, right: 20, left: 5, bottom: 0 }}
                     >
@@ -504,6 +506,11 @@ const Leaderboard: React.FC = () => {
                       />
                     </AreaChart>
                   </ResponsiveContainer>
+                  ) : (
+                    <div className='h-full flex items-center justify-center text-[#50706c] text-xs'>
+                      No performance data
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
