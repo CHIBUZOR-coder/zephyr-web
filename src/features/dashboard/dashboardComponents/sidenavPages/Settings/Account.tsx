@@ -221,7 +221,7 @@ export default function Account() {
                 type='text'
                 value={twitter}
                 onChange={(e) => setTwitter(e.target.value)}
-                placeholder='@username'
+                placeholder='bio link or @username'
                 className='
                 flex-1
                 px-3 py-2
@@ -273,7 +273,7 @@ export default function Account() {
                 type='text'
                 value={telegram}
                 onChange={(e) => setTelegram(e.target.value)}
-                placeholder='@username'
+                placeholder='bio link or @username'
                 className='
                 flex-1
                 px-3 py-2

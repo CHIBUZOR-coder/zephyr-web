@@ -1,5 +1,5 @@
 import { useWallet } from '@solana/wallet-adapter-react'
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { FiLock, FiGlobe, FiExternalLink } from 'react-icons/fi'
 
 type ToggleItemProps = {
@@ -35,10 +35,45 @@ function ToggleItem ({ title, description, value, onChange }: ToggleItemProps) {
 }
 
 export default function Privacy () {
-  const { connected } = useWallet()
+  const { connected, publicKey } = useWallet()
   const [publicProfile, setPublicProfile] = useState<boolean>(true)
   const [portfolioValue, setPortfolioValue] = useState<boolean>(false)
   const [tradingHistory, setTradingHistory] = useState<boolean>(true)
+
+  const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  // Fetch saved settings when wallet connects
+  useEffect(() => {
+    if (!connected || !publicKey) return
+    fetch(`/api/privacy/settings?wallet=${publicKey.toBase58()}`)
+      .then(r => r.json())
+      .then(data => {
+        if (data.publicProfile !== undefined)
+          setPublicProfile(data.publicProfile)
+        if (data.portfolioValue !== undefined)
+          setPortfolioValue(data.portfolioValue)
+        if (data.tradingHistory !== undefined)
+          setTradingHistory(data.tradingHistory)
+      })
+      .catch(console.error)
+  }, [connected, publicKey])
+
+  // Debounced save — fires 800ms after last toggle
+  const savePrivacySettings = (updated: {
+    publicProfile: boolean
+    portfolioValue: boolean
+    tradingHistory: boolean
+  }) => {
+    if (!publicKey) return
+    if (saveTimer.current) clearTimeout(saveTimer.current)
+    saveTimer.current = setTimeout(() => {
+      fetch('/api/privacy/settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ wallet: publicKey.toBase58(), ...updated })
+      }).catch(console.error)
+    }, 800)
+  }
 
   return (
     <div>
@@ -83,21 +118,45 @@ export default function Privacy () {
                 title='Public Profile Visibility'
                 description='Allow others to view your profile page'
                 value={publicProfile}
-                onChange={() => setPublicProfile(!publicProfile)}
+                onChange={() => {
+                  const next = !publicProfile
+                  setPublicProfile(next)
+                  savePrivacySettings({
+                    publicProfile: next,
+                    portfolioValue,
+                    tradingHistory
+                  })
+                }}
               />
 
               <ToggleItem
                 title='Show Portfolio Value'
                 description='Display total portfolio value publicly'
                 value={portfolioValue}
-                onChange={() => setPortfolioValue(!portfolioValue)}
+                onChange={() => {
+                  const next = !portfolioValue
+                  setPortfolioValue(next)
+                  savePrivacySettings({
+                    publicProfile,
+                    portfolioValue: next,
+                    tradingHistory
+                  })
+                }}
               />
 
               <ToggleItem
                 title='Show Trading History'
                 description='Display past trades and positions publicly'
                 value={tradingHistory}
-                onChange={() => setTradingHistory(!tradingHistory)}
+                onChange={() => {
+                  const next = !tradingHistory
+                  setTradingHistory(next)
+                  savePrivacySettings({
+                    publicProfile,
+                    portfolioValue,
+                    tradingHistory: next
+                  })
+                }}
               />
             </div>
 

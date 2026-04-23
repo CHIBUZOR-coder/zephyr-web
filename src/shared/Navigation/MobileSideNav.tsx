@@ -75,7 +75,7 @@ const MobileSideNav: FC<Props> = ({ isOpen, onClose }) => {
         </div>
         {/* HEADER */}
         <div className='flex items-center justify-between px-5 py-6'>
-          <div className='flex  items-center'>
+          <div className='flex items-center'>
             <span
               style={{ backgroundImage: `url("/images/zeflogo.png")` }}
               className='bg-center bg-cover h-[40px] w-[60px] inline-block'

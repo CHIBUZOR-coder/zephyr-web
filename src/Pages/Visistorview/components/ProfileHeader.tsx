@@ -1,12 +1,13 @@
-import { FaCopy, FaUserPlus, FaShareAlt, FaTelegram } from 'react-icons/fa'
+import { FaCopy, FaUserPlus, FaShareAlt, FaTelegramPlane } from 'react-icons/fa'
 import { FaCheck } from 'react-icons/fa'
 import type { ReactNode } from 'react'
 import type { Trader } from '../../../features/dashboard/dashboardComponents/sidenavPages/Leaderboard/leaderboar.types'
 import { useGeneralContext } from '../../../Context/GeneralContext'
 
 import { getTier, isCommunityTier } from '../../../utils/Gettiter'
-import { FaXTwitter } from 'react-icons/fa6'
+
 import { Link } from 'react-router-dom'
+import {  RiTwitterXFill } from 'react-icons/ri'
 
 type ProfileHeaderProps = {
   trader: Trader
@@ -109,12 +110,19 @@ export default function ProfileHeader ({ trader }: ProfileHeaderProps) {
             </div>
           </div>
           <div className='flex items-center gap-2'>
-            <Link to={"#"} className='w-7 h-7 flex items-center justify-center rounded-md bg-sky-500'>
-              <FaTelegram size={13} />
+            <Link
+              to={'#'}
+              className='flex items-center justify-center bg-[#0c1414] h-[27px] w-[27px] rounded-full
+'
+            >
+              <FaTelegramPlane className='w-4 h-4  text-white' />
             </Link>
-            
-            <Link to={"#"} className='w-7 h-7 flex items-center justify-center rounded-md bg-black'>
-              <FaXTwitter size={13} />
+
+            <Link
+              to={'#'}
+              className=' flex items-center justify-center bg-[#0c1414] h-[27px] w-[27px] rounded-full'
+            >
+              <RiTwitterXFill className='w-3 h-3 text-white' />
             </Link>
           </div>
         </div>

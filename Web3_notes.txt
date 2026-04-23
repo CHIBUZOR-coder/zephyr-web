@@ -2004,7 +2004,3 @@ User stays logged in ✓
 
 
 text-[#00A991]
-
-
-
-
