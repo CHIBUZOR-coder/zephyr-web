@@ -94,16 +94,7 @@ const MasterMode = ({
         </span>
       </div>
       {pinnedVaults.map((vault, i) => {
-        const parameters = [
-          {
-            title: 'Copiers Retention',
-            val: vault.connectedCopiers ? `${vault.connectedCopiers}` : '0'
-          },
-          {
-            title: 'AUM',
-            val: vault.totalBalanceUsd ? `${fmt(vault.totalBalanceUsd)}` : '0'
-          }
-        ]
+        
         return (
           <div
             key={i}
@@ -114,7 +105,7 @@ const MasterMode = ({
               className='bg-[#102221] border-2 border-[#009883] rounded-2xl p-6
 '
             >
-              <div className='flex gap-4 lg:gap-10 flex-col lg:flex-row mb-6 '>
+              <div className='flex gap-4 lg:gap-8 flex-col lg:flex-row mb-6 '>
                 {/* Left */}
                 <div className='flex gap-3 '>
                   <div className='flex justify-center '>
@@ -180,12 +171,12 @@ const MasterMode = ({
 
                 {/* Middle */}
                 <div className=''>
-                  <div className=' flex gap-3   border-[#1a3530] '>
+                  <div className=' flex gap-4   border-[#1a3530] '>
                     <div>
                       <p className='text-[9px] text-[#2c4041] font-[900] uppercase tracking-widest mb-1.5'>
                         Vault Balance
                       </p>
-                      <p className='text-[14px] text-white font-bold tracking-tight'>
+                      <p className='text-[12px] text-white font-semibold tracking-tight'>
                         {fmtSol(vault.totalBalanceSol)}
                       </p>
                       <p className='text-[10px] text-[#3c5250] font-bold'>
@@ -200,7 +191,7 @@ const MasterMode = ({
                       typeof vault.currentPosition.state === 'string' &&
                       vault.currentPosition.state !== PositionState.Closed ? (
                         <>
-                          <p className='text-[14px] text-white font-bold tracking-tight'>
+                          <p className='text-[12px] text-white font-semibold tracking-tight'>
                             {(
                               vault.currentPosition.size / LAMPORTS_PER_SOL
                             ).toFixed(4)}{' '}
@@ -220,13 +211,24 @@ const MasterMode = ({
                         </p>
                       )}
                     </div>
+                    
+                    <div>
+                      <p className='text-[9px] text-[#2c4041] font-[900] uppercase tracking-widest mb-1.5'>
+                        AUM
+                      </p>
 
+                      <p className='text-[12px] text-white font-semibold tracking-tight'>
+                        {vault.totalBalanceUsd
+                          ? `${fmt(vault.totalBalanceUsd)}`
+                          : '0'}
+                      </p>
+                    </div>
                     <div>
                       <p className='text-[9px] text-[#2c4041] font-[900] uppercase tracking-widest mb-1.5'>
                         Total Volume
                       </p>
 
-                      <p className='text-[14px] text-white font-bold tracking-tight'>
+                      <p className='text-[12px] text-white font-semibold tracking-tight'>
                         {vault.totalBalanceUsd
                           ? `${fmt(vault.totalBalanceUsd)}`
                           : '0'}
@@ -237,38 +239,18 @@ const MasterMode = ({
                         Realized Profit
                       </p>
 
-                      <p className='text-[14px] text-white font-bold tracking-tight'>
+                      <p className='text-[12px] text-white font-semibold tracking-tight'>
                         {vault.historicalClaimedSol
                           ? `$
                         {fmtSol(vault.historicalClaimedSol)} SOL`
                           : '0 SOL'}
                       </p>
                     </div>
-                    {/* <div>
-                      <p className='text-[9px] text-[#2c4041] font-[900] uppercase tracking-widest mb-1.5'>
-                        AUM
-                      </p>
-
-                      <p className='text-[14px] text-white font-bold tracking-tight'>
-                        {vault.totalBalanceUsd
-                          ? `${fmt(vault.totalBalanceUsd)}`
-                          : '0'}
-                      </p>
-                    </div> */}
                   </div>
                 </div>
                 {/* Right */}
                 <div className='flex-1 flex flex-col lg:flex-row justify-between gap-6'>
-                  <div className='flex items-center gap-3 w-full lg:w-auto'>
-                    <button
-                      onClick={e => {
-                        e.stopPropagation()
-                        handleOpenWithdraw(vault.fullAddress)
-                      }}
-                      className='border border-[#1f4d47] rounded-lg px-2 py-[5px] cursor-pointer hover:bg-[#1f4d47]/10 hover:border-[#1f4d47]/70 transition-colors bg-transparent flex items-center gap-1.5 text-[#009883] text-[8px] font-bold tracking-[0.1em]'
-                    >
-                      - Withdraw SOL
-                    </button>
+                  <div className='flex items-center gap-2 w-full lg:w-auto'>
                     <button
                       onClick={e => {
                         e.stopPropagation()
@@ -278,24 +260,20 @@ const MasterMode = ({
                     >
                       + Deposit SOL
                     </button>
+                    <button
+                      onClick={e => {
+                        e.stopPropagation()
+                        handleOpenWithdraw(vault.fullAddress)
+                      }}
+                      className='border border-[#1f4d47] rounded-lg px-2 py-[5px] cursor-pointer hover:bg-[#1f4d47]/10 hover:border-[#1f4d47]/70 transition-colors bg-transparent flex items-center gap-1.5 text-[#009883] text-[8px] font-bold tracking-[0.1em]'
+                    >
+                      - Withdraw SOL
+                    </button>
                   </div>
                 </div>
               </div>
             </div>
 
-            <div className='grid grid-cols-1 md:grid-cols-2  gap-4'>
-              {parameters.map((item, i) => (
-                <div
-                  key={i}
-                  className='rounded-lg p-4 flex flex-col gap-2 text-white bg-[#102221] w-full'
-                >
-                  <p className='text-[#345253] font-semibold text-sm'>
-                    {item?.title}
-                  </p>
-                  <p>{item?.val}</p>
-                </div>
-              ))}
-            </div>
             <div className='flex justify-between items-center border rounded-xl p-5 bg-[#102221]'>
               <div>
                 <p className='text-[#FE9A00] font-bold'>
