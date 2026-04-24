@@ -2,9 +2,11 @@
 
 import { useState, useEffect } from 'react';
 import { useWallet } from '@solana/wallet-adapter-react';
-import { API_BASE_URL } from '../../core/config/api';
+
 import { useGeneralContext } from '../../Context/GeneralContext';
 import TradeHistory from './TradeHistory';
+
+const API_BASE_URL = 'https://zephyr-np09.onrender.com'
 
 interface CopierVaultData {
   id: string;

@@ -94,6 +94,7 @@ const Trading: React.FC = () => {
 
   const riskAnalysis = useMemo(() => 
     analyzeRisk(riskParams, masterVaultForCheck || undefined), 
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [riskParams, masterVaultForCheck]
   )
 

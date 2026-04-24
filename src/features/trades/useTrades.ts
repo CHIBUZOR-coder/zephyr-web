@@ -1,7 +1,7 @@
 // zephyr-web/src/features/trades/useTrades.ts
 
 import { useState, useEffect, useCallback } from 'react';
-import { API_BASE_URL } from '../../core/config/api';
+const API_BASE_URL =  "https://zephyr-np09.onrender.com";
 
 export interface Trade {
   id: string;

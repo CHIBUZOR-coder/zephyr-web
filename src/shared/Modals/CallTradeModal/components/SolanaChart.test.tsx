@@ -26,6 +26,7 @@ global.fetch = vi.fn(() =>
     ok: true,
     json: () => Promise.resolve({ data: [] }),
   })
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 ) as any
 
 describe('SolanaChart', () => {

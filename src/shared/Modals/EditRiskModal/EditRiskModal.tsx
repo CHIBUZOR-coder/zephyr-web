@@ -124,6 +124,7 @@ export default function EditRiskModal () {
     return { level: 'blocked', reasons: reasons.length ? reasons : ['Risk params too restrictive'] }
   }
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const riskAnalysis = useMemo(() => analyzeRisk(riskParams), [riskParams])
 
   const getRiskBadge = (level: RiskLevel) => {

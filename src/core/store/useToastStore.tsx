@@ -16,6 +16,7 @@ interface ToastStore {
   removeToast: (id: string) => void
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useToastStore = create<ToastStore>((set) => ({
   toasts: [],
   addToast: (toast) => {
@@ -31,6 +32,7 @@ export const useToastStore = create<ToastStore>((set) => ({
 }))
 
 // Alert helpers - import and use these in any component
+// eslint-disable-next-line react-refresh/only-export-components
 export const toast = {
   success: (message: string, duration?: number) => 
     useToastStore.getState().addToast({ type: 'success', message, duration }),

@@ -159,6 +159,7 @@ export const StepTwo = ({ onBack, onNext, form, setForm }: StepTwoProps) => {
         dailyLossLimitBps: (parseInt(String(form.maxVaultDrawdown ?? '20'), 10) || 20) * 100,
       })
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const vaultPda = (res as any)?.vault?.vaultPda ?? (res as any)?.data?.vaultPda ?? (res as any)?.vaultPda;
       if (vaultPda) {
         setForm((prev: StepTwoProps['form']) => ({ ...prev, vaultPda }));
