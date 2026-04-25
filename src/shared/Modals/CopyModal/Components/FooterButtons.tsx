@@ -6,13 +6,15 @@ interface FooterButtonsProps {
   onNext?: () => void
   nextLabel: string
   icon?: ReactNode
+  disabled?: boolean
 }
 
 const FooterButtons = ({
   onBack,
   onNext,
   nextLabel,
-  icon
+  icon,
+  disabled = false
 }: FooterButtonsProps) => {
   const { connected } = useWallet()
   return (
@@ -29,7 +31,7 @@ const FooterButtons = ({
       )}
 
       <button
-        disabled={!connected}
+        disabled={!connected || disabled}
         onClick={onNext}
         className=' smm py-2 rounded-lg bg-teal-400 text-white  flex items-center gap-2 px-3 text-[12px] md:text-[14px] font-[700]  disabled:opacity-50 disabled:cursor-not-allowed'
       >

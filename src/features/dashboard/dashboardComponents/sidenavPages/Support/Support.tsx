@@ -53,7 +53,7 @@ const faqData: FAQ[] = [
   {
     question: "What's the difference between max drawdown and stop loss?",
     answer:
-      "Max Vault Drawdown is a safety limit that stops all trading if your total vault equity drops by the specified percentage. Stop Loss Override applies to individual positions and overrides the trader's stop loss with your own conservative limit."
+      "Max Vault Drawdown is a safety limit that stops all trading if your total vault equity drops by the specified amount of SOL. Stop Loss Override applies to individual positions and overrides the trader's stop loss with your own conservative fixed SOL limit."
   },
   {
     question: 'How do I choose the right trader to copy?',

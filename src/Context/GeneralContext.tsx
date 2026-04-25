@@ -3,6 +3,10 @@
 import { createContext, useContext, useState } from 'react'
 import type { ReactNode } from 'react'
 import type { Trader } from '../features/dashboard/dashboardComponents/sidenavPages/Leaderboard/leaderboar.types'
+import type { Trader as TraderData } from '../features/home/traders.types'
+
+// Union of both Trader types
+export type SelectedTrader = Trader | TraderData
 
 /* ------------------------------------------------ */
 /* TYPES */

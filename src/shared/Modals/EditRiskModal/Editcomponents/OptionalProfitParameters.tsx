@@ -51,11 +51,11 @@ export default function OptionalProfitParameters ({
           />
 
           <Input
-            label='Stop Loss Override (%)'
-            placeholder='10'
+            label='Stop Loss Override (SOL)'
+            placeholder='1.0'
             value={stopLossOverridePct}
             onChange={setStopLossOverridePct}
-            info="Override trader's stop loss with your own limit."
+            info="Override trader's stop loss with your own fixed SOL limit."
           />
 
           <Input

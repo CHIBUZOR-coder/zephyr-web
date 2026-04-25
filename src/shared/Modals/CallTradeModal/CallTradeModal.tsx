@@ -55,6 +55,17 @@ const CallTradeModal: FC<Props> = ({ open, onClose }) => {
   const { masterVault, copierVaults, refetchAll } = useUserVaults()
   const { data: solPrice } = useSolPrice()
 
+  // const vaultBalance =
+  //   masterVault?.actualBalance ??
+  //   (masterVault?.balance ? parseFloat(masterVault.balance as string) : 0)
+const vaultBalance = masterVault?.balance ?? 0
+
+
+
+  const handleMax = () => {
+    setAmount(vaultBalance.toFixed(4))
+  }
+
   const copierCount = masterVault?._count?.copierVaults ?? 0
 
   const totalAumSol =
@@ -420,19 +431,31 @@ const CallTradeModal: FC<Props> = ({ open, onClose }) => {
 
             {/* TRADE SIZE */}
             <div className='mb-4 flex flex-col gap-1'>
-              <div className='w-full flex justify-between items-center'>
-                <span className='font-[900] text-[10px] text-[#50706c]'>
+              <div className='w-full flex justify-between items-center px-1'>
+                <span className='font-[900] text-[10px] text-[#50706c] uppercase tracking-wider'>
                   Trade Size (SOL)
+                </span>
+                <span className='text-[9px] text-[#50706c] font-[700]'>
+                  Vault Balance:{' '}
+                  <span className='text-[#E8F6F3]'>
+                    {vaultBalance.toFixed(4)} SOL
+                  </span>
                 </span>
               </div>
 
-              <div className='w-full relative'>
+              <div className='w-full relative flex items-center'>
                 <input
                   type='number'
                   value={amount}
                   onChange={e => setAmount(e.target.value)}
-                  className='w-full bg-[#062421] font-[900] border border-[#123F3A] p-3 rounded-lg text-[20px] outline-none'
+                  className='w-full bg-[#062421] font-[900] border border-[#123F3A] p-3 rounded-lg text-[20px] outline-none pr-16'
                 />
+                <button
+                  onClick={handleMax}
+                  className='absolute right-3 px-2 py-1 rounded bg-[#09211f] text-[#6ef3d6] border border-[#1f4d47] text-[10px] font-[900] hover:bg-[#0a2b27] transition-colors'
+                >
+                  MAX
+                </button>
               </div>
             </div>
 

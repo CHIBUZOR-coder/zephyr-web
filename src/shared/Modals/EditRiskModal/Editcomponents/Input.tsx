@@ -17,6 +17,13 @@ export default function Input ({
   onChange,
   suffix = '%'
 }: InputProps) {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value
+    if (val === '' || /^\d*\.?\d*$/.test(val)) {
+      onChange?.(val)
+    }
+  }
+
   return (
     <div className='flex flex-col gap-1.5'>
       <label className='text-[12px] font-bold text-[#B0E4DD80] flex items-center gap-1'>
@@ -33,8 +40,11 @@ export default function Input ({
 
       <div className='relative'>
         <input
+          type='text'
+          inputMode='decimal'
+          pattern='[0-9]*\.?[0-9]*'
           value={value}
-          onChange={e => onChange?.(e.target.value)}
+          onChange={handleChange}
           placeholder={placeholder}
           className='w-full bg-[#081a1a] border border-[#1c3535] rounded-lg px-3 py-2.5 text-white text-sm focus:outline-none focus:border-[#00a08a] transition-colors'
         />

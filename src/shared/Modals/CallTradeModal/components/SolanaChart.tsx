@@ -7,12 +7,18 @@ import {
   type UTCTimestamp
 } from 'lightweight-charts'
 
+interface DexPool {
+  baseToken?: { symbol?: string }
+  priceUsd?: string
+}
+
 // ✅ Use environment variables for deployment (Render/Vercel)
 // const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3002'
 const API_BASE_URL = 'https://zephyr-np09.onrender.com'
 const INDEXER_API = `${API_BASE_URL}/api`
 const INDEXER_WS = API_BASE_URL.replace('http', 'ws') + '/ws'
 const JUPITER_API = 'https://api.jup.ag/tokens/v2'
+const DEXSCREENER_API = 'https://api.dexscreener.com/latest/dex'
 
 const intervalMap: Record<string, string> = {
   '1M': 'M1',
@@ -262,6 +268,7 @@ const SolanaChart = ({ interval = '15M', pair = 'SOL/USDC' }: Props) => {
         const fetchOraclePrice = async () => {
           let price = 0
 
+          // 1. Try indexer first
           try {
             const res = await fetch(
               `${INDEXER_API}/price?pair=${encodeURIComponent(pair)}`
@@ -274,6 +281,31 @@ const SolanaChart = ({ interval = '15M', pair = 'SOL/USDC' }: Props) => {
             console.error('Failed to fetch oracle price')
           }
 
+          // 2. Try DexScreener for small tokens (memecoins with SOL pairs)
+          if (price === 0) {
+            const symbol = extractSymbol(pair)
+            try {
+              const dexRes = await fetch(
+                `${DEXSCREENER_API}/pairs/solana?search=${symbol}`
+              )
+              const dexData = await dexRes.json()
+              // Find matching pool with SOL quote (most common for memecoins)
+              // const matchingPool = dexData.pairs?.find((p: any) =>
+              //   p.baseToken?.symbol?.toUpperCase() === symbol.toUpperCase()
+              // )
+              const matchingPool = (dexData.pairs as DexPool[])?.find(
+                p => p.baseToken?.symbol?.toUpperCase() === symbol.toUpperCase()
+              )
+
+              if (matchingPool?.priceUsd) {
+                price = parseFloat(matchingPool.priceUsd)
+              }
+            } catch {
+              console.error('Failed to fetch price from DexScreener')
+            }
+          }
+
+          // 3. Fallback to Jupiter
           if (price === 0) {
             const symbol = extractSymbol(pair)
             try {

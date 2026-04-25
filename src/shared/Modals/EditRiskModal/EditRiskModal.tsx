@@ -71,53 +71,45 @@ export default function EditRiskModal () {
   // Same logic from Trading.tsx
   const analyzeRisk = (params: typeof riskParams): RiskAnalysis => {
     const reasons: string[] = []
-    let maxTradeSize = parseInt(params.maxTradeSizePct.replace(/\D/g, '')) || 0
-    let maxLoss = parseInt(params.maxLossPct.replace(/\D/g, '')) || 0
-    let maxDrawdown = parseInt(params.maxDrawdownPct.replace(/\D/g, '')) || 0
+    let maxTradeSize = parseFloat(params.maxTradeSizePct.replace(/[^\d.]/g, '')) || 0
+    const maxLoss = parseFloat(params.maxLossPct.replace(/[^\d.]/g, '')) || 0
+    const maxDrawdown = parseFloat(params.maxDrawdownPct.replace(/[^\d.]/g, '')) || 0
 
     const isInvalid = maxTradeSize === 0 && maxLoss === 0 && maxDrawdown === 0
     
     if (isInvalid) {
       return { 
         level: 'blocked', 
-        reasons: ['Invalid parameters - please enter numbers 0-100'] 
+        reasons: ['Invalid parameters - please enter values'] 
       }
     }
 
-    if (maxTradeSize > 100) {
-      reasons.push(`Max trade size capped at 100%`)
-      maxTradeSize = 100
-    }
-    if (maxLoss > 100) {
-      reasons.push(`Max loss capped at 100%`)
-      maxLoss = 100
-    }
-    if (maxDrawdown > 100) {
-      reasons.push(`Max drawdown capped at 100%`)
-      maxDrawdown = 100
+    // Validate maxTradeSize as SOL amount
+    if (maxTradeSize < 0.01) {
+      reasons.push(`Max trade size (${maxTradeSize} SOL) is too low`)
+    } else if (maxTradeSize > 50) {
+      reasons.push(`Max trade size capped at 50 SOL`)
+      maxTradeSize = 50
     }
 
-    if (maxTradeSize < 10) {
-      reasons.push(`Max trade size (${maxTradeSize}%) is too low - likely to block trades`)
+    if (maxLoss < 1.0 && maxLoss > 0) {
+      reasons.push(`Max loss (${maxLoss} SOL) is aggressive - may stop prematurely`)
     }
 
-    if (maxLoss < 10 && maxLoss > 0) {
-      reasons.push(`Max loss (${maxLoss}%) is aggressive - may stop prematurely`)
+    if (maxDrawdown < 2.0 && maxDrawdown > 0) {
+      reasons.push(`Max drawdown (${maxDrawdown} SOL) is tight - may pause during volatility`)
     }
 
-    if (maxDrawdown < 10) {
-      reasons.push(`Max drawdown (${maxDrawdown}%) is tight - may pause during volatility`)
+    if (maxDrawdown < maxLoss && maxDrawdown > 0) {
+      reasons.push(`Max drawdown (${maxDrawdown} SOL) < max loss (${maxLoss} SOL) - illogical`)
     }
 
-    if (maxDrawdown < maxLoss) {
-      reasons.push(`Max drawdown (${maxDrawdown}%) < max loss (${maxLoss}%) - illogical`)
-    }
-
-    if (maxTradeSize >= 50 && maxDrawdown >= 20 && maxLoss >= 30) {
+    // Risk level based on absolute SOL amounts
+    if (maxDrawdown >= 10 && maxLoss >= 5) {
       return { level: 'safe', reasons: ['All limits are permissive'] }
     }
 
-    if (maxTradeSize >= 20 && maxDrawdown >= 10) {
+    if (maxDrawdown >= 5) {
       return { level: 'warning', reasons: reasons.length ? reasons : ['Some limits are restrictive'] }
     }
 
@@ -151,17 +143,36 @@ export default function EditRiskModal () {
 
     setLoading(true)
     try {
-      // In a real scenario, we'd need the master vault PDA too.
-      // But updateCopierRiskParams expects masterVaultAddress.
-      // We might need to adjust useVaultOperations or how we store selectedVaultPda
+      const maxTradeSizeSol = parseFloat(riskParams.maxTradeSizePct) || 0.5
+      const maxLossSol = parseFloat(riskParams.maxLossPct) || 1.0
+      const maxDrawdownSol = parseFloat(riskParams.maxDrawdownPct) || 2.0
       
-      // For now, assuming selectedVaultPda is the MASTER vault address we are copying
-      // because that's what MirroringVaults uses: setSelectedVaultPda(strategy.masterVaultAddress)
+      // Default percentages if we can't find balance
+      let maxTradeSizePct = 10
+      let maxLossPct = 5
+      let maxDrawdownPct = 15
+
+      // Get copier vault balance to convert SOL to percentage
+      const copierVault = copierVaults?.find(v => v.masterExecutionVaultPda === selectedVaultPda) || currentVault
+      
+      if (copierVault) {
+        const balance = parseFloat(copierVault.actualBalance?.toString() || copierVault.balance) / 1e9
+        if (balance > 0) {
+          maxTradeSizePct = Math.round((maxTradeSizeSol / balance) * 100)
+          maxTradeSizePct = Math.max(1, Math.min(100, maxTradeSizePct))
+
+          maxLossPct = Math.round((maxLossSol / balance) * 100)
+          maxLossPct = Math.max(1, Math.min(100, maxLossPct))
+
+          maxDrawdownPct = Math.round((maxDrawdownSol / balance) * 100)
+          maxDrawdownPct = Math.max(1, Math.min(100, maxDrawdownPct))
+        }
+      }
       
       await updateCopierRiskParams(selectedVaultPda, {
-        maxLossPct: parseInt(riskParams.maxLossPct) || 5,
-        maxTradeSizePct: parseInt(riskParams.maxTradeSizePct) || 10,
-        maxDrawdownPct: parseInt(riskParams.maxDrawdownPct) || 15,
+        maxLossPct,
+        maxTradeSizePct,
+        maxDrawdownPct,
       })
       toast.success('Risk parameters updated successfully!')
       setEditRiskvisible(false)
@@ -243,16 +254,16 @@ export default function EditRiskModal () {
                   {/* Primary Inputs */}
                   <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
                     <Input 
-                      label='Max Vault Drawdown' 
+                      label='Max Vault Drawdown (SOL)' 
                       value={riskParams.maxDrawdownPct}
                       onChange={(v) => handleParamChange('maxDrawdownPct', v)}
-                      info='Hard stop if your vault equity drops by this amount.'
+                      info='Hard stop if your vault equity drops by this amount of SOL.'
                     />
                     <Input 
-                      label='Max Trade Size' 
+                      label='Max Trade Size (SOL)' 
                       value={riskParams.maxTradeSizePct}
                       onChange={(v) => handleParamChange('maxTradeSizePct', v)}
-                      info='Max percentage of vault balance per trade.'
+                      info='Maximum SOL per single copied trade.'
                     />
                     <Input 
                       label='Max Entry Slippage' 
@@ -261,10 +272,10 @@ export default function EditRiskModal () {
                       info='Maximum price slippage allowed for trade entry.'
                     />
                     <Input 
-                      label='Max Loss Per Trade' 
+                      label='Max Loss Per Trade (SOL)' 
                       value={riskParams.maxLossPct}
                       onChange={(v) => handleParamChange('maxLossPct', v)}
-                      info='Auto-close single trade if it hits this loss %.'
+                      info='Auto-close single trade if it hits this loss amount in SOL.'
                     />
                   </div>
 

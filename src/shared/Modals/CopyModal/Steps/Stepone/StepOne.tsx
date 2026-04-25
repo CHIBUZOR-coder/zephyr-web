@@ -27,8 +27,8 @@ interface RiskAnalysisResult {
 
 // Enhanced Risk Analysis Logic (from Trading.tsx/Settings)
 const analyzeRisk = (form: VaultFormData, masterVaultAddress?: string): RiskAnalysisResult => {
-  let maxTradeSize = parseInt(form.maxTradeSize || '0') || 0
-  let maxDrawdown = parseInt(form.maxVaultDrawdown || '0') || 0
+  let maxTradeSize = parseFloat(form.maxTradeSize || '0') || 0
+  const maxDrawdown = parseFloat(form.maxVaultDrawdown || '0') || 0
   let maxEntrySlippage = parseFloat(form.maxEntrySlippage || '0') || 0
 
   const reasons: string[] = []
@@ -39,49 +39,38 @@ const analyzeRisk = (form: VaultFormData, masterVaultAddress?: string): RiskAnal
   if (isInvalid) {
     return { 
       level: 'blocked', 
-      reasons: ['Invalid parameters - please enter numbers 0-100'] 
+      reasons: ['Invalid parameters - please enter values'] 
     }
   }
 
-  // Cap values at 100
-  if (maxTradeSize > 100) {
-    reasons.push(`Max trade size capped at 100% (you entered ${maxTradeSize}%)`)
-    maxTradeSize = 100
-  }
-  if (maxDrawdown > 100) {
-    reasons.push(`Max drawdown capped at 100% (you entered ${maxDrawdown}%)`)
-    maxDrawdown = 100
-  }
   if (maxEntrySlippage > 10) {
     reasons.push(`Slippage capped at 10% (you entered ${maxEntrySlippage}%)`)
     maxEntrySlippage = 10
   }
 
-  // Check for restrictive values
-  if (maxTradeSize < 10) {
-    reasons.push(`Max trade size (${maxTradeSize}%) is too low - likely to block trades`)
-  } else if (maxTradeSize >= 10 && maxTradeSize < 50) {
-    reasons.push(`Max trade size (${maxTradeSize}%) may block larger trades`)
+  // Validate maxTradeSize as SOL amount
+  if (maxTradeSize < 0.01) {
+    reasons.push(`Max trade size (${maxTradeSize} SOL) is too low - may block trades`)
+  } else if (maxTradeSize > 50) {
+    reasons.push(`Max trade size capped at 50 SOL (you entered ${maxTradeSize} SOL)`)
+    maxTradeSize = 50
   }
 
-  if (maxDrawdown < 10) {
-    reasons.push(`Max drawdown (${maxDrawdown}%) is tight - may pause during volatility`)
+  if (maxDrawdown < 2.0 && maxDrawdown > 0) {
+    reasons.push(`Max drawdown (${maxDrawdown} SOL) is tight - may pause during volatility`)
   }
 
   // Add master vault simulation if provided
   if (masterVaultAddress) {
     reasons.push(`Simulating with master: ${masterVaultAddress.slice(0, 6)}...${masterVaultAddress.slice(-4)}`)
-    if (maxTradeSize < 50) {
-      reasons.push(`If master executes large trades, you may be blocked with current ${maxTradeSize}% limit`)
-    }
   }
 
-  // Determine risk level
-  if (maxTradeSize >= 50 && maxDrawdown >= 20) {
+  // Determine risk level based on absolute SOL amounts
+  if (maxDrawdown >= 10) {
     return { level: 'safe', reasons: reasons.length ? reasons : ['All limits are permissive'] }
   }
 
-  if (maxTradeSize >= 20 && maxDrawdown >= 10) {
+  if (maxDrawdown >= 5) {
     return { level: 'warning', reasons: reasons.length ? reasons : ['Some limits are restrictive'] }
   }
 
@@ -97,10 +86,19 @@ type StepOneProps = {
 
 export const StepOne = ({ onNext, form, setForm }: StepOneProps) => {
   const { selectedTrader, closeVaultFlow, setWalletModal } = useGeneralContext()
-  const { connected } = useWallet()
+  const { connected, publicKey } = useWallet()
 
   // Get master vault address for risk simulation
   const masterVaultAddress = selectedTrader?.vaultAddress
+
+  // Check if user is attempting to copy themselves - check both possible wallet sources
+  const isSelfCopy = useMemo(() => {
+    if (!publicKey || !selectedTrader) return false
+    const traderWallet = (selectedTrader as unknown as { masterWallet?: string }).masterWallet 
+      || (selectedTrader as unknown as { address?: string }).address
+    if (!traderWallet) return false
+    return publicKey.toBase58() === traderWallet
+  }, [publicKey, selectedTrader])
 
   // Risk analysis
   const riskAnalysis = useMemo(() => analyzeRisk(form, masterVaultAddress), [form, masterVaultAddress])
@@ -128,42 +126,58 @@ export const StepOne = ({ onNext, form, setForm }: StepOneProps) => {
     <div className='pb-4 px-6'>
       <div className='flex flex-col gap-2 mt-5'>
         {/* Trader Profile Section */}
-        <div className='w-full rounded-lg border-[1px] border-[#1c3535] p-3 flex justify-between items-center flex-col md:flex-row gap-5 md:gap-0'>
-          <div className='flex justify-between gap-2 w-full md:w-auto'>
-            <span
-              className='h-[48px] w-[48px] rounded-full bg-cover bg-center'
-              style={{ backgroundImage: `url(${selectedTrader?.image})` }}
-            ></span>
-            <div>
-              <div className='flex items-center gap-2'>
-                <p className='text-[18px] font-[700] text-white'>
-                  {selectedTrader?.name}
-                </p>
-                <span className='text-[8px] font-[400] leading-[15px] tracking-[0.5px] uppercase bg-ins border border-[#482174] text-[#D8B4FE] px-1 rounded-sm'>
-                  Institutional
-                </span>
-              </div>
-              <p className='font-[400] text-[10px] leading-4 text-[#F3F3F3]'>
-                Strategy: High-Freq Solana DEX
-              </p>
-            </div>
-          </div>
+        {(() => {
+          // Handle both Trader types (from leaderboard and from traders API)
+          const traderAny = selectedTrader as unknown as { 
+            metrics?: { pnlUsd?: number; winRatePct?: number; maxDrawdownPct?: number }
+          }
+          const metrics = traderAny?.metrics
           
-          <div className='flex gap-5 md:gap-3 items-center w-full md:w-auto'>
-            <div className='flex flex-col gap-2'>
-              <p className='dd'>30D PnL</p>
-              <p className='numm text-[#10B981]'>+142.5%</p>
+          const displayPnl = selectedTrader?.pnl ?? (metrics?.pnlUsd != null ? `${metrics.pnlUsd >= 0 ? '+' : ''}${metrics.pnlUsd.toFixed(1)}` : '0.0')
+          const displayWinRate = selectedTrader?.winRate ?? (metrics?.winRatePct != null ? metrics.winRatePct.toFixed(1) : '0.0')
+          const displayDrawdown = selectedTrader?.drawdown ?? (metrics?.maxDrawdownPct != null ? `-${metrics.maxDrawdownPct.toFixed(1)}` : '0.0')
+          
+          return (
+            <div className='w-full rounded-lg border-[1px] border-[#1c3535] p-3 flex justify-between items-center flex-col md:flex-row gap-5 md:gap-0'>
+              <div className='flex justify-between gap-2 w-full md:w-auto'>
+                <span
+                  className='h-[48px] w-[48px] rounded-full bg-cover bg-center'
+                  style={{ backgroundImage: `url(${selectedTrader?.image})` }}
+                ></span>
+                <div>
+                  <div className='flex items-center gap-2'>
+                    <p className='text-[18px] font-[700] text-white'>
+                      {selectedTrader?.name}
+                    </p>
+                    <span className='text-[8px] font-[400] leading-[15px] tracking-[0.5px] uppercase bg-ins border border-[#482174] text-[#D8B4FE] px-1 rounded-sm'>
+                      {selectedTrader?.tiers || 'Standard'}
+                    </span>
+                  </div>
+                  <p className='font-[400] text-[10px] leading-4 text-[#F3F3F3]'>
+                    Strategy: {selectedTrader?.sol || 'High-Freq Solana DEX'}
+                  </p>
+                </div>
+              </div>
+              
+              <div className='flex gap-5 md:gap-3 items-center w-full md:w-auto'>
+                <div className='flex flex-col gap-2'>
+                  <p className='dd'>30D PnL</p>
+                  <p className={`numm ${parseFloat(displayPnl) >= 0 ? 'text-[#10B981]' : 'text-[#EF4444]'}`}>
+                    {displayPnl}%
+                  </p>
+                </div>
+                <div className='flex flex-col gap-2'>
+                  <p className='dd'>Win Rate</p>
+                  <p className='numm text-white'>{displayWinRate}%</p>
+                </div>
+                <div className='flex flex-col gap-2'>
+                  <p className='dd'>Max DD</p>
+                  <p className='numm text-[#EF4444]'>{displayDrawdown}%</p>
+                </div>
+              </div>
             </div>
-            <div className='flex flex-col gap-2'>
-              <p className='dd'>Win Rate</p>
-              <p className='numm text-white'>78.4%</p>
-            </div>
-            <div className='flex flex-col gap-2'>
-              <p className='dd'>Max DD</p>
-              <p className='numm text-[#EF4444]'>-12.2%</p>
-            </div>
-          </div>
-        </div>
+          )
+        })()}
 
         <div className='flex gap-2 items-center mt-6'>
           <span
@@ -178,16 +192,16 @@ export const StepOne = ({ onNext, form, setForm }: StepOneProps) => {
         {/* Form Inputs Section */}
         <div className='grid grid-col-1 md:grid-cols-2 gap-6 mt-2'>
           <Input
-            label='Max Vault Drawdown'
-            placeholder='20'
-            info='Hard stop if your vault equity drops by this amount.'
+            label='Max Vault Drawdown (SOL)'
+            placeholder='5.0'
+            info='Hard stop if your vault equity drops by this amount of SOL.'
             value={form.maxVaultDrawdown}
             onChange={(e) => handleInputChange('maxVaultDrawdown', e.target.value)}
           />
           <Input
-            label='Max Trade Size'
-            placeholder='5'
-            info='Recommended: 2-5% for conservative risk profile.'
+            label='Max Trade Size (SOL)'
+            placeholder='0.5'
+            info='Maximum SOL per single copied trade.'
             value={form.maxTradeSize}
             onChange={(e) => handleInputChange('maxTradeSize', e.target.value)}
           />
@@ -231,6 +245,19 @@ export const StepOne = ({ onNext, form, setForm }: StepOneProps) => {
           </div>
         )}
 
+        {/* Self-Copy Error Display */}
+        {isSelfCopy && (
+          <div className='p-4 rounded-lg bg-red-900/30 border border-red-500/50 text-red-400'>
+            <div className='flex items-center gap-2 font-bold'>
+              <FiXCircle />
+              <span>Cannot Copy Yourself</span>
+            </div>
+            <p className='text-[10px] mt-1'>
+              You cannot copy your own vault. Please select a different master trader to copy.
+            </p>
+          </div>
+        )}
+
         {/* 4. Pass the type-safe props down */}
         <OptionalProfitParameters 
           form={form} 
@@ -251,9 +278,15 @@ export const StepOne = ({ onNext, form, setForm }: StepOneProps) => {
             Cancel
           </span>
           <FooterButtons
-            onNext={onNext}
+            onNext={() => {
+              if (isSelfCopy) {
+                return
+              }
+              onNext()
+            }}
             nextLabel='Create Vault'
             icon={<FaArrowRight />}
+            disabled={isSelfCopy}
           />
         </div>
       </div>

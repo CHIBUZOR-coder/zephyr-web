@@ -9,6 +9,7 @@ type StepFourProps = {
     maxVaultDrawdown?: string | number;
     maxTradeSize?: string | number;
     takeProfitTriggerBps?: string | number;
+    txSig?: string;
   }
 }
 
@@ -90,7 +91,7 @@ export const StepFour = ({ onClose, onGoPortfolio, form }: StepFourProps) => {
                   STOP LOSS
                 </p>
                 <p className='text-[#ef4444] font-semibold text-[14px]'>
-                  -{form.maxVaultDrawdown}%
+                  {form.maxVaultDrawdown} SOL
                 </p>
               </div>
 
@@ -99,7 +100,7 @@ export const StepFour = ({ onClose, onGoPortfolio, form }: StepFourProps) => {
                   POSITION SIZE
                 </p>
                 <p className='text-white font-semibold text-[14px]'>
-                  {form.maxTradeSize}% Max
+                  {form.maxTradeSize} SOL Max
                 </p>
               </div>
 
@@ -119,9 +120,20 @@ export const StepFour = ({ onClose, onGoPortfolio, form }: StepFourProps) => {
             <div className='flex justify-between items-center px-5 py-4 border-t border-[#0f2424] text-[11px] text-[#5f7d84]'>
               <span className='text-[#6B7280]'>Verified On-Chain</span>
 
-              <button className='text-[#14B8A6] hover:text-teal-300 transition'>
-                View on Solscan ↗
-              </button>
+              {form.txSig ? (
+                <a 
+                  href={`https://solscan.io/tx/${form.txSig}?cluster=devnet`} 
+                  target='_blank' 
+                  rel='noopener noreferrer'
+                  className='text-[#14B8A6] hover:text-teal-300 transition flex items-center gap-1'
+                >
+                  View on Solscan ↗
+                </a>
+              ) : (
+                <button className='text-[#14B8A6] hover:text-teal-300 transition'>
+                  View on Solscan ↗
+                </button>
+              )}
             </div>
           </div>
 

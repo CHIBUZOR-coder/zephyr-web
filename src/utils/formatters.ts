@@ -31,11 +31,15 @@ export function formatPrice(value: number | string): string {
     return `$${num.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
   }
   
-  if (num >= 0.0001) {
+  if (num >= 0.01) {
     return `$${num.toLocaleString(undefined, { minimumFractionDigits: 4, maximumFractionDigits: 4 })}`
   }
   
-  return `$${num.toLocaleString(undefined, { minimumFractionDigits: 6, maximumFractionDigits: 8 })}`
+  if (num >= 0.0001) {
+    return `$${num.toLocaleString(undefined, { minimumFractionDigits: 6, maximumFractionDigits: 6 })}`
+  }
+  
+  return `$${num.toLocaleString(undefined, { minimumFractionDigits: 8, maximumFractionDigits: 8 })}`
 }
 
 export function formatPercentage(value: number | string, decimals = 1): string {

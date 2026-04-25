@@ -1,10 +1,13 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 
 import { FaCheckCircle, FaQrcode } from 'react-icons/fa'
 import { MdOutlineContentCopy } from 'react-icons/md'
 import { useGeneralContext } from '../../../../Context/GeneralContext'
 import { useVaultOperations } from '../../../../features/master/useVaultOperations'
 import { useUserVaults } from '../../../../features/master/useUserVaults'
+import { useWallet } from '@solana/wallet-adapter-react'
+import { useWalletBalance } from '../../../../features/wallet/useWalletQuery'
+import { useSolPrice } from '../../../../core/hooks/usePrice'
 
 type StepThreeProps = {
   onBack: () => void
@@ -16,8 +19,16 @@ type StepThreeProps = {
   setForm: React.Dispatch<React.SetStateAction<StepThreeProps['form']>>
 }
 
+const FEE_BUFFER = 0.005
+
 export const StepThree = ({ onNext, form, setForm }: StepThreeProps) => {
   const { depositConfirmed, setDepositConfirm } = useGeneralContext()
+  const { publicKey } = useWallet()
+  const { data: balanceData } = useWalletBalance(publicKey?.toBase58())
+  const { data: solPriceData } = useSolPrice()
+
+  const walletBalance = balanceData?.balance ?? 0
+  const solPrice = solPriceData?.price ?? 0
 
   const { depositToCopierVault, loading, error } = useVaultOperations()
   const { refetchAll } = useUserVaults()
@@ -35,6 +46,17 @@ export const StepThree = ({ onNext, form, setForm }: StepThreeProps) => {
   const assets = [{ symbol: 'SOL', name: 'Solana' }]
 
   const [selectedAsset, setSelectedAsset] = useState('SOL')
+
+  const usdValue = useMemo(() => {
+    const amount = parseFloat(form.depositAmount || '0')
+    return (amount * solPrice).toFixed(2)
+  }, [form.depositAmount, solPrice])
+
+  const handleMax = () => {
+    const maxSafe = Math.max(0, walletBalance - FEE_BUFFER)
+    // setForm((prev: any) => ({ ...prev, depositAmount: maxSafe.toFixed(4) }))
+    setForm(prev => ({ ...prev, depositAmount: maxSafe.toFixed(4) }))
+  }
 
   const handleDeposit = async () => {
     if (!form.vaultPda) {
@@ -92,9 +114,15 @@ export const StepThree = ({ onNext, form, setForm }: StepThreeProps) => {
             </p>
           </div>
 
-          <div className='bg-[#0F1216] border border-[#1f3c3c] px-3 py-1 rounded-md  text-gray-400 flex items-center gap-2'>
-            <p className='w-[8px] h-[8px] bg-[#14F195] rounded-full animate-pulse'></p>
-            <p className='text-[11px]'> vault initialized</p>
+          <div className='flex flex-col items-end gap-1'>
+            <div className='bg-[#0F1216] border border-[#1f3c3c] px-3 py-1 rounded-md  text-gray-400 flex items-center gap-2'>
+              <p className='w-[8px] h-[8px] bg-[#14F195] rounded-full animate-pulse'></p>
+              <p className='text-[11px]'> vault initialized</p>
+            </div>
+            <p className='text-[10px] text-[#7DAAA4] font-medium'>
+              Wallet:{' '}
+              <span className='text-white'>{walletBalance.toFixed(4)} SOL</span>
+            </p>
           </div>
         </div>
         {/* VAULT ADDRESS */}
@@ -213,12 +241,23 @@ export const StepThree = ({ onNext, form, setForm }: StepThreeProps) => {
                 type='number'
                 placeholder='0.00'
                 value={form.depositAmount}
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                onChange={(e: any) => setForm((prev: { [key: string]: string }) => ({ ...prev, depositAmount: e.target.value }))}
+              
+                // onChange={(e: any) =>
+                //   setForm((prev: any) => ({
+                //     ...prev,
+                //     depositAmount: e.target.value
+                //   }))
+                // }
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                  setForm(prev => ({ ...prev, depositAmount: e.target.value }))
+                }
                 className='bg-transparent outline-none text-white w-full'
               />
 
-              <button className='text-teal-400 text-xs font-medium ml-4'>
+              <button
+                onClick={handleMax}
+                className='text-teal-400 text-xs font-medium ml-4 hover:text-teal-300 transition-colors'
+              >
                 MAX
               </button>
             </div>
@@ -230,7 +269,12 @@ export const StepThree = ({ onNext, form, setForm }: StepThreeProps) => {
             )}
 
             <div className='flex justify-between text-[11px] text-gray-500 mt-2'>
-              <span>≈ $0.00 USD</span>
+              <div className='flex flex-col gap-0.5'>
+                <span>≈ ${usdValue} USD</span>
+                <span className='text-[9px]'>
+                  Balance: {walletBalance.toFixed(4)} SOL
+                </span>
+              </div>
               <span>Est. Fee: 0.000005 SOL</span>
             </div>
           </div>

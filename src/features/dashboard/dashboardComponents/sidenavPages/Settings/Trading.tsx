@@ -29,63 +29,49 @@ const Trading: React.FC = () => {
 
   const analyzeRisk = (params: typeof riskParams, masterVault?: string): RiskAnalysis => {
     const reasons: string[] = []
-    let maxTradeSize = parseInt(params.maxTradeSizePct.replace(/\D/g, '')) || 0
-    let maxLoss = parseInt(params.maxLossPct.replace(/\D/g, '')) || 0
-    let maxDrawdown = parseInt(params.maxDrawdownPct.replace(/\D/g, '')) || 0
+    let maxTradeSize = parseFloat(params.maxTradeSizePct.replace(/[^\d.]/g, '')) || 0
+    const maxLoss = parseFloat(params.maxLossPct.replace(/[^\d.]/g, '')) || 0
+    const maxDrawdown = parseFloat(params.maxDrawdownPct.replace(/[^\d.]/g, '')) || 0
 
-    // Validate inputs - sanitize to valid percentages
     const isInvalid = maxTradeSize === 0 && maxLoss === 0 && maxDrawdown === 0
     
     if (isInvalid) {
       return { 
         level: 'blocked', 
-        reasons: ['Invalid parameters - please enter numbers 0-100'] 
+        reasons: ['Invalid parameters - please enter values'] 
       }
     }
 
-    if (maxTradeSize > 100) {
-      reasons.push(`Max trade size capped at 100% (you entered ${maxTradeSize}%)`)
-      maxTradeSize = 100
-    }
-    if (maxLoss > 100) {
-      reasons.push(`Max loss capped at 100% (you entered ${maxLoss}%)`)
-      maxLoss = 100
-    }
-    if (maxDrawdown > 100) {
-      reasons.push(`Max drawdown capped at 100% (you entered ${maxDrawdown}%)`)
-      maxDrawdown = 100
+    // Validate maxTradeSize as SOL amount
+    if (maxTradeSize < 0.01) {
+      reasons.push(`Max trade size (${maxTradeSize} SOL) is too low`)
+    } else if (maxTradeSize > 50) {
+      reasons.push(`Max trade size capped at 50 SOL`)
+      maxTradeSize = 50
     }
 
-    if (maxTradeSize < 10) {
-      reasons.push(`Max trade size (${maxTradeSize}%) is too low - likely to block trades`)
+    if (maxLoss < 1.0 && maxLoss > 0) {
+      reasons.push(`Max loss (${maxLoss} SOL) is aggressive - may stop prematurely`)
     }
 
-    if (maxTradeSize >= 10 && maxTradeSize < 50) {
-      reasons.push(`Max trade size (${maxTradeSize}%) may block larger trades`)
+    if (maxDrawdown < 2.0 && maxDrawdown > 0) {
+      reasons.push(`Max drawdown (${maxDrawdown} SOL) is tight - may pause during volatility`)
     }
 
-    if (maxLoss < 10 && maxLoss > 0) {
-      reasons.push(`Max loss (${maxLoss}%) is aggressive - may stop prematurely`)
-    }
-
-    if (maxDrawdown < 10) {
-      reasons.push(`Max drawdown (${maxDrawdown}%) is tight - may pause during volatility`)
-    }
-
-    if (maxDrawdown < maxLoss) {
-      reasons.push(`Max drawdown (${maxDrawdown}%) < max loss (${maxLoss}%) - illogical`)
+    if (maxDrawdown < maxLoss && maxDrawdown > 0) {
+      reasons.push(`Max drawdown (${maxDrawdown} SOL) < max loss (${maxLoss} SOL) - illogical`)
     }
 
     if (masterVault) {
       reasons.push(`Watching master vault: ${masterVault.slice(0, 8)}...${masterVault.slice(-4)}`)
-      reasons.push(`If master executes large trades, you may be blocked with current ${maxTradeSize}% limit`)
     }
 
-    if (maxTradeSize >= 50 && maxDrawdown >= 20 && maxLoss >= 30) {
+    // Risk level based on absolute SOL amounts
+    if (maxDrawdown >= 10 && maxLoss >= 5) {
       return { level: 'safe', reasons: ['All limits are permissive'] }
     }
 
-    if (maxTradeSize >= 20 && maxDrawdown >= 10) {
+    if (maxDrawdown >= 5) {
       return { level: 'warning', reasons: reasons.length ? reasons : ['Some limits are restrictive'] }
     }
 
@@ -135,16 +121,8 @@ const Trading: React.FC = () => {
   }, [copierVaults])
 
   const handleParamChange = (key: keyof typeof riskParams, val: string) => {
-    // Remove any non-numeric characters
-    const numericVal = val.replace(/\D/g, '')
-    
-    // Convert to number to check range
-    const num = parseInt(numericVal) || 0
-    
-    // Cap at 100 for percentage inputs
-    const cappedVal = num > 100 ? '100' : numericVal
-    
-    setRiskParams(p => ({ ...p, [key]: cappedVal }))
+    const numericVal = val.replace(/[^\d.]/g, '')
+    setRiskParams(p => ({ ...p, [key]: numericVal }))
   }
 
   return (
@@ -220,17 +198,17 @@ const Trading: React.FC = () => {
 
               <div className='grid md:grid-cols-2 gap-4'>
                 <Input 
-                  label='MAX TRADE SIZE %' 
+                  label='MAX TRADE SIZE (SOL)' 
                   value={riskParams.maxTradeSizePct} 
                   onChange={(v) => handleParamChange('maxTradeSizePct', v)} 
                 />
                 <Input 
-                  label='MAX LOSS %' 
+                  label='MAX LOSS (SOL)' 
                   value={riskParams.maxLossPct} 
                   onChange={(v) => handleParamChange('maxLossPct', v)} 
                 />
                 <Input 
-                  label='MAX DRAWDOWN %' 
+                  label='MAX DRAWDOWN (SOL)' 
                   value={riskParams.maxDrawdownPct} 
                   onChange={(v) => handleParamChange('maxDrawdownPct', v)} 
                 />
@@ -251,10 +229,36 @@ const Trading: React.FC = () => {
                     }
                     setSaving(true)
                     try {
+                      const maxTradeSizeSol = parseFloat(riskParams.maxTradeSizePct) || 0.5
+                      const maxLossSol = parseFloat(riskParams.maxLossPct) || 1.0
+                      const maxDrawdownSol = parseFloat(riskParams.maxDrawdownPct) || 2.0
+                      
+                      // Get copier vault balance to convert SOL to percentage
+                      let maxTradeSizePct = 5 
+                      let maxLossPct = 10
+                      let maxDrawdownPct = 15
+
+                      if (copierVaults && copierVaults.length > 0) {
+                        const copierVault = copierVaults.find(v => v.masterExecutionVaultPda === masterVaultAddress)
+                        if (copierVault) {
+                          const balance = parseFloat(copierVault.actualBalance?.toString() || copierVault.balance) / 1e9
+                          if (balance > 0) {
+                            maxTradeSizePct = Math.round((maxTradeSizeSol / balance) * 100)
+                            maxTradeSizePct = Math.max(1, Math.min(100, maxTradeSizePct))
+
+                            maxLossPct = Math.round((maxLossSol / balance) * 100)
+                            maxLossPct = Math.max(1, Math.min(100, maxLossPct))
+
+                            maxDrawdownPct = Math.round((maxDrawdownSol / balance) * 100)
+                            maxDrawdownPct = Math.max(1, Math.min(100, maxDrawdownPct))
+                          }
+                        }
+                      }
+                      
                       await updateCopierRiskParams(masterVaultAddress, {
-                        maxLossPct: parseInt(riskParams.maxLossPct.replace(/\D/g, '')) || 50,
-                        maxTradeSizePct: parseInt(riskParams.maxTradeSizePct.replace(/\D/g, '')) || 100,
-                        maxDrawdownPct: parseInt(riskParams.maxDrawdownPct.replace(/\D/g, '')) || 50,
+                        maxLossPct,
+                        maxTradeSizePct,
+                        maxDrawdownPct,
                       })
                       toast.success('Risk parameters updated!')
                     } catch (e) {

@@ -113,7 +113,7 @@ export default function OptionalProfitParameters ({ form, setForm }: OptionalPro
               <div>
                 <div className='flex items-center gap-2 mb-2'>
                   <p className='text-[12px] text-[#B0E4DD80] font-[700]  leading-[18px]'>
-                    Stop Loss Override (%)
+                    Stop Loss Override (SOL)
                   </p>
 
                   <span className='text-[9px]  h-[16px] w-[16px] bg-[#23483B] text-[#6fd6c2] rounded-full p-1 flex justify-center items-center'>
@@ -121,7 +121,7 @@ export default function OptionalProfitParameters ({ form, setForm }: OptionalPro
                   </span>
                 </div>
                 <input
-                  placeholder='e.g., 10'
+                  placeholder='e.g., 1.0'
                   value={form.stopLossTriggerBps}
                   onChange={(e) => handleInputChange('stopLossTriggerBps', e.target.value)}
                   className='
@@ -140,7 +140,7 @@ export default function OptionalProfitParameters ({ form, setForm }: OptionalPro
                 />
 
                 <p className='text-[10px] text-[#B0E4DD61] mt-1 font-[400] leading-[15px]'>
-                  Override trader's stop loss with your own limit.
+                  Override trader's stop loss with your own fixed SOL limit.
                 </p>
               </div>
 

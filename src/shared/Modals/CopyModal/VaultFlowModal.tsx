@@ -24,7 +24,7 @@ const VaultFlowModal = () => {
 
   const [form, setForm] = useState({
     maxVaultDrawdown: '20',
-    maxTradeSize: '5',
+    maxTradeSize: '0.5',
     maxEntrySlippage: '0.5',
     takeProfitTriggerBps: '',
     stopLossTriggerBps: '',
