@@ -154,10 +154,10 @@ export default function PerformanceSection ({
 
       {/* Bottom Stats */}
       <div className='grid grid-cols-2 md:grid-cols-4 mt-6 gap-4 text-center'>
-        <Info label='AUM' value={trader.aum} />
-        <Info label='Copiers' value={trader.copiers} />
+        <Info label='Win Rate' value={trader.winRate} />
+        <Info label='Max Drawdown' value={trader.drawdown} />
         <Info label='Total Trades' value={trader.trades} />
-        <Info label='Volume Traded' value={`${trader.sol} SOL`} />
+        <Info label='Total Volume' value={trader.volume} />
       </div>
     </div>
   )

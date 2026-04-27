@@ -26,7 +26,6 @@ export const StepThree = ({ onNext, form, setForm }: StepThreeProps) => {
   const { publicKey } = useWallet()
   const { data: balanceData } = useWalletBalance(publicKey?.toBase58())
   const { data: solPriceData } = useSolPrice()
-
   const walletBalance = balanceData?.balance ?? 0
   const solPrice = solPriceData?.price ?? 0
 

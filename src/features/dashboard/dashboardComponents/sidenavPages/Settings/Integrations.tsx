@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useWallet } from '@solana/wallet-adapter-react'
 import { FaTelegramPlane } from 'react-icons/fa'
 import { FaDiscord, FaXTwitter } from 'react-icons/fa6'
+import { authFetch } from '../../../../../core/query/authClient'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type IntegrationName = 'Telegram' | 'Discord' | 'X (Twitter)'
@@ -82,8 +83,7 @@ export default function Integrations () {
   useEffect(() => {
     if (!connected || !publicKey) return
 
-    fetch(`/api/integrations/status?wallet=${publicKey.toBase58()}`)
-      .then(r => r.json())
+    authFetch<Record<IntegrationName, boolean>>(`/api/integrations/status?wallet=${publicKey.toBase58()}`)
       .then(data => setStatus(data)) // e.g. { Telegram: true, Discord: false, ... }
       .catch(console.error)
   }, [connected, publicKey])
@@ -107,9 +107,8 @@ export default function Integrations () {
   const handleDisconnect = async (name: IntegrationName) => {
     setLoading(name)
     try {
-      await fetch(`/api/integrations/${name.toLowerCase()}/disconnect`, {
+      await authFetch(`/api/integrations/${name.toLowerCase()}/disconnect`, {
         method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ wallet: publicKey!.toBase58() })
       })
       setStatus(prev => ({ ...prev, [name]: false }))

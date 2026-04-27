@@ -5,12 +5,14 @@ import TierStep from './components/TierStep'
 import { useMasterTierState, useProtocolTierConfig } from '../../../features/master/useMasterTier'
 import { useWallet } from '@solana/wallet-adapter-react'
 import { formatCurrency, formatPercentage } from '../../../utils/formatters'
+import { useUserVaults } from '../../../features/master/useUserVaults'
 
 export default function TierProgression () {
   const { publicKey } = useWallet()
   const masterWalletAddress = publicKey?.toBase58()
   const { data: tierState } = useMasterTierState(masterWalletAddress)
   const { data: protocolTierConfig } = useProtocolTierConfig()
+  const { metrics } = useUserVaults()
 
   const currentTier = tierState?.currentTier || 1
   const isMaxTier = currentTier >= 5
@@ -44,9 +46,9 @@ export default function TierProgression () {
   const currentTierTraderFeePct = currentTierConfig?.traderFeePct || 'N/A'
   const currentTierPlatformFeePct = currentTierConfig ? (100 - parseFloat(currentTierConfig.traderFeePct)).toFixed(1) : 'N/A'
 
-  const currentAum = parseFloat(tierState?.metrics?.rollingAumUsd || '0')
+  const currentAum = metrics?.totalAumUsd || parseFloat(tierState?.metrics?.rollingAumUsd || '0')
   const requiredAum = parseFloat(nextTierConfig?.minAumUsd || '0')
-  const currentCopiers = tierState?.metrics?.activeCopiers || 0
+  const currentCopiers = metrics?.totalCopiers || tierState?.metrics?.activeCopiers || 0
   const requiredCopiers = nextTierConfig?.minCopiers || 0
 
   const getProgress = (current: number, required: number) => {

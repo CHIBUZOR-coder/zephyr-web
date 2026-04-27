@@ -78,6 +78,7 @@ function mapLeaderboardEntryToTrader(entry: LeaderboardEntry): Trader {
     follows: entry.metrics.activeCopiers,
     followsDisplay: formatCompactNumber(entry.metrics.activeCopiers),
     sol: (entry.metrics.aumUsd / 150).toFixed(0),
+    volume: `$${formatCompactNumber(entry.metrics.volumeUsd)}`,
     address: entry.masterWallet,
     vaultAddress: entry.vaultPda,
     createdAt: entry.user.createdAt,

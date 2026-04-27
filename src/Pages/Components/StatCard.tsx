@@ -1,4 +1,5 @@
 import Card from './Card'
+import { fmtCompactCurrency } from '../../utils/currencyHelpers'
 
 interface StatCardProps {
   value: number
@@ -23,7 +24,7 @@ export default function StatCard ({
   indicator
 }: StatCardProps) {
   const formattedValue = unit === '$' 
-    ? `$${value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+    ? (value >= 1000 ? fmtCompactCurrency(value) : `$${value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`)
     : unit === 'SOL'
     ? `${value.toFixed(4)} SOL`
     : `${value < 0 ? value : `+${value}`}${unit}`

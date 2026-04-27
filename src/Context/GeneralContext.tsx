@@ -1,16 +1,24 @@
 /* eslint-disable react-refresh/only-export-components */
 
-import { createContext, useContext, useState } from 'react'
+import { createContext, useCallback, useContext, useState } from 'react'
 import type { ReactNode } from 'react'
 import type { Trader } from '../features/dashboard/dashboardComponents/sidenavPages/Leaderboard/leaderboar.types'
 import type { Trader as TraderData } from '../features/home/traders.types'
 
 // Union of both Trader types
 export type SelectedTrader = Trader | TraderData
+export type ToastType = 'success' | 'error' | 'info'
 
 /* ------------------------------------------------ */
 /* TYPES */
 /* ------------------------------------------------ */
+// 👇 Add Toast item type
+export interface ToastItem {
+  id: number
+  message: string
+  subMessage?: string
+  type: ToastType
+}
 
 type VaultStep = 1 | 2 | 3 | 4
 type Category =
@@ -101,6 +109,13 @@ type GeneralContextType = {
   //Marked as read for risk alert
   markedAsRead: boolean
   setMarkedAsRead: (val: boolean) => void
+
+  callTradeToast: boolean
+  setCallTradeToast: (val: boolean) => void
+  // 👇 Add Toast
+  toasts: ToastItem[]
+  showToast: (message: string, subMessage?: string, type?: ToastType) => void
+  dismissToast: (id: number) => void
 }
 
 /* ------------------------------------------------ */
@@ -159,7 +174,25 @@ export const GeneralProvider = ({ children }: { children: ReactNode }) => {
   const [claimFeesOpen, setClaimFeesOpen] = useState(false)
   const [editRiskvisible, setEditRiskvisible] = useState(false)
   const [markedAsRead, setMarkedAsRead] = useState(false)
+  const [callTradeToast, setCallTradeToast] = useState(false)
+  // 👇 Add Toast State
+  const [toasts, setToasts] = useState<ToastItem[]>([])
 
+  const showToast = useCallback(
+    (message: string, subMessage?: string, type: ToastType = 'success') => {
+      const id = Date.now()
+      setToasts(prev => [...prev, { id, message, subMessage, type }])
+      setTimeout(() => {
+        setToasts(prev => prev.filter(t => t.id !== id))
+      }, 4500)
+    },
+    []
+  )
+
+  const dismissToast = useCallback((id: number) => {
+    setToasts(prev => prev.filter(t => t.id !== id))
+    setCallTradeToast(false)
+  }, [])
 
   return (
     <GeneralContext.Provider
@@ -212,7 +245,12 @@ export const GeneralProvider = ({ children }: { children: ReactNode }) => {
         editRiskvisible,
         setEditRiskvisible,
         markedAsRead,
-        setMarkedAsRead
+        setMarkedAsRead,
+        toasts, // 👈 Add
+        showToast, // 👈 Add
+        dismissToast, // 👈 Add
+        callTradeToast,
+        setCallTradeToast
       }}
     >
       {children}

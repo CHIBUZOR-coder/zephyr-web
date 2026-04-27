@@ -29,19 +29,25 @@ const FEE_BUFFER = 0.005
 
 export const DepositModal = ({ open, onClose }: Props) => {
   const { setDepositConfirm, selectedVaultPda } = useGeneralContext()
-  const { depositToCopierVault, depositToMasterVault, error: opError } = useVaultOperations()
+  const {
+    depositToCopierVault,
+    depositToMasterVault,
+    error: opError
+  } = useVaultOperations()
   const { refetchAll, copierVaults, masterVault } = useUserVaults()
   const { publicKey } = useWallet()
-  
+
   const inputRef = useRef<HTMLInputElement>(null)
   const [amount, setAmount] = useState('')
   const { data: balanceData } = useWalletBalance(publicKey?.toBase58())
   const userBalance = balanceData?.balance ?? 0
-  
+
   const { data: networkFee = 0.000005 } = useFeeEstimation()
   const { data: solPrice = 150 } = useSolPrice()
-  
-  const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
+
+  const [status, setStatus] = useState<
+    'idle' | 'loading' | 'success' | 'error'
+  >('idle')
   const [localError, setLocalError] = useState<string | null>(null)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
   const isProcessing = useRef(false)
@@ -74,27 +80,38 @@ export const DepositModal = ({ open, onClose }: Props) => {
   const estimatedImpact = useMemo(() => {
     const inputVal = parseFloat(amount) || 0
     if (inputVal === 0) return '<0.01%'
-    
+
     // For impact calculation: (new deposit / current total pool)
     // We'll use the target vault's on-chain balance
-    let currentPool = 1;
+    let currentPool = 1
     if (targetVault) {
       if ('balance' in targetVault && targetVault.balance !== undefined) {
-        currentPool = targetVault.balance ? parseFloat(targetVault.balance as string) : 0;
-      } else if ('actualBalance' in targetVault && targetVault.actualBalance !== undefined) {
-        currentPool = targetVault.actualBalance;
+        currentPool = targetVault.balance
+          ? parseFloat(targetVault.balance as string)
+          : 0
+      } else if (
+        'actualBalance' in targetVault &&
+        targetVault.actualBalance !== undefined
+      ) {
+        currentPool = targetVault.actualBalance
       }
     }
     const impact = (inputVal / (currentPool + inputVal)) * 100
-    
+
     return impact < 0.01 ? '<0.01%' : `${impact.toFixed(2)}%`
   }, [amount, targetVault])
 
   const handleDeposit = async () => {
-    if (status === 'loading' || !selectedVaultPda || !amount || parseFloat(amount) <= 0) return
-    if (isProcessing.current) return;
-    isProcessing.current = true;
-    
+    if (
+      status === 'loading' ||
+      !selectedVaultPda ||
+      !amount ||
+      parseFloat(amount) <= 0
+    )
+      return
+    if (isProcessing.current) return
+    isProcessing.current = true
+
     setStatus('loading')
     setLocalError(null)
     setSuccessMessage(null)
@@ -102,7 +119,7 @@ export const DepositModal = ({ open, onClose }: Props) => {
     try {
       // Check if it's a copier vault
       const isCopier = copierVaults?.some(v => v.vaultPda === selectedVaultPda)
-      
+
       if (isCopier) {
         await depositToCopierVault(selectedVaultPda, parseFloat(amount))
       } else {
@@ -111,10 +128,10 @@ export const DepositModal = ({ open, onClose }: Props) => {
       }
 
       setStatus('success')
-      
+
       // Immediate refetch
       refetchAll()
-      
+
       // Secondary refetch after a delay to catch RPC state update
       setTimeout(() => {
         refetchAll()
@@ -134,8 +151,8 @@ export const DepositModal = ({ open, onClose }: Props) => {
 
       // If the error indicates the transaction already landed, treat as success
       if (
-        errorMsg.includes('Transaction confirmed') || 
-        errorMsg.includes('already processed') || 
+        errorMsg.includes('Transaction confirmed') ||
+        errorMsg.includes('already processed') ||
         errorMsg.includes('already been processed')
       ) {
         setStatus('success')
@@ -159,6 +176,18 @@ export const DepositModal = ({ open, onClose }: Props) => {
   }
 
   const isMaster = !copierVaults?.some(v => v.vaultPda === selectedVaultPda)
+const { showToast } = useGeneralContext()
+
+  useEffect(() => {
+    if (status === 'success' || successMessage) {
+      showToast(
+        'Deposit Successful',
+        'Transaction confirmed on Solana Mainnet.'
+      )
+    }
+
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [status, successMessage])
 
   return (
     <AnimatePresence>
@@ -279,7 +308,7 @@ export const DepositModal = ({ open, onClose }: Props) => {
                     type='number'
                     placeholder='0.00'
                     value={amount}
-                    onChange={(e) => setAmount(e.target.value)}
+                    onChange={e => setAmount(e.target.value)}
                     className='
                     bg-transparent
                     outline-none
@@ -312,10 +341,13 @@ export const DepositModal = ({ open, onClose }: Props) => {
               </div>
 
               {/* ERROR MESSAGE */}
-              {((localError || opError) && !successMessage) && (
-                <div className="bg-red-900/20 border border-red-500/50 p-3 rounded-lg flex items-start gap-2">
-                  <FiAlertTriangle className="text-red-500 shrink-0 mt-0.5" size={14} />
-                  <p className="text-[11px] text-red-200 leading-tight">
+              {(localError || opError) && !successMessage && (
+                <div className='bg-red-900/20 border border-red-500/50 p-3 rounded-lg flex items-start gap-2'>
+                  <FiAlertTriangle
+                    className='text-red-500 shrink-0 mt-0.5'
+                    size={14}
+                  />
+                  <p className='text-[11px] text-red-200 leading-tight'>
                     {localError || opError}
                   </p>
                 </div>
@@ -323,9 +355,12 @@ export const DepositModal = ({ open, onClose }: Props) => {
 
               {/* SUCCESS MESSAGE */}
               {successMessage && (
-                <div className="bg-green-900/20 border border-green-500/50 p-3 rounded-lg flex items-start gap-2">
-                  <FiInfo className="text-green-500 shrink-0 mt-0.5" size={14} />
-                  <p className="text-[11px] text-green-200 leading-tight">
+                <div className='bg-green-900/20 border border-green-500/50 p-3 rounded-lg flex items-start gap-2'>
+                  <FiInfo
+                    className='text-green-500 shrink-0 mt-0.5'
+                    size={14}
+                  />
+                  <p className='text-[11px] text-green-200 leading-tight'>
                     {successMessage}
                   </p>
                 </div>
@@ -356,7 +391,14 @@ export const DepositModal = ({ open, onClose }: Props) => {
                   <span className='flex justify-between text-[10px] font-[900] leading-[15px] tracking-[1px] text-[#B0E4DD33]'>
                     Network Fee
                   </span>
-                  <span className='text-white'>~{networkFee.toFixed(6)} SOL (~${(networkFee * (typeof solPrice === 'number' ? solPrice : 80)).toFixed(4)})</span>
+                  <span className='text-white'>
+                    ~{networkFee.toFixed(6)} SOL (~$
+                    {(
+                      networkFee *
+                      (typeof solPrice === 'number' ? solPrice : 80)
+                    ).toFixed(4)}
+                    )
+                  </span>
                 </div>
               </div>
 
@@ -380,10 +422,18 @@ export const DepositModal = ({ open, onClose }: Props) => {
                 text-white
                 text-[16px]
                 uppercase
-                ${status === 'loading' ? 'bg-[#14b8a6]/50 cursor-not-allowed' : 'bg-[#14b8a6] hover:bg-[#0ea593] shadow-[0px_7px_10px_1px_rgb(14,165,147,0.3)]'}
+                ${
+                  status === 'loading'
+                    ? 'bg-[#14b8a6]/50 cursor-not-allowed'
+                    : 'bg-[#14b8a6] hover:bg-[#0ea593] shadow-[0px_7px_10px_1px_rgb(14,165,147,0.3)]'
+                }
                 `}
               >
-                {status === 'loading' ? 'Processing...' : status === 'success' ? 'Success!' : 'CONFIRM DEPOSIT →'}
+                {status === 'loading'
+                  ? 'Processing...'
+                  : status === 'success'
+                  ? 'Success!'
+                  : 'CONFIRM DEPOSIT →'}
               </button>
 
               {/* FOOTER TEXT */}

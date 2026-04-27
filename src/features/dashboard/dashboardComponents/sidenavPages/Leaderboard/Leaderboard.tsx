@@ -42,6 +42,7 @@ const RankMovement = ({ movement }: { movement: Movement }) => {
 const Leaderboard: React.FC = () => {
   const { openVaultFlow } = useGeneralContext()
   const dropdownRef = useRef<HTMLDivElement>(null)
+  const chartContainerRef = useRef<HTMLDivElement>(null)
 
   const [activePeriod, setPeriod] = useState<LeaderboardPeriod>('30d')
   const [searchTerm, setSearchTerm] = useState('')
@@ -443,10 +444,10 @@ const Leaderboard: React.FC = () => {
                   <span>Performance History</span>
                   <span className='text-[#19d3c5]'>● Cumulative ROI</span>
                 </div>
-                <div className='h-44 mt-6 min-h-[100px]'>
+                <div className='h-44 mt-6 min-h-[100px]' ref={chartContainerRef}>
                   {/* Check container has valid dimensions before rendering */}
-                  {performanceData && performanceData.length > 0 ? (
-                    <ResponsiveContainer width='100%' height='100%'>
+                  {performanceData && performanceData.length > 0  ? (
+                    <ResponsiveContainer width='100%' height='100%' minWidth={0}>
                       <AreaChart
                       data={performanceData}
                       margin={{ top: 10, right: 20, left: 5, bottom: 0 }}

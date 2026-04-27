@@ -34,6 +34,7 @@ export type Trader = {
   follows: number;
   followsDisplay: string;
   sol: string;
+  volume: string;
   bio?: string | null;
   twitter?: string | null;
   discord?: string | null;

@@ -10,6 +10,8 @@ export interface PinnedVault {
   lastExecution: string;
   totalBalanceSol: number;
   totalBalanceUsd: number;
+  totalAumUsd: number;
+  totalVolumeUsd: number;
   activePositions: number;
   stopLoss?: number | null;
   takeProfit?: number | null;

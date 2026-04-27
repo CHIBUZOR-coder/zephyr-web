@@ -38,16 +38,23 @@ export async function authFetch<T>(
 ): Promise<T> {
   const { accessToken } = useAuthStore.getState();
 
-  const res = await fetch(`${API_BASE}${path}`, {
-    ...options,
-    credentials: "include",
-    headers: {
-      "Content-Type": "application/json",
-      "ngrok-skip-browser-warning": "true",
-      ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
-      ...(options.headers || {}),
-    },
-  });
+  let res: Response;
+  try {
+    res = await fetch(`${API_BASE}${path}`, {
+      ...options,
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+        "ngrok-skip-browser-warning": "true",
+        ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+        ...(options.headers || {}),
+      },
+    });
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  } catch (err) {
+    // Network error (no internet, server down, etc.)
+    throw new Error("Unable to connect. Please check your internet connection.");
+  }
 
   if (res.status === 401 && !isRefreshing) {
     isRefreshing = true;
@@ -66,8 +73,8 @@ export async function authFetch<T>(
   }
 
   if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`Request failed : ${text}`);
+    // Don't expose internal API details - return user-friendly message
+    throw new Error("Unable to complete request. Please check your connection and try again.");
   }
   return res.json() as Promise<T>;
 }

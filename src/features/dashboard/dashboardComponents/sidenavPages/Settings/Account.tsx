@@ -3,17 +3,22 @@ import { FaXTwitter, FaTelegram } from 'react-icons/fa6'
 import { useWallet } from '@solana/wallet-adapter-react'
 import AvatarUpload from './Components/AvatarUpload'
 import { useUserProfile } from './hooks/useUserProfile'
+import { formatSocialLink } from '../../../../../utils/formatters'
+import { ConfirmationModal } from '../../../../../shared/Modals'
 
-export default function Account() {
+export default function Account () {
   const { connected } = useWallet()
-  const { profile, isLoading, isSaving, error, updateProfile } = useUserProfile()
+  const { profile, isLoading, isSaving, error, updateProfile } =
+    useUserProfile()
 
   const [displayName, setDisplayName] = useState('')
+  const [userName, setUserName] = useState('')
   const [bio, setBio] = useState('')
   const [twitter, setTwitter] = useState('')
   const [discord, setDiscord] = useState('')
   const [telegram, setTelegram] = useState('')
   const [saveStatus, setSaveStatus] = useState<'idle' | 'success' | 'error'>('idle')
+  const [showConfirmModal, setShowConfirmModal] = useState(false)
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -28,31 +33,62 @@ export default function Account() {
     return () => clearTimeout(timer)
   }, [profile])
 
-  const isSocialCooldownActive = false;
-  const daysUntilSocialUnlock = 0;
+  const isSocialCooldownActive = false
+  const daysUntilSocialUnlock = 0
 
-  const handleSave = async () => {
-    if (!connected) return
+  const executeSave = async () => {
     setSaveStatus('idle')
+    setShowConfirmModal(false)
 
-    const socialsChanged = 
-      (twitter !== (profile?.twitter || '')) ||
-      (discord !== (profile?.discord || '')) ||
-      (telegram !== (profile?.telegram || ''));
+    const socialsChanged =
+      twitter !== (profile?.twitter || '') ||
+      discord !== (profile?.discord || '') ||
+      telegram !== (profile?.telegram || '')
 
     if (socialsChanged) {
       const confirmed = window.confirm(
         'Are you sure you want to update your social links? Once saved, you will not be able to edit them again for 14 days.'
-      );
-      if (!confirmed) return;
+      )
+      if (!confirmed) return
     }
+    const formattedTwitter = formatSocialLink(twitter, 'x')
+    const formattedTelegram = formatSocialLink(telegram, 'telegram')
 
     try {
-      await updateProfile({ displayName, bio, twitter, discord, telegram })
+      await updateProfile({ 
+        displayName, 
+        bio, 
+        twitter: formattedTwitter, 
+        discord, 
+        telegram: formattedTelegram 
+      })
+      
+      // Update local state with formatted values
+      setTwitter(formattedTwitter)
+      setTelegram(formattedTelegram)
+      
       setSaveStatus('success')
       setTimeout(() => setSaveStatus('idle'), 3000)
     } catch {
       setSaveStatus('error')
+    }
+  }
+
+  const handleSave = async () => {
+    if (!connected) return
+
+    const formattedTwitter = formatSocialLink(twitter, 'x')
+    const formattedTelegram = formatSocialLink(telegram, 'telegram')
+
+    const socialsChanged = 
+      (formattedTwitter !== (profile?.twitter || '')) ||
+      (discord !== (profile?.discord || '')) ||
+      (formattedTelegram !== (profile?.telegram || ''));
+
+    if (socialsChanged) {
+      setShowConfirmModal(true)
+    } else {
+      executeSave()
     }
   }
 
@@ -148,13 +184,37 @@ export default function Account() {
           {/* Display Name */}
           <div>
             <label className='text-[11px] tracking-wide text-textMuted'>
+              USER NAME
+            </label>
+
+            <input
+              type='text'
+              value={userName}
+              onChange={e => setUserName(e.target.value)}
+              maxLength={50}
+              placeholder='Your display name'
+              className='
+              w-full mt-1
+              px-3 py-2
+              rounded-lg
+              border border-borderSubtle
+              bg-inputBg
+              text-sm
+              outline-none
+              focus:border-accent
+              '
+            />
+          </div>
+          {/* Display Name */}
+          <div>
+            <label className='text-[11px] tracking-wide text-textMuted'>
               DISPLAY NAME
             </label>
 
             <input
               type='text'
               value={displayName}
-              onChange={(e) => setDisplayName(e.target.value)}
+              onChange={e => setDisplayName(e.target.value)}
               maxLength={50}
               placeholder='Your display name'
               className='
@@ -177,12 +237,14 @@ export default function Account() {
                 BIO
               </label>
 
-              <span className='text-[10px] text-textMuted'>{bio.length}/160</span>
+              <span className='text-[10px] text-textMuted'>
+                {bio.length}/160
+              </span>
             </div>
 
             <textarea
               value={bio}
-              onChange={(e) => setBio(e.target.value.slice(0, 160))}
+              onChange={e => setBio(e.target.value.slice(0, 160))}
               maxLength={160}
               placeholder='Tell others about yourself'
               className='
@@ -207,7 +269,8 @@ export default function Account() {
             </p>
             {isSocialCooldownActive && (
               <p className='text-[10px] text-amber-500'>
-                Social links are locked. You can update them again in {daysUntilSocialUnlock} days.
+                Social links are locked. You can update them again in{' '}
+                {daysUntilSocialUnlock} days.
               </p>
             )}
 
@@ -220,7 +283,7 @@ export default function Account() {
               <input
                 type='text'
                 value={twitter}
-                onChange={(e) => setTwitter(e.target.value)}
+                onChange={e => setTwitter(e.target.value)}
                 placeholder='bio link or @username'
                 className='
                 flex-1
@@ -272,7 +335,7 @@ export default function Account() {
               <input
                 type='text'
                 value={telegram}
-                onChange={(e) => setTelegram(e.target.value)}
+                onChange={e => setTelegram(e.target.value)}
                 placeholder='bio link or @username'
                 className='
                 flex-1
@@ -291,6 +354,24 @@ export default function Account() {
           </div>
         </div>
       </div>
+
+      <ConfirmationModal
+        isOpen={showConfirmModal}
+        onClose={() => setShowConfirmModal(false)}
+        onConfirm={executeSave}
+        title="Update Social Links?"
+        description={
+          <>
+            Are you sure you want to update your social links? 
+            <br /><br />
+            <span className="text-white font-bold">Important:</span> Once saved, you will not be able to edit them again for <span className="text-[#FE9A00] font-bold">14 days</span>.
+          </>
+        }
+        confirmLabel="Update Links"
+        cancelLabel="Cancel"
+        variant="warning"
+        isLoading={isSaving}
+      />
     </div>
   )
 }

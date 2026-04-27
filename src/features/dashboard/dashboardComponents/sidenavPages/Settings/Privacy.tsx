@@ -1,6 +1,7 @@
 import { useWallet } from '@solana/wallet-adapter-react'
 import { useState, useEffect, useRef } from 'react'
 import { FiLock, FiGlobe, FiExternalLink } from 'react-icons/fi'
+import { authFetch } from '../../../../../core/query/authClient'
 
 type ToggleItemProps = {
   title: string
@@ -45,8 +46,11 @@ export default function Privacy () {
   // Fetch saved settings when wallet connects
   useEffect(() => {
     if (!connected || !publicKey) return
-    fetch(`/api/privacy/settings?wallet=${publicKey.toBase58()}`)
-      .then(r => r.json())
+    authFetch<{
+      publicProfile?: boolean
+      portfolioValue?: boolean
+      tradingHistory?: boolean
+    }>(`/api/privacy/settings?wallet=${publicKey.toBase58()}`)
       .then(data => {
         if (data.publicProfile !== undefined)
           setPublicProfile(data.publicProfile)
@@ -67,9 +71,8 @@ export default function Privacy () {
     if (!publicKey) return
     if (saveTimer.current) clearTimeout(saveTimer.current)
     saveTimer.current = setTimeout(() => {
-      fetch('/api/privacy/settings', {
+      authFetch('/api/privacy/settings', {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ wallet: publicKey.toBase58(), ...updated })
       }).catch(console.error)
     }, 800)

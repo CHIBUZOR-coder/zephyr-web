@@ -215,6 +215,18 @@ export default function Portfolio () {
   // Map MasterVault to PinnedVault format
   const pinnedVaults: PinnedVault[] = useMemo(() => {
     if (!masterVault) return []
+    
+    // Calculate AUM: Master Balance + Copier Balances
+    const masterBalanceUsd = (masterVault.balance || 0) * currentPrice;
+    const managedCopiersBalanceUsd = (managedCopierVaults || []).reduce(
+      (sum, v) => sum + (v.actualBalance || 0) * currentPrice, 
+      0
+    );
+    const totalAumUsd = masterBalanceUsd + managedCopiersBalanceUsd;
+    
+    // totalVolume is BigInt string from backend, usually 6 decimals if USDC based
+    const totalVolumeUsd = masterVault.totalVolume ? parseFloat(masterVault.totalVolume) / 1e6 : 0;
+
     return [
       {
         id: masterVault.id,
@@ -224,17 +236,19 @@ export default function Portfolio () {
         connectedCopiers: masterVault._count?.copierVaults || 0,
         lastExecution: formatRelativeDate(masterVault.updatedAt),
         totalBalanceSol: masterVault.balance || 0,
-        totalBalanceUsd: (masterVault.balance || 0) * currentPrice,
+        totalBalanceUsd: masterBalanceUsd,
+        totalAumUsd: totalAumUsd,
+        totalVolumeUsd: totalVolumeUsd,
         activePositions: 0,
         stopLoss: null,
         takeProfit: null,
-        availableFeesSol: parseFloat(masterVault.totalFeesEarned) / 1e9,
-        historicalClaimedSol: 0,
-        currentPosition: undefined,
+        availableFeesSol: parseFloat(masterVault.totalFeesEarned || '0') / 1e9,
+        historicalClaimedSol: parseFloat(masterVault.totalRealizedProfit || '0') / 1e9,
+        currentPosition: masterVault.currentPosition,
         tier: `TIER ${masterVault.currentTier}`
       }
     ]
-  }, [masterVault, currentPrice])
+  }, [masterVault, managedCopierVaults, currentPrice])
 
   // Map CopierVaults to Strategy format
   const strategies: Strategy[] = useMemo(() => {

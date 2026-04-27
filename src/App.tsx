@@ -41,6 +41,7 @@ import { useUserVaults } from './features/master/useUserVaults'
 import Onboarding from './shared/Modals/OnboardingModal/Onboarding'
 import { FaInstagram, FaTelegram } from 'react-icons/fa'
 import { FaXTwitter } from 'react-icons/fa6'
+import { Toastify } from './shared/Toast/Toastify'
 
 function App () {
   const { connected } = useWallet()
@@ -90,13 +91,12 @@ function App () {
     tierConfigInitOpen,
     setTierConfigInitOpen,
     claimFeesOpen,
-    setClaimFeesOpen
+    setClaimFeesOpen,
+    toasts,
+    dismissToast
   } = useGeneralContext()
 
   const location = useLocation()
-
-
-
 
   useEffect(() => {
     if (location.pathname === '/') {
@@ -198,14 +198,9 @@ function App () {
 
   const { masterMode } = useTradingModeStore()
 
-  if (!authReady) {
-    return (
-      <StateScreen
-        title='Loading Zephyr…'
-        description='Restoring secure session'
-      />
-    )
-  }
+  // Note: We removed the "Loading Zephyr…" StateScreen here
+  // because the app now handles loading states via other UI components
+  // (e.g., "Synchronizing..." spinner, profile loading, etc.)
 
   if (mismatch) {
     return (
@@ -382,6 +377,9 @@ function App () {
           open={claimFeesOpen}
           onClose={() => setClaimFeesOpen(false)}
         />
+
+        <Toastify toasts={toasts} onDismiss={dismissToast} />
+
 
         {showOnboarding && (
           <Onboarding

@@ -1,10 +1,11 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { authFetch } from "../../core/query/authClient";
 import { useWallet } from "@solana/wallet-adapter-react";
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useMemo } from "react";
 import { Connection, PublicKey } from "@solana/web3.js";
 import { endpoint } from "../../core/config/solanaWallet";
 import { useGeneralContext } from "../../Context/GeneralContext";
+import { useSolPrice } from "../../core/hooks/usePrice";
 
 export const PositionState = {
   Open: "Open",
@@ -62,6 +63,8 @@ export function useUserVaults() {
   const { setHasMatervalt } = useGeneralContext();
   const queryClient = useQueryClient();
   const [connection] = useState(() => new Connection(endpoint, "confirmed"));
+  const { data: solPrice } = useSolPrice();
+  const currentPrice = solPrice?.price ?? 150;
 
   const { data: masterVault, isLoading: loadingMaster } = useQuery({
     queryKey: ["master-vault", publicKey?.toBase58()],
@@ -170,10 +173,33 @@ export function useUserVaults() {
     ]);
   }, [queryClient, publicKey]);
 
+  const metrics = useMemo(() => {
+    if (!masterVault) return null;
+
+    const masterBalanceUsd = (masterVault.balance || 0) * currentPrice;
+    const managedCopiersBalanceUsd = (managedCopierVaults || []).reduce(
+      (sum, v) => sum + (v.actualBalance || 0) * currentPrice,
+      0
+    );
+    const totalAumUsd = masterBalanceUsd + managedCopiersBalanceUsd;
+    const totalVolumeUsd = masterVault.totalVolume
+      ? parseFloat(masterVault.totalVolume) / 1e6
+      : 0;
+
+    return {
+      totalAumUsd,
+      totalVolumeUsd,
+      masterBalanceUsd,
+      masterBalanceSol: masterVault.balance || 0,
+      totalCopiers: masterVault._count?.copierVaults || 0,
+    };
+  }, [masterVault, managedCopierVaults, currentPrice]);
+
   return {
     masterVault,
     copierVaults,
     managedCopierVaults,
+    metrics,
     isLoading: loadingMaster || loadingCopiers || loadingManaged,
     refetchAll,
   };

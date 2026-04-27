@@ -1,6 +1,7 @@
 import { useWallet } from '@solana/wallet-adapter-react'
 import { useState, useEffect, useRef } from 'react' // ← added useEffect, useRef
 import { IoNotificationsOutline } from 'react-icons/io5'
+import { authFetch } from '../../../../../core/query/authClient'
 
 type NotificationSetting = {
   key: string // ← added: stable identifier for the backend
@@ -41,8 +42,7 @@ export default function Notifications () {
   useEffect(() => {
     if (!connected || !publicKey) return
 
-    fetch(`/api/notifications/preferences?wallet=${publicKey.toBase58()}`)
-      .then(r => r.json())
+    authFetch<Record<string, boolean>>(`/api/notifications/preferences?wallet=${publicKey.toBase58()}`)
       .then((data: Record<string, boolean>) => {
         // data = { trade_execution: true, vault_activity: false, copy_trading: true }
         setSettings(prev =>
@@ -61,9 +61,8 @@ export default function Notifications () {
       const payload = Object.fromEntries(updated.map(s => [s.key, s.enabled]))
       // payload = { trade_execution: true, vault_activity: false, copy_trading: true }
 
-      fetch('/api/notifications/preferences', {
+      authFetch('/api/notifications/preferences', {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           wallet: publicKey.toBase58(),
           preferences: payload

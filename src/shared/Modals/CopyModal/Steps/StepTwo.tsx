@@ -119,7 +119,7 @@ const analyzeRisk = (
 }
 
 export const StepTwo = ({ onBack, onNext, form, setForm }: StepTwoProps) => {
-  const { selectedTrader } = useGeneralContext()
+  const { selectedTrader, showToast } = useGeneralContext()
   const { createCopierVault, loading } = useCopierVault()
   const { initializeRiskConfig, initializeTierConfig, updateRiskConfig } =
     useVaultOperations()
@@ -186,7 +186,6 @@ export const StepTwo = ({ onBack, onNext, form, setForm }: StepTwoProps) => {
     const maxLossSol = parseFloat(form.stopLossTriggerBps ?? '1.0') || 1.0
     const maxDrawdownSol = parseFloat(form.maxVaultDrawdown ?? '2.0') || 2.0
     const depositAmount = parseFloat(form.depositAmount ?? '0') || 0
-
     // Convert SOL amount to percentage
     let maxTradeSizePct = 5
     let maxLossPct = 10
@@ -236,6 +235,10 @@ export const StepTwo = ({ onBack, onNext, form, setForm }: StepTwoProps) => {
       if (vaultPda) {
         setForm((prev: StepTwoProps['form']) => ({ ...prev, vaultPda, txSig }))
         onNext()
+        showToast(
+          'Copy Trading Was Successful',
+          'View Mirroring Vault in Portfolio.'
+        )
       } else {
         setLocalError('Failed to get vault address. Please refresh the page.')
       }
@@ -251,6 +254,19 @@ export const StepTwo = ({ onBack, onNext, form, setForm }: StepTwoProps) => {
       }
     }
   }
+
+  // const { showToast } = useGeneralContext()
+
+  // useEffect(() => {
+  //   if (masterVaultAddress) {
+  //     showToast(
+  //       'Copy Trading Was Successful',
+  //       'Transaction confirmed on Solana Mainnet.'
+  //     )
+  //   }
+
+  //   // eslint-disable-next-line react-hooks/exhaustive-deps
+  // }, [masterVaultAddress])
 
   return (
     <div className='pb-4 px-6'>

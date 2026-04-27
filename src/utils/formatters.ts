@@ -53,3 +53,43 @@ export function formatNumber(value: number | string): string {
   if (isNaN(num)) return '0'
   return num.toLocaleString()
 }
+
+export function formatSocialLink(value: string, platform: 'x' | 'telegram'): string {
+  const input = value.trim();
+  if (!input) return '';
+
+  if (platform === 'x') {
+    // Check if it's already a full URL
+    const xUrlRegex = /^(https?:\/\/)?(www\.)?(x\.com|twitter\.com)\/([a-zA-Z0-9_]+)/i;
+    const match = input.match(xUrlRegex);
+    if (match) {
+      const username = match[4];
+      return `https://x.com/${username}`;
+    }
+    
+    // Handle @username or just username
+    const username = input.startsWith('@') ? input.slice(1) : input;
+    // Basic validation: alphanumeric and underscore
+    if (/^[a-zA-Z0-9_]+$/.test(username)) {
+      return `https://x.com/${username}`;
+    }
+  }
+
+  if (platform === 'telegram') {
+    // Check if it's already a full URL
+    const tgUrlRegex = /^(https?:\/\/)?(www\.)?(t\.me|telegram\.me)\/([a-zA-Z0-9_]+)/i;
+    const match = input.match(tgUrlRegex);
+    if (match) {
+      const username = match[4];
+      return `https://t.me/${username}`;
+    }
+
+    // Handle @username or just username
+    const username = input.startsWith('@') ? input.slice(1) : input;
+    if (/^[a-zA-Z0-9_]+$/.test(username)) {
+      return `https://t.me/${username}`;
+    }
+  }
+
+  return input;
+}

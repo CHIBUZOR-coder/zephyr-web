@@ -283,7 +283,7 @@ const LiveTrade = () => {
                 <span>TRADER</span>
                 <span>TRADE DETAILS</span>
                 <span>EXECUTION</span>
-                <span className='text-right'>VERIFICATION</span>
+                <span className='text-right'>EXPLORER</span>
               </div>
 
               {/* Trades */}

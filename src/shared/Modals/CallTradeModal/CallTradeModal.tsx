@@ -11,6 +11,7 @@ import { useSolPrice } from '../../../core/hooks/usePrice'
 import { LAMPORTS_PER_SOL } from '@solana/web3.js'
 import { Link } from 'react-router-dom'
 import { formatPrice } from '../../../utils/formatters'
+import { useGeneralContext } from '../../../Context/GeneralContext'
 
 const JUPITER_TOKEN_API = 'https://api.jup.ag/tokens/v2'
 const DEXSCREENER_API = 'https://api.dexscreener.com/latest/dex'
@@ -52,29 +53,21 @@ const CallTradeModal: FC<Props> = ({ open, onClose }) => {
     initializeRiskConfig,
     error: opError
   } = useVaultOperations()
-  const { masterVault, copierVaults, refetchAll } = useUserVaults()
+  const { masterVault, copierVaults, metrics, refetchAll } = useUserVaults()
   const { data: solPrice } = useSolPrice()
 
-  // const vaultBalance =
-  //   masterVault?.actualBalance ??
-  //   (masterVault?.balance ? parseFloat(masterVault.balance as string) : 0)
-const vaultBalance = masterVault?.balance ?? 0
-
-
+  const vaultBalance = masterVault?.balance ?? 0
 
   const handleMax = () => {
     setAmount(vaultBalance.toFixed(4))
   }
 
-  const copierCount = masterVault?._count?.copierVaults ?? 0
+  const copierCount = metrics?.totalCopiers ?? masterVault?._count?.copierVaults ?? 0
+  const totalAumUsd = metrics?.totalAumUsd ?? 0
 
-  const totalAumSol =
-    copierVaults?.reduce((sum, v) => {
-      // useUserVaults hook provides actualBalance in SOL
-      const bal = v.actualBalance ?? 0
-      return sum + bal
-    }, 0) ?? 0
-  const totalAumUsd = totalAumSol * (solPrice?.price ?? 150)
+  const tradeSizeNum = parseFloat(amount) || 0
+  const isOverBalance = tradeSizeNum > vaultBalance
+  const isInvalidAmount = tradeSizeNum <= 0
 
   const defaultChartPair = 'SOL/USDC'
   const chartPair =
@@ -116,7 +109,6 @@ const vaultBalance = masterVault?.balance ?? 0
             const baseToken = pair.baseToken
             const quoteToken = pair.quoteToken
             const priceUsd = pair.priceUsd
-
             setTokenSymbol(baseToken.symbol.toUpperCase())
             setTokenQuote(quoteToken.symbol.toUpperCase())
             setTokenPrice(parseFloat(priceUsd) || null)
@@ -160,7 +152,6 @@ const vaultBalance = masterVault?.balance ?? 0
           setTokenError('Search failed')
         }
       }
-
       // Debounce: wait 500ms after last keystroke before fetching
       timeoutId = setTimeout(() => {
         if (!cancelled) {
@@ -168,7 +159,6 @@ const vaultBalance = masterVault?.balance ?? 0
         }
       }, 500)
     }
-
     return () => {
       cancelled = true
       if (timeoutId) clearTimeout(timeoutId)
@@ -294,6 +284,19 @@ const vaultBalance = masterVault?.balance ?? 0
       setLocalError(errorMessage)
     }
   }
+
+  const { showToast, setCallTradeToast } = useGeneralContext()
+
+  useEffect(() => {
+    if (status === 'success') {
+      showToast(
+        'Call trade executed successfully',
+        'Your master vault trade has been mirrored to all eligible copiers.'
+      )
+    }
+    setCallTradeToast(true)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [status])
 
   return (
     <AnimatePresence>
@@ -488,14 +491,14 @@ const vaultBalance = masterVault?.balance ?? 0
             </div>
 
             {/* ERROR MESSAGE */}
-            {(localError || opError) && (
+            {(localError || opError || isOverBalance) && (
               <div className='bg-red-900/20 border border-red-500/50 p-3 rounded-lg flex items-start gap-2 mb-4'>
                 <FiAlertTriangle
                   className='text-red-500 shrink-0 mt-0.5'
                   size={14}
                 />
                 <p className='text-[11px] text-red-200 leading-tight'>
-                  {localError || opError}
+                  {isOverBalance ? `Insufficient balance. Your vault only has ${vaultBalance.toFixed(4)} SOL.` : (localError || opError)}
                 </p>
               </div>
             )}
@@ -581,12 +584,12 @@ const vaultBalance = masterVault?.balance ?? 0
 
             {/* BUTTON */}
             <button
-              disabled={status === 'loading' || !masterVault}
+              disabled={status === 'loading' || !masterVault || isOverBalance || isInvalidAmount}
               onClick={handleExecuteTrade}
               className={`mt-4 w-full py-3 rounded-xl shadow-[0_0_20px_rgba(249,115,22,0.35)] transition-all font-semibold
                 ${
-                  status === 'loading'
-                    ? 'bg-orange-900/50 cursor-not-allowed text-orange-200'
+                  (status === 'loading' || isOverBalance || isInvalidAmount)
+                    ? 'bg-gray-800 cursor-not-allowed text-gray-500 shadow-none'
                     : status === 'success'
                     ? 'bg-green-500 text-black'
                     : 'bg-gradient-to-r from-[#F59E0B] to-[#F97316] text-black hover:brightness-110'
@@ -597,6 +600,8 @@ const vaultBalance = masterVault?.balance ?? 0
                   'EXECUTING TRADE...'
                 ) : status === 'success' ? (
                   'TRADE SUCCESSFUL!'
+                ) : isOverBalance ? (
+                  'INSUFFICIENT BALANCE'
                 ) : (
                   <>
                     <HiOutlineLightningBolt size={16} />

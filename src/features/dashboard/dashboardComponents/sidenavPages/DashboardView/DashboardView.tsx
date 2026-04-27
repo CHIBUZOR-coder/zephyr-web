@@ -7,12 +7,14 @@ import 'swiper/css'
 import 'swiper/css/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useGeneralContext } from '../../../../../Context/GeneralContext'
 
 import { Link } from 'react-router-dom'
 import { useDashboardLeaderboard } from '../Leaderboard/useLeaderboard'
 import { useMarketStats } from '../../../../../core/hooks/useMarketStats'
+import { useFirstCallers } from './hooks/useFirstCallers'
+import { useRecentTrades } from '../../../../trades/useTrades'
 
 type TimeRange = 'ALL' | '24H' | '7D' | '30D'
 
@@ -23,6 +25,8 @@ const DashboardView = () => {
     loading: leadersLoading,
     error: leadersError
   } = useDashboardLeaderboard()
+  const { data: firstCallers, isLoading: topTradesLoading } = useFirstCallers(10)
+  const { trades: recentTrades, loading: recentTradesLoading } = useRecentTrades(50)
   const {
     solPrice,
     solChange,
@@ -72,92 +76,78 @@ const DashboardView = () => {
     setOpenIndex(prev => (prev === index ? null : index))
   }
 
-  const socials = [
-    {
-      name: 'SolanaWhale',
-      action: 'just swapped',
-      time: '2m ago',
-      sell: 50.5,
-      buy: '7.2k $PYTH',
-      comment: 3,
-      likes: 24,
-      message: '',
-      img: '/images/person3.png',
-      price: 0.084
-    },
-    {
-      name: 'Degenerate',
-      action: 'copied',
-      time: '15m ago',
-      sell: null,
-      buy: null,
-      comment: 24,
-      likes: 152,
-      message: '',
-      img: '/images/person2.png'
-    },
-    {
-      name: 'AlphaSeeker',
-      action: 'bought',
-      time: '42m ago',
-      sell: null,
-      buy: null,
-      comment: 24,
-      likes: 152,
-      message: '',
-      binfo: 'BUY 120M $BONK',
-      price: '2,140',
-      img: '/images/person1.png'
-    }
-  ]
+  const firstCall = useMemo(() => {
+    return firstCallers?.map((trade) => {
+      // eslint-disable-next-line react-hooks/purity
+      const timeAgo = Math.floor((Date.now() - new Date(trade.executedAt).getTime()) / (60 * 60 * 1000));
+      const timeText = timeAgo < 1 ? 'RECENT' : timeAgo < 24 ? `${timeAgo} HOURS` : `${Math.floor(timeAgo/24)} DAYS`;
+      
+      return {
+        name: `Token ${trade.tokenOut.slice(0, 4)}`,
+        person: trade.masterExecutionVault?.user?.displayName || `Trader ${trade.masterExecutionVault?.masterWallet?.slice(0, 4) || '??'}`,
+        img: trade.masterExecutionVault?.user?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${trade.masterExecutionVault?.masterWallet || trade.id}`,
+        text: trade.tokenOut.slice(0, 4).toUpperCase(),
+        time: timeText,
+        num: parseFloat(trade.amountOutDecimal) || 0,
+        col: 'yel',
+        wallet: trade.masterExecutionVault?.masterWallet ? `${trade.masterExecutionVault.masterWallet.slice(0, 4)}...${trade.masterExecutionVault.masterWallet.slice(-4)}` : 'N/A',
+        cap: 100, 
+        peackCap: 150, 
+        titer: trade.masterExecutionVault?.currentTier === 5 ? 'Institutional' : 'Verifieda',
+        date: new Date(trade.executedAt).toLocaleDateString(),
+        timestamp: new Date(trade.executedAt).toLocaleString(),
+        signature: trade.signature,
+        isFirstCaller: trade.isFirstCaller,
+      };
+    }) || []
+  }, [firstCallers]);
 
-  const firstCall = [
-    {
-      name: 'Nebula Protocol',
-      person: 'AlphaSeeker',
-      img: '/images/neb.png',
-      text: 'NBLA',
-      time: '24 HOURS',
-      num: 142.5,
-      col: 'yel',
-      wallet: '0x34...9f76',
-      cap: 140,
-      peackCap: 19.9,
-      titer: 'community',
-      date: '2026-02-01',
-      timestamp: 'Feb 01, 2026 14:22 UTC'
-    },
-    {
-      name: 'Aether Finance',
-      person: 'ZeroX_Maxi',
-      img: '/images/ath.png',
-      text: 'AETH',
-      time: '30 DAYS',
-      num: 88.2,
-      col: 'blu',
-      wallet: '0x74...3f92',
-      cap: 177,
-      peackCap: 55.9,
-      titer: 'Verifieda',
-      date: '2026-01-28',
-      timestamp: 'Jan 04, 2026 15:30 UTC'
-    },
-    {
-      name: 'Vortex DEX',
-      person: 'Dee_Wizard',
-      img: '/images/vort.png',
-      text: 'VTX',
-      time: '7 DAYS',
-      num: 62.1,
-      col: 'blu',
-      wallet: '0x24...3f11',
-      cap: 160,
-      peackCap: 55.9,
-      titer: 'rising',
-      date: '2026-01-28',
-      timestamp: 'Mar 02, 2026 16:30 UTC'
-    }
-  ]
+  const formatTimeAgo = (ms: number): string => {
+    const minutes = Math.floor(ms / (60 * 1000));
+    const hours = Math.floor(ms / (60 * 60 * 1000));
+    const days = Math.floor(ms / (24 * 60 * 60 * 1000));
+    const weeks = Math.floor(ms / (7 * 24 * 60 * 60 * 1000));
+    const months = Math.floor(ms / (30 * 24 * 60 * 60 * 1000));
+    
+    if (minutes < 1) return 'just now';
+    if (minutes < 60) return `${minutes}m ago`;
+    if (hours < 24) return `${hours}h ago`;
+    if (days < 7) return `${days}d ago`;
+    if (weeks < 4) return `${weeks}w ago`;
+    return `${months}mo ago`;
+  };
+
+  const socials = useMemo(() => {
+    return recentTrades.map(trade => {
+      // eslint-disable-next-line react-hooks/purity
+      const timeAgo = Math.floor((Date.now() - new Date(trade.executedAt).getTime()));
+      const timeText = formatTimeAgo(timeAgo);
+      
+      const isMaster = trade.vaultType === 'MASTER';
+      const name = isMaster 
+        ? (trade.masterExecutionVault?.user?.displayName || `Trader ${trade.masterExecutionVault?.masterWallet?.slice(0, 4)}`)
+        : (trade.copierVault?.copier?.displayName || `Copier ${trade.copierVault?.copier?.walletAddress?.slice(0, 4)}`);
+      
+      const img = isMaster
+        ? (trade.masterExecutionVault?.user?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${trade.masterExecutionVault?.masterWallet}`)
+        : (trade.copierVault?.copier?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${trade.copierVault?.copier?.walletAddress}`);
+
+      return {
+        name,
+        action: isMaster ? 'executed a trade' : 'mirrored a trade',
+        time: timeText,
+        sell: Number(trade.amountInDecimal).toFixed(2),
+        buy: `${Number(trade.amountOutDecimal).toFixed(2)} $${trade.tokenOut.slice(0, 4).toUpperCase()}`,
+        comment: 0,
+        likes: 0,
+        message: '',
+        img,
+        price: 0, 
+        signature: trade.signature,
+        tokenOut: trade.tokenOut
+      };
+    });
+  }, [recentTrades]);
 
   const filteredCalls = firstCall
     .filter(item => {
@@ -169,9 +159,9 @@ const DashboardView = () => {
     })
     .filter(item => {
       if (range === 'ALL') return true
-      if (range === '24H') return item.time === '24 HOURS'
-      if (range === '7D') return item.time === '7 DAYS'
-      if (range === '30D') return item.time === '30 DAYS'
+      if (range === '24H') return item.time.includes('HOURS') || item.time === 'RECENT'
+      if (range === '7D') return !item.time.includes('DAYS') || parseInt(item.time) <= 7
+      if (range === '30D') return true
       return true
     })
     .sort((a, b) => (sortDir === 'desc' ? b.num - a.num : a.num - b.num))
@@ -398,125 +388,140 @@ const DashboardView = () => {
         <div className='flex justify-between items-center'>
           <p className='font-[700] text-[15px] text-white'>First Caller</p>
           <p className='text-[6px] font-[900] uppercase text-white leading-[12px] tracking-[1.6px]'>
-            The Hall of On-Chain Alpha
+            First to Trade Each Token (24h)
           </p>
         </div>
 
         <div className='flex flex-col gap-4 mt-4'>
           <div className='bg-[#0f1a18] border-[1px] border-[#23483B]  rounded-xl'>
             <h4 className='p-4 text-sm font-semibold mb-3 text-white'>
-              Top X Trades
+              First {firstCall.length} Tokens (24h)
             </h4>
 
-            {firstCall.slice(0, 3).map((item, i) => (
-              <div className='' key={i}>
-                {/* MAIN ROW */}
-                <div
-                  onClick={() => toggleRow(i)}
-                  className='main flex justify-between border-[#23483B] border-t p-4 cursor-pointer'
-                >
-                  <div className='flex items-center gap-3'>
-                    <div
-                      className='h-8 w-8 rounded-full bg-cover bg-center'
-                      style={{ backgroundImage: `url(${item.img})` }}
-                    ></div>
-
-                    <div>
-                      <p className='text-[11px] font-bold text-white'>
-                        {item.name}
-                      </p>
-                      <p className='text-[9px] text-[#B0E4DD]'>{item.text}x</p>
-                    </div>
-                  </div>
-
-                  <div className='flex items-center gap-4'>
-                    <div>
-                      <p className={`text-[13px] font-black text-white`}>
-                        {item.num}x
-                      </p>
-                      <p className='text-[7px] text-[#B0E4DD99] font-bold'>
-                        Multiple
-                      </p>
-                    </div>
-
-                    <div className='flex  gap-2 justify-between items-center'>
-                      <p className='text-[9px] font-bold text-white'>
-                        {item.person}
-                      </p>
-                      <div
-                        className={`${
-                          item.titer === 'community'
-                            ? 'bg-verircom'
-                            : 'bg-veriris'
-                        } w-[16px] h-[16px] rounded-full p-1 flex justify-center items-center`}
-                      >
-                        <span
-                          className={`inline-block  w-[12px] h-[12px]   bg-center bg-cover `}
-                          style={{
-                            backgroundImage: `url(${
-                              item.titer === 'community'
-                                ? '/images/checkgreen.svg'
-                                : item.titer === 'rising'
-                                ? '/images/rising.svg'
-                                : item.titer === 'Verifieda'
-                                ? 'images/Verifieda.svg'
-                                : ''
-                            })`
-                          }}
-                        ></span>
-                      </div>
-                    </div>
-                    {/* DROPDOWN */}
-                    <div
-                      className={`cursor-pointer h-5 w-5 bg-center bg-cover transition-transform duration-300 ${
-                        openIndex === i ? 'rotate-180' : ''
-                      }`}
-                      style={{
-                        backgroundImage: `url('/images/dropdown.svg')`
-                      }}
-                    ></div>
-                  </div>
-                </div>
-
-                {/* EXPANDED DETAILS */}
-                {openIndex === i && (
-                  <div className='mx-4 mb-4 rounded-xl border border-[#23483B] bg-[#0b1513] p-4'>
-                    <div className='grid grid-cols-3 gap-6 text-xs'>
-                      <div>
-                        <p className='text-[#6f9f97] text-[8px]'>
-                          Market Cap at Call
-                        </p>
-                        <p className='font-bold text-white'>${item.cap}k</p>
-                      </div>
-
-                      <div>
-                        <p className='text-[#6f9f97] text-[8px]'>
-                          Peak Market Cap
-                        </p>
-                        <p className='font-bold text-[#00A991]'>
-                          ${item.peackCap}M
-                        </p>
-                      </div>
-
-                      <div>
-                        <p className='text-[#6f9f97] text-[8px]'>
-                          Caller Wallet
-                        </p>
-                        <p className='font-bold text-[#9fd5cc]'>
-                          {item.wallet}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className='mt-4 rounded-lg bg-[#0f1f1c] p-3 text-[11px] text-[#9fd5cc]'>
-                      This trade was captured at the exact moment the first
-                      caller executed the buy. Zephyr verifies all entries
-                      against on-chain transaction data to ensure accuracy.
-                    </div>
-                  </div>
-                )}
+            {topTradesLoading ? (
+              <div className='p-8 text-center text-gray-500 text-xs animate-pulse font-bold tracking-widest uppercase'>
+                Scanning Chain...
               </div>
-            ))}
+            ) : firstCall.length === 0 ? (
+              <div className='p-8 text-center text-gray-500 text-xs'>
+                No first callers in the last 24h
+              </div>
+            ) : (
+              firstCall.slice(0, 3).map((item, i) => (
+                <div className='' key={i}>
+                  {/* MAIN ROW */}
+                  <div
+                    onClick={() => toggleRow(i)}
+                    className='main flex justify-between border-[#23483B] border-t p-4 cursor-pointer'
+                  >
+                    <div className='flex items-center gap-3'>
+                      <div
+                        className='h-8 w-8 rounded-full bg-cover bg-center'
+                        style={{ backgroundImage: `url(${item.img})` }}
+                      ></div>
+
+                      <div>
+                        <p className='text-[11px] font-bold text-white uppercase'>
+                          {item.text}
+                        </p>
+                        <p className='text-[9px] text-[#B0E4DD]'>{item.time}</p>
+                      </div>
+                    </div>
+
+                    <div className='flex items-center gap-4'>
+                      <div>
+                        <p className={`text-[13px] font-black text-white`}>
+                          {item.num.toFixed(1)}
+                        </p>
+                        <p className='text-[7px] text-[#B0E4DD99] font-bold uppercase'>
+                          Tokens Out
+                        </p>
+                      </div>
+
+                      <div className='flex  gap-2 justify-between items-center'>
+                        <p className='text-[9px] font-bold text-white'>
+                          {item.person}
+                        </p>
+                        <div
+                          className={`${
+                            item.titer === 'community'
+                              ? 'bg-verircom'
+                              : 'bg-veriris'
+                          } w-[16px] h-[16px] rounded-full p-1 flex justify-center items-center`}
+                        >
+                          <span
+                            className={`inline-block  w-[12px] h-[12px]   bg-center bg-cover `}
+                            style={{
+                              backgroundImage: `url(${
+                                item.titer === 'community'
+                                  ? '/images/checkgreen.svg'
+                                  : item.titer === 'rising'
+                                  ? '/images/rising.svg'
+                                  : item.titer === 'Verifieda'
+                                  ? '/images/Verifieda.svg'
+                                  : ''
+                              })`
+                            }}
+                          ></span>
+                        </div>
+                      </div>
+                      {/* DROPDOWN */}
+                      <div
+                        className={`cursor-pointer h-5 w-5 bg-center bg-cover transition-transform duration-300 ${
+                          openIndex === i ? 'rotate-180' : ''
+                        }`}
+                        style={{
+                          backgroundImage: `url('/images/dropdown.svg')`
+                        }}
+                      ></div>
+                    </div>
+                  </div>
+
+                  {/* EXPANDED DETAILS */}
+                  {openIndex === i && (
+                    <div className='mx-4 mb-4 rounded-xl border border-[#23483B] bg-[#0b1513] p-4'>
+                      <div className='grid grid-cols-3 gap-6 text-xs'>
+                        <div>
+                          <p className='text-[#6f9f97] text-[8px] uppercase font-bold tracking-tighter'>
+                            Execution Status
+                          </p>
+                          <p className='font-bold text-white text-[10px]'>CONFIRMED</p>
+                        </div>
+
+                        <div>
+                          <p className='text-[#6f9f97] text-[8px] uppercase font-bold tracking-tighter'>
+                            On-Chain Proof
+                          </p>
+                          <a 
+                            href={`https://solscan.io/tx/${item.signature}?cluster=devnet`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className='font-bold text-[#00A991] text-[10px] hover:underline'
+                          >
+                            VIEW SIG ↗
+                          </a>
+                        </div>
+
+                        <div>
+                          <p className='text-[#6f9f97] text-[8px] uppercase font-bold tracking-tighter'>
+                            Caller Wallet
+                          </p>
+                          <p className='font-bold text-[#9fd5cc] text-[10px]'>
+                            {item.wallet}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className='mt-4 rounded-lg bg-[#0f1f1c] p-3 text-[11px] text-[#9fd5cc]'>
+                        This trade was captured at the exact moment the first
+                        caller executed the buy. Zephyr verifies all entries
+                        against on-chain transaction data to ensure accuracy.
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))
+            )}
 
             <p
               onClick={() => setShowModal(true)}
@@ -535,232 +540,81 @@ const DashboardView = () => {
               <p className='w-[6px] h-[6px] rounded-full bg-[#22C55E] animate-pulse'></p>
             </div>
             <div className=' bg-[#0f1a18] rounded-xl'>
-              <div className=' p-4 flex flex-col mt-4 gap-8'>
-                {socials.map((item, i) => {
-                  if (item.action.toLocaleLowerCase().includes('swapped')) {
-                    return (
-                      <div key={i} className='flex justify-between '>
-                        <div className='flex justify-center items-center h-[28px] w-[28px] border-[1px] border-[#112968] rounded-full'>
+              <div className='p-4 flex flex-col mt-4 gap-4 max-h-[420px] overflow-y-auto scrollbar-thin scrollbar-thumb-[#23483B] scrollbar-track-transparent'>
+                {recentTradesLoading ? (
+                  <div className='p-8 text-center text-gray-500 text-xs animate-pulse font-bold tracking-widest uppercase'>
+                    Loading live feed...
+                  </div>
+                ) : socials.length === 0 ? (
+                  <div className='p-8 text-center text-gray-500 text-xs'>
+                    No activity yet. Be the first to trade!
+                  </div>
+                ) : (
+                  socials.slice(0, 50).map((item, i) => (
+                    <div key={i} className='flex justify-between '>
+                      <div className='flex justify-center items-center h-[28px] w-[28px] border-[1px] border-[#112968] rounded-full overflow-hidden'>
+                        <span
+                          style={{
+                            backgroundImage: `url(${item.img})`
+                          }}
+                          className='bg-cover bg-center rounded-full h-full w-full'
+                        ></span>
+                      </div>
+
+                      <div className='flex flex-col w-[90%] gap-[5px]'>
+                        <div className='flex justify-between items-center '>
+                          <div className='flex gap-3 items-center'>
+                            <p className='text-[10px] font-[700] text-white'>
+                              @{item.name}
+                            </p>
+                            <p className='text-[10px] text-[#B0E4DD]'>
+                              {item.action}
+                            </p>
+                          </div>
+                          <p className='text-[7.5px] text-[#B0E4DD]'>
+                            {item.time}
+                          </p>
+                        </div>
+                        <div className='bg-[#22403F] rounded-md flex justify-between items-center p-2 '>
+                          <div className=' '>
+                            <p className='text-[9px] text-[#FA6938] font-[700]'>
+                              IN: {item.sell}
+                            </p>
+                          </div>
+
                           <span
                             style={{
-                              backgroundImage: `url(${item.img})`
+                              backgroundImage: `url('/images/arrowr.svg')`
                             }}
-                            className='bg-cover bg-center  rounded-full h-[88%] w-[88%] '
+                            className='bg-center bg-cover h-4 w-4'
                           ></span>
-                        </div>
 
-                        <div className='flex flex-col w-[90%] gap-[5px]'>
-                          <div className='flex justify-between items-center '>
-                            <div className='flex gap-3 items-center'>
-                              <p className='text-[10px] font-[700] text-white'>
-                                {item.name}
-                              </p>
-                              <p className='text-[10px] text-[#B0E4DD]'>
-                                {item.action}
-                              </p>
-                            </div>
-                            <p className='text-[7.5px] text-[#B0E4DD]'>
-                              {item.time}
+                          <div className=''>
+                            <p className='text-[9px] text-[#13EC5F] font-[700]'>
+                              OUT:
+                              <span className='text-white'>{item.buy}</span>
                             </p>
-                          </div>
-                          <div className='bg-[#22403F] rounded-md flex justify-between items-center p-2 '>
-                            <div className=' '>
-                              <p className='text-[9px] text-[#FA6938] font-[700]'>
-                                SELL: {item.sell}
-                              </p>
-                              <p className='text-[7.5px] font-[400] text-[#B0E4DD]'>
-                                price: ${item.price}
-                              </p>
-                            </div>
-
-                            <span
-                              style={{
-                                backgroundImage: `url('/images/arrowr.svg')`
-                              }}
-                              className='bg-center bg-cover h-4 w-4'
-                            ></span>
-
-                            <div className=''>
-                              <p className='text-[9px] text-[#FA6938] font-[700]'>
-                                BUY:
-                                <span className='text-white'>{item.buy}</span>
-                              </p>
-                              <p className='text-[7.5px] font-[400] text-[#FA6938] flex gap-[3px] items-center'>
-                                <span>Solscan</span>
-                                <span
-                                  style={{
-                                    backgroundImage: `url('/images/redirect.svg')`
-                                  }}
-                                  className=' cursor-pointer  h-2 w-2 bg-center bgcover'
-                                ></span>
-                              </p>
-                            </div>
-                          </div>
-                          <div className='flex gap-3 items-center'>
-                            <div className='flex gap-1 items-center'>
+                            <a 
+                              href={`https://solscan.io/tx/${item.signature}?cluster=devnet`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className='text-[7.5px] font-[400] text-[#FA6938] flex gap-[3px] items-center hover:underline'
+                            >
+                              <span>Solscan</span>
                               <span
                                 style={{
-                                  backgroundImage: `url('/images/likes.svg')`
+                                  backgroundImage: `url('/images/redirect.svg')`
                                 }}
-                                className='bg-center bg-cover h-[12px] w-[15px] cursor-pointer'
+                                className=' cursor-pointer  h-2 w-2 bg-center bg-cover'
                               ></span>
-
-                              <span className='text-[8.5px] font-[400] text-white'>
-                                {item.likes}
-                              </span>
-                            </div>
-                            <div className='flex gap-1 items-center'>
-                              <span
-                                style={{
-                                  backgroundImage: `url('/images/comment.svg')`
-                                }}
-                                className='bg-center bg-cover h-[12px] w-[15px] cursor-pointer'
-                              ></span>
-
-                              <span className='text-[8.5px] font-[400] text-white'>
-                                {item.comment}
-                              </span>
-                            </div>
+                            </a>
                           </div>
                         </div>
+                        {/* Likes/Comments removed for Phase 1 as they aren't in DB yet */}
                       </div>
-                    )
-                  } else if (
-                    item.action.toLocaleLowerCase().includes('copied')
-                  ) {
-                    return (
-                      <div key={i} className='flex justify-between'>
-                        <div className='flex justify-center items-center h-[28px] w-[28px] border-[1px] border-[#112968] rounded-full'>
-                          <span
-                            style={{
-                              backgroundImage: `url(${item.img})`
-                            }}
-                            className='bg-cover bg-center  rounded-full h-[88%] w-[88%] '
-                          ></span>
-                        </div>
-                        <div className='flex flex-col w-[90%] gap-[5px]'>
-                          <div className='flex justify-between items-center '>
-                            <div className='flex gap-3 items-center'>
-                              <p className='text-[10px] font-[700] text-white'>
-                                {item.name}
-                              </p>
-                              <p className='text-[10px] text-[#B0E4DD]'>
-                                {item.action}
-                              </p>
-                            </div>
-                            <p className='text-[7.5px] text-[#B0E4DD]'>
-                              {item.time}
-                            </p>
-                          </div>
-                          <div className=' rounded-md items-center p-2 '>
-                            <p className='text-[#B0E4DD] text-[9px] font-[400]'>
-                              Just increased allocation for @AlphaSeeker. That
-                              last trade on $JUP was legendary! 🚀
-                            </p>
-                          </div>
-                          <div className='flex gap-3 items-center'>
-                            <div className='flex gap-1 items-center'>
-                              <span
-                                style={{
-                                  backgroundImage: `url('/images/likes.svg')`
-                                }}
-                                className='bg-center bg-cover h-[12px] w-[15px] cursor-pointer'
-                              ></span>
-
-                              <span className='text-[8.5px] font-[400] text-white'>
-                                {item.likes}
-                              </span>
-                            </div>
-                            <div className='flex gap-1 items-center'>
-                              <span
-                                style={{
-                                  backgroundImage: `url('/images/comment.svg')`
-                                }}
-                                className='bg-center bg-cover h-[12px] w-[15px] cursor-pointer'
-                              ></span>
-
-                              <span className='text-[8.5px] font-[400] text-white'>
-                                {item.comment}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    )
-                  } else {
-                    return (
-                      <div key={i} className='flex justify-between'>
-                        <div className='flex justify-center items-center h-[28px] w-[28px] border-[1px] border-[#112968] rounded-full'>
-                          <span
-                            style={{
-                              backgroundImage: `url(${item.img})`
-                            }}
-                            className='bg-cover bg-center  rounded-full h-[88%] w-[88%] '
-                          ></span>
-                        </div>
-                        <div className='flex flex-col w-[90%] gap-[5px]'>
-                          <div className='flex justify-between items-center '>
-                            <div className='flex gap-3 items-center'>
-                              <p className='text-[10px] font-[700] text-white'>
-                                {item.name}
-                              </p>
-                              <p className='text-[10px] text-[#B0E4DD]'>
-                                {item.action}
-                              </p>
-                            </div>
-                            <p className='text-[7.5px] text-[#B0E4DD]'>
-                              {item.time}
-                            </p>
-                          </div>
-                          <div className='bg-[#22403F] rounded-md flex justify-between items-center p-2 '>
-                            <div className='flex justify-between  gap-3'>
-                              <span
-                                style={{
-                                  backgroundImage: `url("/images/bonk.png")`
-                                }}
-                                className='bg-cover bg-center h-[15px] w-[15px]'
-                              ></span>
-
-                              <p className='text-[9px] font-[700] text-[#13EC5F]'>
-                                BUY 120M $BONK
-                              </p>
-                            </div>
-                            <p className='text-[7.5px] font-[400] text-[#13EC5F]'>
-                              Value: ${item.price}
-                            </p>
-                          </div>
-
-                          <div className='flex gap-3 items-center'>
-                            <div className='flex gap-1 items-center'>
-                              <span
-                                style={{
-                                  backgroundImage: `url('/images/likes.svg')`
-                                }}
-                                className='bg-center bg-cover h-[12px] w-[15px] cursor-pointer'
-                              ></span>
-
-                              <span className='text-[8.5px] font-[400] text-white'>
-                                {item.likes}
-                              </span>
-                            </div>
-                            <div className='flex gap-1 items-center'>
-                              <span
-                                style={{
-                                  backgroundImage: `url('/images/comment.svg')`
-                                }}
-                                className='bg-center bg-cover h-[12px] w-[15px] cursor-pointer'
-                              ></span>
-
-                              <span className='text-[8.5px] font-[400] text-white'>
-                                {item.comment}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    )
-                  }
-                })}
+                    </div>
+                  ))
+                )}
               </div>
               <div className='mt-12'>
                 <p className=' h-[0.5px] bg-[#232948]'></p>
@@ -918,7 +772,7 @@ const DashboardView = () => {
                           ></div>
 
                           <div>
-                            <p className='text-[11px] font-bold text-white'>
+                            <p className='text-[11px] font-bold text-white uppercase'>
                               {item.name}
                             </p>
                             <p className='text-[9px] text-[#B0E4DD]'>
@@ -930,10 +784,10 @@ const DashboardView = () => {
                         <div className='flex items-center gap-4 lg:gap-8 '>
                           <div>
                             <p className={`text-[13px] font-black text-white`}>
-                              {item.num}x
+                              {item.num.toFixed(1)}
                             </p>
-                            <p className='text-[7px] text-[#B0E4DD99] font-bold'>
-                              MULTIPLE
+                            <p className='text-[7px] text-[#B0E4DD99] font-bold uppercase'>
+                              Tokens Out
                             </p>
                           </div>
 
@@ -960,7 +814,7 @@ const DashboardView = () => {
                                       : item.titer === 'rising'
                                       ? '/images/rising.svg'
                                       : item.titer === 'Verifieda'
-                                      ? 'images/Verifieda.svg'
+                                      ? '/images/Verifieda.svg'
                                       : ''
                                   })`
                                 }}
@@ -1004,10 +858,10 @@ const DashboardView = () => {
                                   <div className='flex flex-col gap-4'>
                                     <div>
                                       <p className='text-[#6f9f97] text-[8px]  uppercase'>
-                                        Market Cap at Call
+                                        Execution Status
                                       </p>
                                       <p className='font-[700] text-[10px] text-white '>
-                                        ${item.cap}k
+                                        CONFIRMED
                                       </p>
                                     </div>
 
@@ -1032,11 +886,16 @@ const DashboardView = () => {
                                   <div className='flex flex-col gap-4'>
                                     <div className=''>
                                       <p className='text-[#6f9f97] text-[8px] uppercase font-[900]'>
-                                        Peak Market Cap
+                                        On-Chain Proof
                                       </p>
-                                      <p className=' text-[#22C55E] text-[10px] font-[700]'>
-                                        ${item.peackCap}M
-                                      </p>
+                                      <a 
+                                        href={`https://solscan.io/tx/${item.signature}?cluster=devnet`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className=' text-[#22C55E] text-[10px] font-[700] hover:underline'
+                                      >
+                                        VIEW TRANSACTION ↗
+                                      </a>
                                     </div>
 
                                     <div className=''>
@@ -1051,8 +910,8 @@ const DashboardView = () => {
                                 </div>
 
                                 <p className='mt-4 w-full lg:w-1/2 rounded-lg  bg-[#FFFFFF08] p-3 text-[11px] text-[#9fd5cc]'>
-                                  This trade was captured at the exact moment
-                                  the first caller executed the buy. Zephyr
+                                  This trader was the FIRST to execute a trade
+                                  on this token in the last 24h. Zephyr
                                   verifies all entries against on-chain
                                   transaction data to ensure accuracy.
                                 </p>

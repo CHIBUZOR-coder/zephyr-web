@@ -277,6 +277,24 @@ export const WithdrawModal = ({ open, onClose }: Props) => {
       }
     }
   }
+  const { showToast } = useGeneralContext()
+
+  // const handleAction = () => {
+  //   showToast('Deposit Successful', 'Transaction confirmed on Solana Mainnet.')
+  //   // or
+  //   showToast('Transaction Failed', 'Insufficient balance.', 'error')
+  // }
+
+  useEffect(() => {
+    if (status === 'success' || successMessage) {
+      showToast(
+        'Withdrawal Successful',
+        'Transaction confirmed on Solana Mainnet.'
+      )
+    }
+
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [status, successMessage])
 
   return (
     <AnimatePresence>
@@ -442,8 +460,8 @@ export const WithdrawModal = ({ open, onClose }: Props) => {
                   <button
                     onClick={() => {
                       if (onChainBalance !== null) {
-                        const avail = onChainBalance - 0.003;
-                        setAmount((avail > 0 ? avail : 0).toFixed(4));
+                        const avail = onChainBalance - 0.003
+                        setAmount((avail > 0 ? avail : 0).toFixed(4))
                       }
                     }}
                     disabled={onChainBalance === null}

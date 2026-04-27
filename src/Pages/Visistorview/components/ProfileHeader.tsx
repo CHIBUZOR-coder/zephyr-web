@@ -96,17 +96,32 @@ export default function ProfileHeader ({ trader }: ProfileHeaderProps) {
 
           <div className='flex items-center gap-6 text-xs mt-2'>
             <div>
-              <p className='text-gray-500'>JOINED</p>
+              <p className='text-gray-500 uppercase tracking-wider'>JOINED</p>
               <p className='text-white font-medium'>
                 {formatDate(trader.createdAt)}
               </p>
             </div>
 
             <div>
-              <p className='text-gray-500'>LAST ACTIVE</p>
+              <p className='text-gray-500 uppercase tracking-wider'>LAST ACTIVE</p>
               <p className='text-green-400 font-medium'>
                 {formatRelativeTime(trader.updatedAt)}
               </p>
+            </div>
+          </div>
+          
+          <div className='flex items-center gap-6 mt-4 pt-4 border-t border-white/5'>
+            <div className='flex flex-col'>
+                <p className='text-[10px] text-gray-500 uppercase tracking-widest font-bold'>AUM</p>
+                <p className='text-white text-base font-black'>{trader.aum}</p>
+            </div>
+            <div className='flex flex-col'>
+                <p className='text-[10px] text-gray-500 uppercase tracking-widest font-bold'>Volume</p>
+                <p className='text-white text-base font-black'>{trader.volume}</p>
+            </div>
+            <div className='flex flex-col'>
+                <p className='text-[10px] text-gray-500 uppercase tracking-widest font-bold'>Copiers</p>
+                <p className='text-white text-base font-black'>{trader.followsDisplay}</p>
             </div>
           </div>
           <div className='flex items-center gap-2'>

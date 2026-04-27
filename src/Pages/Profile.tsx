@@ -13,7 +13,7 @@ import { useTradingModeStore } from '../features/dashboard/useTradingModeStore'
 export default function Profile () {
   const { publicKey } = useWallet()
   const { masterMode } = useTradingModeStore()
-  const { masterVault, copierVaults } = useUserVaults()
+  const { masterVault, copierVaults, metrics } = useUserVaults()
   const masterWalletAddress = publicKey?.toBase58()
   const { data: userProfile } = useUserProfile(masterWalletAddress)
   const { data: tierState } = useMasterTierState(masterWalletAddress)
@@ -37,16 +37,16 @@ export default function Profile () {
       unit: '$'
     },
     {
-      time: '30D PnL',
-      value: parseFloat(tierState?.metrics.rollingVolumeUsd ?? '0'),
-      duration: 'Last 30 days',
+      time: 'AUM',
+      value: metrics?.totalAumUsd ?? 0,
+      duration: 'Master + Copiers',
       unit: '$'
     },
     {
-      time: 'Max Drawdown',
-      value: parseFloat(tierState?.metrics.maxDrawdownPct ?? '0'),
-      duration: 'Peak to trough',
-      unit: '%'
+      time: 'Total Volume',
+      value: metrics?.totalVolumeUsd ?? 0,
+      duration: 'Lifetime Trading',
+      unit: '$'
     },
     {
       time: 'Win Rate',

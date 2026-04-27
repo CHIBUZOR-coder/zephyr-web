@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { FiShield, FiAlertTriangle } from 'react-icons/fi'
 import { useMasterVault } from '../../../../features/master/useMasterVault'
+import { useGeneralContext } from '../../../../Context/GeneralContext'
 
 // ─── TYPES ───────────────────────────────────────────────────────────────────
 
@@ -87,6 +88,7 @@ const Step3CreateVault: React.FC<Props> = ({
   const { createMasterVault, initializeProgramConfig, loading, error } =
     useMasterVault()
   const [internalLoading, setInternalLoading] = useState(false)
+  const { showToast } = useGeneralContext()
 
   const isConfigError = error?.includes('config') && error?.includes('3012')
 
@@ -96,6 +98,10 @@ const Step3CreateVault: React.FC<Props> = ({
       const vaultAddress = await createMasterVault()
       if (vaultAddress) {
         setCreatedVaultAddress(vaultAddress?.address)
+        showToast(
+          'Master Vault Creation Successful',
+          'View your vault on Portfolio page. You can now proceed to set up your trading strategy.'
+        )
       }
 
       onNext()
@@ -146,6 +152,19 @@ const Step3CreateVault: React.FC<Props> = ({
       icon: isDeploying ? <Spinner size={14} /> : null
     }
   ]
+
+  // const { showToast } = useGeneralContext()
+
+  //   useEffect(() => {
+  //     if (status === 'success' || successMessage) {
+  //       showToast(
+  //         'Deposit Successful',
+  //         'Transaction confirmed on Solana Mainnet.'
+  //       )
+  //     }
+
+  //     // eslint-disable-next-line react-hooks/exhaustive-deps
+  //   }, [vaultAddress])
 
   return (
     <motion.div

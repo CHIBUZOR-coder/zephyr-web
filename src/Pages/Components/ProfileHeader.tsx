@@ -9,6 +9,7 @@ import { useGeneralContext } from '../../Context/GeneralContext'
 import { getTimeAgo } from '../../utils/dateHelpers'
 import { Link } from 'react-router-dom'
 import { TierBadge } from './TierBadge'
+import { fmtCompactCurrency } from '../../utils/currencyHelpers'
 
 function getDefaultAvatar(walletAddress: string): string {
   return `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(walletAddress)}`
@@ -17,8 +18,8 @@ function getDefaultAvatar(walletAddress: string): string {
 export default function ProfileHeader () {
   const { masterMode, toggleMasterMode } = useTradingModeStore()
   const { publicKey } = useWallet()
-  const { masterVault } = useUserVaults()
-  const { hasMaterVault, setMasterTraderOpen } = useGeneralContext()
+  const { masterVault, metrics } = useUserVaults()
+  const { hasMaterVault, setMasterTraderOpen, setClaimFeesOpen, setSelectedVaultPda } = useGeneralContext()
 
   const walletAddress = publicKey?.toBase58() || ''
   const { data: userProfile } = useUserProfile(walletAddress)
@@ -133,6 +134,23 @@ export default function ProfileHeader () {
               </p>
             </div>
           </div>
+
+          {masterMode && metrics && (
+             <div className='flex items-center gap-6 mt-2 pt-4 border-t border-[#33564a]'>
+                <div className='flex flex-col'>
+                    <p className='text-[10px] text-[#50706c] uppercase tracking-widest font-bold'>AUM</p>
+                    <p className='text-white text-lg font-black'>{fmtCompactCurrency(metrics.totalAumUsd)}</p>
+                </div>
+                <div className='flex flex-col'>
+                    <p className='text-[10px] text-[#50706c] uppercase tracking-widest font-bold'>Volume</p>
+                    <p className='text-white text-lg font-black'>{fmtCompactCurrency(metrics.totalVolumeUsd)}</p>
+                </div>
+                <div className='flex flex-col'>
+                    <p className='text-[10px] text-[#50706c] uppercase tracking-widest font-bold'>Copiers</p>
+                    <p className='text-white text-lg font-black'>{metrics.totalCopiers}</p>
+                </div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -173,7 +191,15 @@ export default function ProfileHeader () {
           <span>VIEW PORTFOLIO</span>
         </Link>
         {masterMode && (
-          <button className=' btns px-4 py-2 rounded-lg border border-medal_border bg-medal  text-sm  flex items-center gap-2'>
+          <button 
+            onClick={() => {
+              if (masterVault?.vaultPda) {
+                setSelectedVaultPda(masterVault.vaultPda)
+                setClaimFeesOpen(true)
+              }
+            }}
+            className=' btns px-4 py-2 rounded-lg border border-medal_border bg-medal  text-sm  flex items-center gap-2'
+          >
             <span
               style={{ backgroundImage: `url("/images/yellow_arrow.svg")` }}
               className='bg-center bg-cover h-[16px] w-[16px] inline-block cursor-pointer '

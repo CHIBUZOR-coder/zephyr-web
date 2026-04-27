@@ -98,7 +98,13 @@ export const MirroringVaults = ({
                   <div className='flex items-center gap-2 min-w-[230px] md:min-w-[300px]'>
                     <div className='rounded-lg bg-[#0a1414] p-2 flex justify-center items-center'>
                       <img
-                        src={strategy.masterVaultAvatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${strategy.masterWalletAddress || strategy.masterVaultAddress}`}
+                        src={
+                          strategy.masterVaultAvatar ||
+                          `https://api.dicebear.com/7.x/avataaars/svg?seed=${
+                            strategy.masterWalletAddress ||
+                            strategy.masterVaultAddress
+                          }`
+                        }
                         alt='Master Vault'
                         className='w-[32px] h-[32px] rounded-full object-cover'
                       />
@@ -120,9 +126,7 @@ export const MirroringVaults = ({
                           <circle cx='12' cy='12' r='10' />
                           <polyline points='12 6 12 12 16 14' />
                         </svg>
-                        <span>
-                          LAST ACTIVITY: {strategy.lastActivityLabel}
-                        </span>
+                        <span>LAST ACTIVITY: {strategy.lastActivityLabel}</span>
                       </div>
 
                       {strategy.masterVaultAddress && (
@@ -131,10 +135,12 @@ export const MirroringVaults = ({
                             MIRRORING MASTER:
                           </span>
                           <div className='flex items-center gap-1.5 ml-1'>
-                            <span 
+                            <span
                               onClick={e => {
                                 e.stopPropagation()
-                                navigate(`/profile/${strategy.masterVaultAddress}`)
+                                navigate(
+                                  `/profile/${strategy.masterVaultAddress}`
+                                )
                               }}
                               className='text-[10px] text-[#7a9ab0] hover:text-[#00c0a8] cursor-pointer transition-colors'
                             >
@@ -207,9 +213,14 @@ export const MirroringVaults = ({
                       <span className='text-[9px] text-[#546462] tracking-[0.18em] uppercase font-[900] mb-0.5'>
                         RISK RULES
                       </span>
-                      <span className='text-[16px] font-[900] text-white tracking-wide'>
-                        TP: {strategy.riskRules.tp}%
-                      </span>
+                      <div className='flex flex-col '>
+                        <span className='text-[16px] font-[900] text-white tracking-wide'>
+                          TP: {strategy.riskRules.tp}%
+                        </span>
+                        <span className='text-[10px] font-[900] text-[#546462] tracking-wide'>
+                          SL: {strategy.riskRules.tp}%
+                        </span>
+                      </div>
                     </div>
                   </div>
                   <div className='flex items-center gap-2 '>
@@ -274,7 +285,7 @@ const CopierMode = ({
 }: CopierModeProps) => {
   return (
     <div>
-      <MirroringVaults 
+      <MirroringVaults
         strategies={strategies}
         removeStrategy={removeStrategy}
         onViewVault={onViewVault}
