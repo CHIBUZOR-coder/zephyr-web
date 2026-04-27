@@ -53,7 +53,7 @@ const CallTradeModal: FC<Props> = ({ open, onClose }) => {
     initializeRiskConfig,
     error: opError
   } = useVaultOperations()
-  const { masterVault, copierVaults, metrics, refetchAll } = useUserVaults()
+  const { masterVault,  metrics, refetchAll } = useUserVaults()
   const { data: solPrice } = useSolPrice()
 
   const vaultBalance = masterVault?.balance ?? 0
