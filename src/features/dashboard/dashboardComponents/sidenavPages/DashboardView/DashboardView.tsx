@@ -532,7 +532,7 @@ const DashboardView = () => {
           </div>
 
           {/* Social Feeds */}
-          <div className='mt-10 mb-[5.5rem] lg:mb-0'>
+          <div className='mt-10 mb-[5.5rem] lg:mb-0 '>
             <div className='flex gap-2 items-center px-4'>
               <h4 className='text-[15px] font-[700] text-white '>
                 Social Feed
@@ -540,7 +540,7 @@ const DashboardView = () => {
               <p className='w-[6px] h-[6px] rounded-full bg-[#22C55E] animate-pulse'></p>
             </div>
             <div className=' bg-[#0f1a18] rounded-xl'>
-              <div className='p-4 flex flex-col mt-4 gap-4 max-h-[420px] overflow-y-auto scrollbar-thin scrollbar-thumb-[#23483B] scrollbar-track-transparent'>
+              <div className='p-4 flex flex-col mt-4 gap-4 max-h-[420px] overflow-y-auto side scrollbar-thin scrollbar-thumb-[#23483B] scrollbar-track-transparent'>
                 {recentTradesLoading ? (
                   <div className='p-8 text-center text-gray-500 text-xs animate-pulse font-bold tracking-widest uppercase'>
                     Loading live feed...
@@ -631,7 +631,7 @@ const DashboardView = () => {
                     </div>
                     <input
                       placeholder='Post an update...'
-                      className='mt-2 bg-[#22403F] w-full p-3 rounded-lg text-xs outline-none'
+                      className='mt-2 bg-[#22403F] text-white w-full p-3 rounded-lg text-xs outline-none'
                     />
                   </div>
                 </div>

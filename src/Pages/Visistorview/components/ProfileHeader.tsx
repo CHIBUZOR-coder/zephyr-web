@@ -6,7 +6,7 @@ import { useGeneralContext } from '../../../Context/GeneralContext'
 
 import { getTier, isCommunityTier } from '../../../utils/Gettiter'
 
-import { Link } from 'react-router-dom'
+
 import {  RiTwitterXFill } from 'react-icons/ri'
 
 type ProfileHeaderProps = {
@@ -125,20 +125,27 @@ export default function ProfileHeader ({ trader }: ProfileHeaderProps) {
             </div>
           </div>
           <div className='flex items-center gap-2'>
-            <Link
-              to={'#'}
-              className='flex items-center justify-center bg-[#0c1414] h-[27px] w-[27px] rounded-full
-'
-            >
-              <FaTelegramPlane className='w-4 h-4  text-white' />
-            </Link>
+            {trader.telegram && (
+              <a
+                href={trader.telegram}
+                target='_blank'
+                rel='noopener noreferrer'
+                className='flex items-center justify-center bg-[#0c1414] h-[27px] w-[27px] rounded-full hover:bg-sky-500/20 transition-colors'
+              >
+                <FaTelegramPlane className='w-4 h-4 text-white' />
+              </a>
+            )}
 
-            <Link
-              to={'#'}
-              className=' flex items-center justify-center bg-[#0c1414] h-[27px] w-[27px] rounded-full'
-            >
-              <RiTwitterXFill className='w-3 h-3 text-white' />
-            </Link>
+            {trader.twitter && (
+              <a
+                href={trader.twitter}
+                target='_blank'
+                rel='noopener noreferrer'
+                className='flex items-center justify-center bg-[#0c1414] h-[27px] w-[27px] rounded-full hover:bg-white/10 transition-colors'
+              >
+                <RiTwitterXFill className='w-3 h-3 text-white' />
+              </a>
+            )}
           </div>
         </div>
       </div>

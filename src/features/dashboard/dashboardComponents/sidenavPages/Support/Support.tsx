@@ -150,8 +150,8 @@ export default function Support () {
             </h3>
 
             <div className='space-y-3'>
-              <div className='bg-supportCard border border-supportBorder rounded-lg p-4 flex justify-between items-center'>
-                <div className='flex items-center gap-3'>
+              <div className='bg-supportCard border border-supportBorder rounded-lg p-4 flex justify-between items-center flex-col md:flex-row gap-4 md:gap-0'>
+                <div className='flex items-center gap-3  w-full md:w-auto'>
                   <span>
                     <MdMessage className='w-[28px] h-[42px] text-[#009883]' />
                   </span>
@@ -169,19 +169,19 @@ export default function Support () {
                   to={'https://t.me/ZephyrAssist'}
                   target='_blank'
                   className='bg-[#009883n dev
-                ] text-white text-[14px] font-[600] text-xs px-4 py-2 rounded-md leading-[21px] bg-[#009883] '
+                ] text-white text-[14px] font-[600] text-xs px-4 py-2 rounded-md leading-[21px] bg-[#009883]  w-full md:w-auto text-center hover:bg-[#425b5b] transition ease-in-out duration-500'
                 >
                   START CHAT
                 </Link>
               </div>
 
-              <div className='bg-supportCard border border-supportBorder rounded-lg p-4 flex justify-between items-center'>
-                <div>
-                  <p className='text-sm text-white'>Email Support</p>
+              <div className='bg-supportCard border border-supportBorder rounded-lg p-4 flex justify-between items-center flex-col md:flex-row gap-4 md:gap-0'>
+                <div className='w-full md:w-auto'>
+                  <p className='text-sm text-white'>Email Support/Feedback</p>
                   <p className='text-xs text-gray-400'>24 hour response</p>
                 </div>
 
-                <button className='border border-[#009883] text-[#009883] text-[14px] font-[600] px-4 py-2 rounded-md hover:bg-[#0f1e1e]'>
+                <button className='border border-[#009883] text-[#009883] text-[14px] font-[600] px-4 py-2 rounded-md hover:bg-[#0f1e1e] w-full md:w-auto'>
                   SEND EMAIL
                 </button>
               </div>
@@ -263,8 +263,8 @@ export default function Support () {
             </p>
             <p>
               Security Reminder: Never share private keys, passwords, or
-              recovery phrases with anyone. Official Telegram administrators will
-              never ask for this information.
+              recovery phrases with anyone. Official Telegram administrators
+              will never ask for this information.
             </p>
           </div>
         </div>

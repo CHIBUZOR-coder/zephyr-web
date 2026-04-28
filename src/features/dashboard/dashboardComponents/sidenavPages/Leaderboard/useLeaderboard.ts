@@ -39,6 +39,9 @@ export interface LeaderboardEntry {
     displayName: string | null;
     avatar: string | null;
     isVerified: boolean;
+    twitter?: string | null;
+    telegram?: string | null;
+    discord?: string | null;
     createdAt: string;
     updatedAt: string;
   };
@@ -81,6 +84,9 @@ function mapLeaderboardEntryToTrader(entry: LeaderboardEntry): Trader {
     volume: `$${formatCompactNumber(entry.metrics.volumeUsd)}`,
     address: entry.masterWallet,
     vaultAddress: entry.vaultPda,
+    twitter: entry.user.twitter,
+    telegram: entry.user.telegram,
+    discord: entry.user.discord,
     createdAt: entry.user.createdAt,
     updatedAt: entry.user.updatedAt,
   };

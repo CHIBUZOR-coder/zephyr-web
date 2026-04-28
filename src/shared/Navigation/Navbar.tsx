@@ -80,7 +80,7 @@ const Navbar = () => {
               placeholder='Search traders, tokens, or addresses'
               className={` ${
                 visible ? '' : 'hidden'
-              }  w-1/2 lg:w-1/4 bg-[#102221] px-4 py-2 rounded-lg outline-none placeholder:text-xs`}
+              }  w-1/2 lg:w-1/4 bg-[#102221] text-white px-4 py-2 rounded-lg outline-none placeholder:text-xs`}
             />
 
             <div className='flex items-center gap-5'>
@@ -398,7 +398,7 @@ const Navbar = () => {
           placeholder='Search traders, tokens, or addresses'
           className={` ${
             visible ? '' : 'hidden'
-          } w-[85%] md:w-1/3 bg-[#102221] px-4 py-2 rounded-lg outline-none placeholder:text-xs`}
+          } w-[85%] md:w-1/3 bg-[#102221] text-white px-4 py-2 rounded-lg outline-none placeholder:text-xs`}
         />
       </div>
     </div>
