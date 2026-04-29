@@ -14,7 +14,7 @@ const RiskAlertModal: FC<RiskAlertModalProps> = ({
   if (!showRiskModal) return null
 
   return (
-    <div className='fixed inset-0 z-[100] flex items-center justify-center bg-black/60 p-4 '>
+    <div className='fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 '>
       <div
         className='
     w-full 

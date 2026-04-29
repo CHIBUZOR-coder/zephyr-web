@@ -26,7 +26,7 @@ import type { UserProfile } from './features/users/user.types'
 import { CustomWalletModal } from './shared/Modals/walletModal/CustomWalletModal'
 import { DepositModal } from './shared/Modals/DepositModal/DepositModal'
 import { WithdrawModal } from './shared/Modals/WithdrawModal/WithdrawModal'
-import NotificationPanel from './shared/components/NotificationPanel'
+import NotificationPanel from './shared/Modals/Notification/NotificationPanel'
 import MobileBottomNav from './shared/Navigation/MobileBottomNav'
 import { ToastContainer } from './core/store/useToastStore'
 import MobileSideNav from './shared/Navigation/MobileSideNav'
@@ -379,7 +379,6 @@ function App () {
         />
 
         <Toastify toasts={toasts} onDismiss={dismissToast} />
-
 
         {showOnboarding && (
           <Onboarding

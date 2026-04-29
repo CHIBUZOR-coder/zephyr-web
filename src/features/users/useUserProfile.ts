@@ -33,5 +33,7 @@ export function useUserProfile(address?: string) {
     },
     enabled: !!address && address.length >= 32,
     staleTime: 5 * 60 * 1000,
+    refetchOnMount: true,
+    initialDataUpdatedAt: 0,
   });
 }

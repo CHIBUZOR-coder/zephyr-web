@@ -8,6 +8,7 @@ import { useWallet } from '@solana/wallet-adapter-react'
 import { useWalletBalance } from '../../../features/wallet/useWalletQuery'
 import { useFeeEstimation } from '../../../features/wallet/useFeeEstimation'
 import { useSolPrice } from '../../../core/hooks/usePrice'
+import { useNotificationStore } from '../Notification/useNotificationStore'
 
 type Props = {
   open: boolean
@@ -102,16 +103,26 @@ export const DepositModal = ({ open, onClose }: Props) => {
   }, [amount, targetVault])
 
   const handleDeposit = async () => {
-    if (
-      status === 'loading' ||
-      !selectedVaultPda ||
-      !amount ||
-      parseFloat(amount) <= 0
-    )
+    if (status === 'loading' || !selectedVaultPda || !amount || parseFloat(amount) <= 0) return
+    if (isProcessing.current) return;
+    
+    // Check if user is authenticated
+    if (!publicKey) {
+      setLocalError('Please connect your wallet first to make a deposit.')
+      setStatus('error')
       return
-    if (isProcessing.current) return
-    isProcessing.current = true
-
+    }
+    
+    // Check if user has sufficient balance
+    const depositValue = parseFloat(amount)
+    if (depositValue > userBalance - FEE_BUFFER) {
+      setLocalError(`Insufficient SOL balance. You have ${userBalance.toFixed(4)} SOL but need ${(depositValue + FEE_BUFFER).toFixed(4)} SOL (includes ${FEE_BUFFER} SOL fee buffer).`)
+      setStatus('error')
+      return
+    }
+    
+    isProcessing.current = true;
+    
     setStatus('loading')
     setLocalError(null)
     setSuccessMessage(null)
@@ -176,13 +187,23 @@ export const DepositModal = ({ open, onClose }: Props) => {
   }
 
   const isMaster = !copierVaults?.some(v => v.vaultPda === selectedVaultPda)
-const { showToast } = useGeneralContext()
+  const { showToast } = useGeneralContext()
+  const addNotification = useNotificationStore(s => s.addNotification)
 
   useEffect(() => {
     if (status === 'success' || successMessage) {
       showToast(
         'Deposit Successful',
         'Transaction confirmed on Solana Mainnet.'
+      )
+
+      addNotification(
+        'Deposit Successful',
+        `${amount} SOL deposited to your ${
+          isMaster ? 'Master' : 'Copier'
+        } vault.`,
+        'success',
+        'deposit' // 👈
       )
     }
 

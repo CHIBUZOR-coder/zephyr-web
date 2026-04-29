@@ -3,7 +3,22 @@ import { useAuthStore } from "../../features/auth/auth.store";
 // export const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:3002";
 export const API_BASE = "https://zephyr-np09.onrender.com";
 
-let isRefreshing = false;
+// This promise acts as a "wait room" for concurrent 401s
+let refreshPromise: Promise<string | null> | null = null;
+
+/**
+ * Custom Error class to pass status codes to the UI
+ */
+export class APIError extends Error {
+  status?: number;
+
+  constructor(message: string, status?: number) {
+    super(message);
+    this.name = "APIError";
+    this.message = message;
+    this.status = status;
+  }
+}
 
 async function refreshAccessToken(): Promise<string | null> {
   try {
@@ -16,65 +31,85 @@ async function refreshAccessToken(): Promise<string | null> {
       },
     });
 
-    if (!res.ok) {
-      return null;
-    }
+    if (!res.ok) throw new Error("Refresh failed");
 
     const data = await res.json();
-    if (data.success && data.accessToken) {
-      const { setAuth, user } = useAuthStore.getState();
-      setAuth(user!, data.accessToken);
-      return data.accessToken;
+    if (data.success && data.user) {
+      const { setAuth } = useAuthStore.getState();
+      setAuth(data.user, data.accessToken || null);
+      return data.accessToken || null;
     }
     return null;
-  } catch {
+  } catch (error) {
+    console.error("Token refresh failed:", error);
     return null;
   }
 }
 
 export async function authFetch<T>(
   path: string,
-  options: RequestInit = {},
+  options: RequestInit = {}
 ): Promise<T> {
-  const { accessToken } = useAuthStore.getState();
+  const { accessToken, logout } = useAuthStore.getState();
 
-  let res: Response;
-  try {
-    res = await fetch(`${API_BASE}${path}`, {
+  const makeRequest = async (token: string | null) => {
+    return fetch(`${API_BASE}${path}`, {
       ...options,
       credentials: "include",
       headers: {
         "Content-Type": "application/json",
         "ngrok-skip-browser-warning": "true",
-        ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
         ...(options.headers || {}),
       },
     });
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  } catch (err) {
-    // Network error (no internet, server down, etc.)
-    throw new Error("Unable to connect. Please check your internet connection.");
+  };
+
+  let res: Response;
+  try {
+    res = await makeRequest(accessToken);
+  } catch {
+    throw new APIError("Network error. Please check your internet connection.");
   }
 
-  if (res.status === 401 && !isRefreshing) {
-    isRefreshing = true;
+  // Handle 401 Unauthorized
+  if (res.status === 401) {
+    // If a refresh is already in progress, wait for it instead of failing
+    if (!refreshPromise) {
+      refreshPromise = refreshAccessToken();
+    }
+
+    const newToken = await refreshPromise;
     
-    const newToken = await refreshAccessToken();
-    
-    isRefreshing = false;
-    
+    // Clear the promise once finished so the next cycle can start fresh
+    if (refreshPromise) refreshPromise = null;
+
     if (newToken) {
-      return authFetch(path, options);
+      // Retry the original request with the new token
+      res = await makeRequest(newToken);
     } else {
-      const { logout } = useAuthStore.getState();
       logout();
-      throw new Error("Session expired. Please sign in again.");
+      throw new APIError("Session expired. Please sign in again.", 401);
     }
   }
 
+  // Final status check
   if (!res.ok) {
-    // Don't expose internal API details - return user-friendly message
-    throw new Error("Unable to complete request. Please check your connection and try again.");
+    // Attempt to get error message from server if available
+    let errorMessage = "Unable to complete request.";
+    try {
+      const errorData = await res.json();
+      errorMessage = errorData.message || errorMessage;
+    } catch {
+      /* fallback to default */
+    }
+    throw new APIError(errorMessage, res.status);
   }
-  return res.json() as Promise<T>;
+
+  // Safe JSON parsing
+  try {
+    return await res.json() as T;
+  } catch {
+    throw new APIError("Server returned an invalid response.");
+  }
 }

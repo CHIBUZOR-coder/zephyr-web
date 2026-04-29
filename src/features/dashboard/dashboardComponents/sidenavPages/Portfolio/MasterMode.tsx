@@ -303,11 +303,11 @@ const MasterMode = ({
         )
       })}
 
-      <div className='mt-8 opacity-80'>
+      <div className='mt-8'>
         <MirroringVaults
-          strategies={strategies}
-          removeStrategy={removeStrategy}
-          onViewVault={onViewVault}
+            strategies={strategies}
+            removeStrategy={removeStrategy}
+            onViewVault={onViewVault}
         />
       </div>
     </div>

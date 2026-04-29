@@ -72,6 +72,8 @@ export function useMasterTierState(masterWallet?: string) {
     },
     enabled: !!masterWallet,
     staleTime: 60 * 1000, // 1 minute
+    refetchOnMount: true,
+    initialDataUpdatedAt: 0,
   });
 }
 

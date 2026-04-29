@@ -3372,6 +3372,19 @@ export type Zephyr = {
       ]
     },
     {
+      "name": "feesClaimedEvent",
+      "discriminator": [
+        69,
+        22,
+        213,
+        206,
+        103,
+        202,
+        98,
+        163
+      ]
+    },
+    {
       "name": "governanceConfigInitialized",
       "discriminator": [
         165,
@@ -3691,196 +3704,201 @@ export type Zephyr = {
     },
     {
       "code": 6006,
+      "name": "cannotCopySelf",
+      "msg": "You cannot copy your own vault"
+    },
+    {
+      "code": 6007,
       "name": "copierVaultPaused",
       "msg": "Copier Vault is currently paused"
     },
     {
-      "code": 6007,
+      "code": 6008,
       "name": "copierVaultNotPaused",
       "msg": "Copier Vault is not paused"
     },
     {
-      "code": 6008,
+      "code": 6009,
       "name": "unauthorizedAccess",
       "msg": "Unauthorized access - you do not own this vault"
     },
     {
-      "code": 6009,
+      "code": 6010,
       "name": "vaultAlreadyPaused",
       "msg": "Vault is already in the requested state (Paused)"
     },
     {
-      "code": 6010,
+      "code": 6011,
       "name": "vaultNotPaused",
       "msg": "Vault is already in the requested state (Active)"
     },
     {
-      "code": 6011,
+      "code": 6012,
       "name": "tradeSizeExceeded",
       "msg": "Trade size exceeds maximum allowed percentage"
     },
     {
-      "code": 6012,
+      "code": 6013,
       "name": "invalidRiskParams",
       "msg": "Invalid risk parameters provided"
     },
     {
-      "code": 6013,
+      "code": 6014,
       "name": "invalidTakeProfitParameters",
       "msg": "Invalid take profit parameters"
     },
     {
-      "code": 6014,
+      "code": 6015,
       "name": "maxLossExceeded",
       "msg": "Maximum loss limit exceeded relative to total deposits"
     },
     {
-      "code": 6015,
+      "code": 6016,
       "name": "maxDrawdownExceeded",
       "msg": "Maximum drawdown exceeded relative to peak balance"
     },
     {
-      "code": 6016,
+      "code": 6017,
       "name": "invalidAllocationPercentage",
       "msg": "Invalid allocation percentage. Must be between 1 and 100"
     },
     {
-      "code": 6017,
+      "code": 6018,
       "name": "insufficientBalance",
       "msg": "Insufficient balance for this operation"
     },
     {
-      "code": 6018,
+      "code": 6019,
       "name": "mathOverflow",
       "msg": "Arithmetic overflow or underflow occurred"
     },
     {
-      "code": 6019,
+      "code": 6020,
       "name": "invalidAmount",
       "msg": "Invalid amount - must be greater than 0"
     },
     {
-      "code": 6020,
+      "code": 6021,
       "name": "invalidTradeAmount",
       "msg": "Invalid trade amount"
     },
     {
-      "code": 6021,
+      "code": 6022,
       "name": "invalidTokenPair",
       "msg": "Invalid token pair - source and destination tokens cannot be the same"
     },
     {
-      "code": 6022,
+      "code": 6023,
       "name": "tradeFromWalletNotAllowed",
       "msg": "Direct wallet trades not allowed - must use Master Execution Vault"
     },
     {
-      "code": 6023,
+      "code": 6024,
       "name": "profitThresholdNotMet",
       "msg": "Profit threshold not yet met - current price is below take-profit trigger"
     },
     {
-      "code": 6024,
+      "code": 6025,
       "name": "positionNotOpen",
       "msg": "No open position to take profit on"
     },
     {
-      "code": 6025,
+      "code": 6026,
       "name": "sellQuantityZero",
       "msg": "Sell quantity is zero - position size too small for partial sell"
     },
     {
-      "code": 6026,
+      "code": 6027,
       "name": "invalidOraclePrice",
       "msg": "Invalid oracle price provided"
     },
     {
-      "code": 6027,
+      "code": 6028,
       "name": "oracleDisagreement",
       "msg": "Oracle prices diverge beyond maximum allowed threshold"
     },
     {
-      "code": 6028,
+      "code": 6029,
       "name": "atomicCopierCountMismatch",
       "msg": "Atomic path requires exactly active_copier_count copier vault accounts"
     },
     {
-      "code": 6029,
+      "code": 6030,
       "name": "copierVaultMasterMismatch",
       "msg": "Copier vault does not belong to this master vault"
     },
     {
-      "code": 6030,
+      "code": 6031,
       "name": "slotGraceWindowExceeded",
       "msg": "Slot grace window exceeded - copier execution too late"
     },
     {
-      "code": 6031,
+      "code": 6032,
       "name": "vaultMustBeEmptyToClose",
       "msg": "Vault must have zero balance and closed position before close"
     },
     {
-      "code": 6032,
+      "code": 6033,
       "name": "riskParamExceedsCap",
       "msg": "Requested risk parameter exceeds the protocol-level cap."
     },
     {
-      "code": 6033,
+      "code": 6034,
       "name": "depositBelowMinimum",
       "msg": "Deposit below minimum required by RiskConfig"
     },
     {
-      "code": 6034,
+      "code": 6035,
       "name": "stopLossConditionNotMet",
       "msg": "Stop-loss conditions are not yet met - no risk limit has been breached"
     },
     {
-      "code": 6035,
+      "code": 6036,
       "name": "dailyLossLimitExceeded",
       "msg": "Daily loss limit exceeded - vault has lost more than the configured daily maximum"
     },
     {
-      "code": 6036,
+      "code": 6037,
       "name": "emergencyWithdrawZeroBalance",
       "msg": "No balance available for emergency withdrawal"
     },
     {
-      "code": 6037,
+      "code": 6038,
       "name": "invalidDailyLossBps",
       "msg": "Invalid daily loss limit basis points - must be between 1 and 10000"
     },
     {
-      "code": 6038,
+      "code": 6039,
       "name": "globalPause",
       "msg": "Protocol is globally paused — no new operations allowed."
     },
     {
-      "code": 6039,
+      "code": 6040,
       "name": "noPendingDowngrade",
       "msg": "No pending tier downgrade to approve or reject"
     },
     {
-      "code": 6040,
+      "code": 6041,
       "name": "unauthorizedEmergencyAdmin",
       "msg": "Only the emergency admin can toggle the protocol emergency pause"
     },
     {
-      "code": 6041,
+      "code": 6042,
       "name": "timelockNotExpired",
       "msg": "Authority transfer timelock has not yet expired — wait before accepting"
     },
     {
-      "code": 6042,
+      "code": 6043,
       "name": "noPendingAuthorityTransfer",
       "msg": "No pending authority transfer exists to accept or cancel"
     },
     {
-      "code": 6043,
+      "code": 6044,
       "name": "protocolEmergencyPaused",
       "msg": "Protocol is under emergency pause — new operations are blocked"
     },
     {
-      "code": 6044,
+      "code": 6045,
       "name": "invalidGovernanceParams",
       "msg": "Invalid governance parameter provided"
     }
@@ -4465,6 +4483,34 @@ export type Zephyr = {
           {
             "name": "updatedBy",
             "type": "pubkey"
+          },
+          {
+            "name": "timestamp",
+            "type": "i64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "feesClaimedEvent",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "vault",
+            "type": "pubkey"
+          },
+          {
+            "name": "master",
+            "type": "pubkey"
+          },
+          {
+            "name": "amount",
+            "type": "u64"
+          },
+          {
+            "name": "remainingFees",
+            "type": "u64"
           },
           {
             "name": "timestamp",

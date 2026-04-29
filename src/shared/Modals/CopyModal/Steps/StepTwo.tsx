@@ -12,6 +12,7 @@ import { useGeneralContext } from '../../../../Context/GeneralContext'
 import { useCopierVault } from '../../../../features/master/useCopierVault'
 import { useVaultOperations } from '../../../../features/master/useVaultOperations'
 import Input from '../../EditRiskModal/Editcomponents/Input'
+import { useNotificationStore } from '../../Notification/useNotificationStore'
 
 type RiskLevel = 'safe' | 'warning' | 'blocked'
 
@@ -134,6 +135,8 @@ export const StepTwo = ({ onBack, onNext, form, setForm }: StepTwoProps) => {
     [form, masterVaultAddress]
   )
 
+  const addNotification = useNotificationStore(s => s.addNotification)
+
   const getRiskBadge = (level: RiskLevel) => {
     switch (level) {
       case 'safe':
@@ -238,6 +241,14 @@ export const StepTwo = ({ onBack, onNext, form, setForm }: StepTwoProps) => {
         showToast(
           'Copy Trading Was Successful',
           'View Mirroring Vault in Portfolio.'
+        )
+        addNotification(
+          'Copier Vault Created',
+          `Your vault is now mirroring ${
+            selectedTrader?.name
+          }. Vault: ${vaultPda.slice(0, 4)}...${vaultPda.slice(-4)}`,
+          'success',
+          'vault'
         )
       } else {
         setLocalError('Failed to get vault address. Please refresh the page.')

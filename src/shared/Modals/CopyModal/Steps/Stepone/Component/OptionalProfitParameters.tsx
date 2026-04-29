@@ -2,6 +2,9 @@ import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { FiChevronDown } from 'react-icons/fi'
 import { IoMdOptions } from 'react-icons/io'
+import type { Dispatch, SetStateAction } from 'react'
+
+import type { VaultFormData } from '../StepOne'
 
 const dropdown = {
   hidden: { height: 0, opacity: 0 },
@@ -9,10 +12,10 @@ const dropdown = {
 }
 
 interface OptionalProfitParametersProps {
-  form: { [key: string]: string }
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  setForm: any
+  form: VaultFormData
+  setForm: Dispatch<SetStateAction<VaultFormData>>
 }
+
 
 export default function OptionalProfitParameters ({ form, setForm }: OptionalProfitParametersProps) {
   const [open, setOpen] = useState(false)

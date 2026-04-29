@@ -446,7 +446,7 @@ const Leaderboard: React.FC = () => {
                 </div>
                 <div className='h-44 mt-6 min-h-[100px]' ref={chartContainerRef}>
                   {/* Check container has valid dimensions before rendering */}
-                  {performanceData && performanceData.length > 0  ? (
+                  {performanceData && performanceData.length > 0 ? (
                     <ResponsiveContainer width='100%' height='100%' minWidth={0}>
                       <AreaChart
                       data={performanceData}

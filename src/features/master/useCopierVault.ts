@@ -114,9 +114,8 @@ export const useCopierVault = () => {
           })
           .rpc();
         console.log('Solana transaction successful:', tx);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      } catch (txErr: any) {
-        const msg = txErr?.message || String(txErr);
+      } catch (txErr: unknown) {
+        const msg = txErr instanceof Error ? txErr.message : String(txErr);
         if (msg.includes('already processed') || msg.includes('already been processed')) {
           console.log('Creation transaction was already processed. Continuing to sync.');
         } else {

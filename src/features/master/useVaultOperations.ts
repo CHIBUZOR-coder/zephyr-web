@@ -843,6 +843,88 @@ export const useVaultOperations = () => {
 
       const [riskConfigPda] = PublicKey.findProgramAddressSync([Buffer.from('risk_config')], program.programId);
 
+      // Check if copier vault account exists on-chain
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      let copierVaultAccount: any = null;
+      try {
+        copierVaultAccount = await program.account.copierVault.fetch(copierVaultPda);
+      } catch (err) {
+        console.log('Error fetching copier vault (may not exist):', err);
+        copierVaultAccount = null;
+      }
+
+      // Auto-initialize if account doesn't exist (stale copy - DB has record but on-chain account missing)
+      if (!copierVaultAccount) {
+        console.log('Copier vault not initialized on-chain, attempting auto-initialization...');
+
+        // Get config PDA
+        const [configPda] = PublicKey.findProgramAddressSync([
+          Buffer.from('config'),
+        ], program.programId);
+
+        // Try to get master wallet from master vault
+        let masterWallet = publicKey;
+        let isOldProgram = false;
+        
+        try {
+          const masterVaultAccount = await program.account.masterExecutionVault.fetch(masterVault);
+          if (masterVaultAccount) {
+            masterWallet = masterVaultAccount.masterWallet;
+          }
+        } catch (err) {
+          const errMsg = err instanceof Error ? err.message : String(err);
+          if (errMsg.includes('discriminator')) {
+            console.log('Master vault was created with old program version - need to reinitialize');
+            isOldProgram = true;
+          }
+        }
+
+        // Try to initialize the copier vault
+        try {
+          await (program.methods
+            .initializeCopierVault(
+              {
+                maxLossPct: newParams.maxLossPct || 10,
+                maxTradeSizePct: newParams.maxTradeSizePct || 100,
+                maxDrawdownPct: newParams.maxDrawdownPct || 20,
+              },
+              null,
+              null,
+              null
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            ) as any)
+            .accounts({
+              copier: publicKey,
+              masterWallet: masterWallet,
+              vault: copierVaultPda,
+              config: configPda,
+              masterVault: masterVault,
+              riskConfig: riskConfigPda,
+              systemProgram: SystemProgram.programId,
+            })
+            .rpc();
+
+          console.log('Copier vault initialized successfully');
+        } catch (initErr: unknown) {
+          const initErrMsg = initErr instanceof Error ? initErr.message : String(initErr);
+          console.log('Init error:', initErrMsg);
+          
+          // If initialized or already exists, continue to update
+          if (initErrMsg.includes('already been used') || initErrMsg.includes('0x0')) {
+            console.log('Copier vault already initialized, continuing to update');
+          } else if (isOldProgram || initErrMsg.includes('discriminator') || initErrMsg.includes('AccountNotInitialized')) {
+            // Only throw if both fetch AND init fail with program mismatch
+            throw new Error(
+              'This copier relationship was created with an old version of the Zephyr program. ' +
+              'Please re-copy this master vault to create a fresh relationship with the current program.'
+            );
+          } else {
+            // Other error - rethrow
+            throw initErr;
+          }
+        }
+      }
+
       const tx = await (program.methods
         .updateRiskParams(
           { maxLossPct: newParams.maxLossPct, maxTradeSizePct: newParams.maxTradeSizePct, maxDrawdownPct: newParams.maxDrawdownPct },
@@ -861,7 +943,14 @@ export const useVaultOperations = () => {
       return tx;
     } catch (err: unknown) {
       console.error('Update risk params failed:', err);
-      const friendlyError = parseSolanaError(err);
+      const errMsg = err instanceof Error ? err.message : String(err);
+      
+      // Provide helpful error message
+      let friendlyError = parseSolanaError(err);
+      if (errMsg.includes('discriminator')) {
+        friendlyError = 'This copier relationship was created with an old version of the program. Please re-copy the master vault.';
+      }
+      
       setError(friendlyError);
       throw new Error(friendlyError);
     } finally {

@@ -19,6 +19,8 @@ import { useRecentTrades } from '../../../../trades/useTrades'
 type TimeRange = 'ALL' | '24H' | '7D' | '30D'
 
 const DashboardView = () => {
+  const [now] = useState(() => Date.now())
+
   const { openVaultFlow } = useGeneralContext()
   const {
     leaders,
@@ -100,7 +102,7 @@ const DashboardView = () => {
         isFirstCaller: trade.isFirstCaller,
       };
     }) || []
-  }, [firstCallers]);
+  }, [firstCallers, now]);
 
   const formatTimeAgo = (ms: number): string => {
     const minutes = Math.floor(ms / (60 * 1000));
@@ -147,7 +149,7 @@ const DashboardView = () => {
         tokenOut: trade.tokenOut
       };
     });
-  }, [recentTrades]);
+  }, [recentTrades, now]);
 
   const filteredCalls = firstCall
     .filter(item => {
@@ -646,7 +648,7 @@ const DashboardView = () => {
           <>
             {/* BACKDROP */}
             <motion.div
-              className='fixed inset-0 z-[90] bg-black/60'
+              className='fixed inset-0 z-[90] bg-black/80 backdrop-blur-sm'
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}

@@ -195,7 +195,7 @@ export default function EditRiskModal () {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setEditRiskvisible(false)}
-              className='fixed inset-0 bg-black/70 z-[90]'
+              className='fixed inset-0 bg-black/80 backdrop-blur-sm z-[90]'
             />
 
             {/* Modal */}

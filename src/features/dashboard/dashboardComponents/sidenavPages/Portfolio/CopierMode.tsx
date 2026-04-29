@@ -86,7 +86,7 @@ export const MirroringVaults = ({
                   <button
                     onClick={e => {
                       e.stopPropagation()
-                      setSelectedVaultPda(strategy.fullAddress)
+                      setSelectedVaultPda(strategy.masterVaultAddress || strategy.fullAddress)
                       setEditRiskvisible(true)
                     }}
                     className='absolute top-2 right-3 border border-[#1f4d47] rounded-lg px-2 py-[5px] cursor-pointer hover:bg-[#1f4d47]/10 hover:border-[#1f4d47]/70 transition-colors bg-transparent flex items-center gap-1.5 text-[#009883] text-[10px] font-bold tracking-[0.1em]'
@@ -260,12 +260,12 @@ export const MirroringVaults = ({
                     </button>
                   </div>
                 </div>
-                <EditRiskModal />
               </div>
             )
           })
         )}
       </div>
+      <EditRiskModal />
     </div>
   )
 }

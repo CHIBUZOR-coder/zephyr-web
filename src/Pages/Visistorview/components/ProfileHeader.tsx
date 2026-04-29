@@ -3,10 +3,7 @@ import { FaCheck } from 'react-icons/fa'
 import type { ReactNode } from 'react'
 import type { Trader } from '../../../features/dashboard/dashboardComponents/sidenavPages/Leaderboard/leaderboar.types'
 import { useGeneralContext } from '../../../Context/GeneralContext'
-
 import { getTier, isCommunityTier } from '../../../utils/Gettiter'
-
-
 import {  RiTwitterXFill } from 'react-icons/ri'
 
 type ProfileHeaderProps = {

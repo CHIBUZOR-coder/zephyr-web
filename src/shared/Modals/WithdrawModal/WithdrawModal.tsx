@@ -17,6 +17,7 @@ import { useAuthLogin } from '../../../features/auth/useAuthLogin'
 import { useWallet } from '@solana/wallet-adapter-react'
 import { Connection, PublicKey, LAMPORTS_PER_SOL } from '@solana/web3.js'
 import { endpoint } from '../../../core/config/solanaWallet'
+import { useNotificationStore } from '../Notification/useNotificationStore'
 
 type Props = {
   open: boolean
@@ -284,12 +285,22 @@ export const WithdrawModal = ({ open, onClose }: Props) => {
   //   // or
   //   showToast('Transaction Failed', 'Insufficient balance.', 'error')
   // }
+  const addNotification = useNotificationStore(s => s.addNotification)
 
   useEffect(() => {
     if (status === 'success' || successMessage) {
       showToast(
         'Withdrawal Successful',
         'Transaction confirmed on Solana Mainnet.'
+      )
+
+      addNotification(
+        'Withdrawal Successful',
+        `${amount} SOL withdrawn from your ${
+          isCopier ? 'Copier' : 'Master'
+        } vault.`,
+        'success',
+        'withdrawal' // 👈
       )
     }
 

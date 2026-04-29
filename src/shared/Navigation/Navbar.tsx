@@ -15,7 +15,8 @@ import { useWalletBalance } from '../../features/wallet/useWalletQuery'
 import { useSolPrice } from '../../core/hooks/usePrice'
 import { useAuthStore } from '../../features/auth/auth.store'
 import { Link } from 'react-router-dom'
-import useRiskStore from '../../core/store/RiskStoreState'
+
+import { useNotificationStore } from '../Modals/Notification/useNotificationStore'
 
 const Navbar = () => {
   const [walletMenuOpen, setWalletMenuOpen] = useState(false)
@@ -24,11 +25,10 @@ const Navbar = () => {
     setOpenMenu,
     visible,
     setMasterTraderOpen,
-    hasMaterVault,
-
+    hasMaterVault
   } = useGeneralContext()
 
-  const { markedAsRead, setMarkedAsRead } = useRiskStore()
+ 
 
   const { masterMode, toggleMasterMode } = useTradingModeStore()
   const { publicKey, connected } = useWallet()
@@ -41,6 +41,7 @@ const Navbar = () => {
   const balance = balanceData?.balance ?? null
   const { data: solPriceData } = useSolPrice()
   const solPrice = solPriceData?.price ?? 0
+  const unread = useNotificationStore(s => s.unreadCount())
 
   useEffect(() => {
     if (!publicKey) return
@@ -221,16 +222,13 @@ const Navbar = () => {
                     )}
                   </Link>
                   <span
-                    onClick={() => {
-                      setOpenNotifications(true)
-                      setMarkedAsRead(true)
-                    }}
+                    onClick={() => setOpenNotifications(true)}
                     style={{
                       backgroundImage: `url("/images/bell.svg")`
                     }}
-                    className='inline-block relative bg-center bg-cover w-[20px] h-[20px]'
+                    className='inline-block relative bg-center bg-cover w-[20px] h-[20px] cursor-pointer'
                   >
-                    {markedAsRead ? null : (
+                    {unread > 0 && (
                       <span className='absolute right-[1.3px] top-1 bg-[#FB2C36] h-[6px] w-[6px] rounded-full'></span>
                     )}
                   </span>

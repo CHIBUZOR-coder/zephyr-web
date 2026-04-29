@@ -5,6 +5,18 @@ import type { ReactNode } from 'react'
 import type { Trader } from '../features/dashboard/dashboardComponents/sidenavPages/Leaderboard/leaderboar.types'
 import type { Trader as TraderData } from '../features/home/traders.types'
 
+
+
+// NEW: Notifications are persistent (not auto-dismissed)
+export interface NotificationItem {
+  id: number
+  title: string // e.g. "Stop Loss Triggered"
+  message: string // e.g. "Your $JUP position hit stop loss at -5%"
+  type: ToastType // reuse 'success' | 'error' | 'info'
+  timestamp: Date
+  read: boolean // 👈 key difference from Toast
+}
+
 // Union of both Trader types
 export type SelectedTrader = Trader | TraderData
 export type ToastType = 'success' | 'error' | 'info'

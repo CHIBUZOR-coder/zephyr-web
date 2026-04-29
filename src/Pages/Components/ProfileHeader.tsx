@@ -22,7 +22,7 @@ export default function ProfileHeader () {
   const { hasMaterVault, setMasterTraderOpen, setClaimFeesOpen, setSelectedVaultPda } = useGeneralContext()
 
   const walletAddress = publicKey?.toBase58() || ''
-  const { data: userProfile } = useUserProfile(walletAddress)
+  const { data: userProfile, isLoading: profileLoading } = useUserProfile(walletAddress)
   const { data: tierState } = useMasterTierState(walletAddress)
   useEffect(()=>{
     console.log("User Profile:", userProfile)
@@ -84,7 +84,9 @@ export default function ProfileHeader () {
           <div className='flex items-center gap-3'>
             <div>
               <h2 className=' text-[24px] font-[900] leading-[32px]'>
-                {userProfile?.displayName || addressSnippet}
+                {profileLoading ? (
+                  <span className='text-gray-400'>Loading...</span>
+                ) : userProfile?.displayName || addressSnippet}
               </h2>
             </div>
 
@@ -120,7 +122,7 @@ export default function ProfileHeader () {
                 Joined
               </p>
               <p className='text-white text-[14px] font-[700] leading-[20px]'>
-                {joinedDate}
+                {profileLoading ? '...' : joinedDate}
               </p>
             </div>
             <div className='prion border-r-[1px] border-r-[#33564a] pr-4'>
@@ -128,7 +130,7 @@ export default function ProfileHeader () {
                 Last Active
               </p>
               <p className='text-[#22C55E] text-[14px] font-[700] leading-[20px]'>
-                {userProfile?.updatedAt
+                {profileLoading ? '...' : userProfile?.updatedAt
                   ? getTimeAgo(userProfile.updatedAt)
                   : 'JUST NOW'}
               </p>
