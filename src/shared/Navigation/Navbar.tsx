@@ -28,8 +28,6 @@ const Navbar = () => {
     hasMaterVault
   } = useGeneralContext()
 
- 
-
   const { masterMode, toggleMasterMode } = useTradingModeStore()
   const { publicKey, connected } = useWallet()
   const { setWallet } = useWalletStore()
@@ -382,7 +380,9 @@ const Navbar = () => {
                     }}
                     className='inline-block cursor-pointer relative bg-center bg-cover w-[20px] h-[20px]'
                   >
-                    <span className='absolute right-[1.3px] top-1 bg-[#FB2C36] h-[6px] w-[6px] rounded-full'></span>
+                    {unread > 0 && (
+                      <span className='absolute right-[1.3px] top-1 bg-[#FB2C36] h-[6px] w-[6px] rounded-full'></span>
+                    )}
                   </span>
                 </>
               )}
