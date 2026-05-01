@@ -36,12 +36,15 @@ export const CustomWalletModal = ({ open, onClose }: Props) => {
     )
   })
 
-  // AUTO-CLOSE when authenticated
+  // ── CHANGED: also watch loginMutation.isSuccess
+  // On mobile, Phantom/Solflare background the app during signing.
+  // When the app returns, onSuccess fires but onClose() ref is stale.
+  // Watching isSuccess as reactive state catches it on re-render.
   useEffect(() => {
-    if (authenticated && open) {
+    if ((authenticated || loginMutation.isSuccess) && open) {
       onClose()
     }
-  }, [authenticated, open, onClose])
+  }, [authenticated, loginMutation.isSuccess, open, onClose])
 
   const hasAttemptedAuth = authenticated
 
@@ -84,10 +87,7 @@ export const CustomWalletModal = ({ open, onClose }: Props) => {
     select(adapterName)
   }
 
-  // ── CHANGED: isMobile guard added so this effect is skipped on mobile
-  // On desktop:  autoConnect handles reconnection, this effect is not needed
-  // On mobile:   autoConnect + this effect were both firing, causing a race
-  //              condition on Phantom that showed a connection error
+  // Only force-connect on desktop — on mobile autoConnect handles it
   useEffect(() => {
     if (
       !isMobile &&
@@ -190,7 +190,7 @@ export const CustomWalletModal = ({ open, onClose }: Props) => {
                   </p>
                   <div className='flex gap-2 mt-1'>
                     
-                     <Link to='https://phantom.app/download'
+                    <Link  to='https://phantom.app/download'
                       target='_blank'
                       rel='noreferrer'
                       className='text-[10px] text-[#00f5c4] border border-[#00f5c4] rounded px-3 py-1 hover:bg-[#00f5c4]/10 transition'
