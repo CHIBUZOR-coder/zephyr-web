@@ -113,7 +113,7 @@ const Leaderboard: React.FC = () => {
   }
 
   return (
-    <div className='min-h-screen bg-[#031b1f] text-white p-6 lg:p-10 mb-32 lg:mb-0 '>
+    <div className='min-h-screen bg-[#031b1f] text-white p-6 lg:p-10 mb-60 lg:mb-0 '>
       {/* TITLE */}
       <div className='mb-8'>
         <h1 className='text-xl font-bold flex items-center gap-2'>

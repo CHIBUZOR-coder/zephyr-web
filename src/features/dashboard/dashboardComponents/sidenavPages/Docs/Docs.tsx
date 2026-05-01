@@ -12,7 +12,7 @@ import NeedHelpSection from './components/NeedHelpSection'
 export default function Docs () {
 
   return (
-    <div className='bg-docsBg min-h-screen text-white font-inter px-6 py-10 mb-14 lg:mb-0'>
+    <div className='bg-docsBg min-h-screen text-white font-inter px-6 py-10 mb-60 lg:mb-0'>
       <div className='max-w-7xl mx-auto space-y-8'>
         <DocsHeader />
 

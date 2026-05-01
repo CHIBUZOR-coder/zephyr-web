@@ -41,7 +41,7 @@ export default function SettingsPage () {
   }
 
   return (
-    <div className='flex min-h-screen bg-bgMain text-textMain items-start'>
+    <div className='flex min-h-screen bg-bgMain text-textMain items-start '>
       <Sidebar open={open} setOpen={setOpen} />
 
       <div className='flex-1'>

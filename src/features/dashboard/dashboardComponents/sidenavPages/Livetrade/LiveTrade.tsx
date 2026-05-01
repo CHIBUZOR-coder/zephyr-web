@@ -230,7 +230,7 @@ const LiveTrade = () => {
   //     : liveTraders.filter(trader => trader.name === '@sol_whale') // simulate "my positions"
   // const { masterMode, callTrade } = useTradingModeStore()
   return (
-    <div className='min-h-screen text-white  mb-28 lg:mb-0'>
+    <div className='min-h-screen text-white  mb-48 lg:mb-0'>
       {/* Header */}
       <div className='flex justify-between items-center mb-8 bg-[#091114] p-8 flex-col lg:flex-row gap-5'>
         <div>

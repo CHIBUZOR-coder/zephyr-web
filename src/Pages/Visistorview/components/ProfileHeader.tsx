@@ -1,10 +1,12 @@
-import { FaCopy, FaUserPlus, FaShareAlt, FaTelegramPlane } from 'react-icons/fa'
+import { FaCopy, FaUserPlus, FaShareAlt, FaTelegramPlane, FaTelegram } from 'react-icons/fa'
 import { FaCheck } from 'react-icons/fa'
 import type { ReactNode } from 'react'
 import type { Trader } from '../../../features/dashboard/dashboardComponents/sidenavPages/Leaderboard/leaderboar.types'
 import { useGeneralContext } from '../../../Context/GeneralContext'
 import { getTier, isCommunityTier } from '../../../utils/Gettiter'
-import {  RiTwitterXFill } from 'react-icons/ri'
+import { RiTwitterXFill } from 'react-icons/ri'
+import { Link } from 'react-router-dom'
+import { FaXTwitter } from 'react-icons/fa6'
 
 type ProfileHeaderProps = {
   trader: Trader
@@ -100,25 +102,50 @@ export default function ProfileHeader ({ trader }: ProfileHeaderProps) {
             </div>
 
             <div>
-              <p className='text-gray-500 uppercase tracking-wider'>LAST ACTIVE</p>
+              <p className='text-gray-500 uppercase tracking-wider'>
+                LAST ACTIVE
+              </p>
               <p className='text-green-400 font-medium'>
                 {formatRelativeTime(trader.updatedAt)}
               </p>
             </div>
           </div>
-          
+
           <div className='flex items-center gap-6 mt-4 pt-4 border-t border-white/5'>
             <div className='flex flex-col'>
-                <p className='text-[10px] text-gray-500 uppercase tracking-widest font-bold'>AUM</p>
-                <p className='text-white text-base font-black'>{trader.aum}</p>
+              <p className='text-[10px] text-gray-500 uppercase tracking-widest font-bold'>
+                AUM
+              </p>
+              <p className='text-white text-base font-black'>{trader.aum}</p>
             </div>
             <div className='flex flex-col'>
-                <p className='text-[10px] text-gray-500 uppercase tracking-widest font-bold'>Volume</p>
-                <p className='text-white text-base font-black'>{trader.volume}</p>
+              <p className='text-[10px] text-gray-500 uppercase tracking-widest font-bold'>
+                Volume
+              </p>
+              <p className='text-white text-base font-black'>{trader.volume}</p>
             </div>
             <div className='flex flex-col'>
-                <p className='text-[10px] text-gray-500 uppercase tracking-widest font-bold'>Copiers</p>
-                <p className='text-white text-base font-black'>{trader.followsDisplay}</p>
+              <p className='text-[10px] text-gray-500 uppercase tracking-widest font-bold'>
+                Copiers
+              </p>
+              <p className='text-white text-base font-black'>
+                {trader.followsDisplay}
+              </p>
+            </div>
+            
+            <div className='flex items-center gap-2'>
+              <Link
+                to={''}
+                className='rounded-full h-8 w-8 flex justify-center items-center p-2 bg-blue-300 text-white'
+              >
+                <FaTelegram className='h-6 w-6' />
+              </Link>
+              <Link
+                to={''}
+                className='rounded-full h-9 w-9 flex justify-center items-center p-2 bg-black text-white'
+              >
+                <FaXTwitter className='h-5 w-5' />
+              </Link>
             </div>
           </div>
           <div className='flex items-center gap-2'>

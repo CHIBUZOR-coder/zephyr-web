@@ -10,23 +10,33 @@ import { getTimeAgo } from '../../utils/dateHelpers'
 import { Link } from 'react-router-dom'
 import { TierBadge } from './TierBadge'
 import { fmtCompactCurrency } from '../../utils/currencyHelpers'
+import { FaXTwitter } from 'react-icons/fa6'
+import { FaTelegram } from 'react-icons/fa'
 
-function getDefaultAvatar(walletAddress: string): string {
-  return `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(walletAddress)}`
+function getDefaultAvatar (walletAddress: string): string {
+  return `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(
+    walletAddress
+  )}`
 }
 
 export default function ProfileHeader () {
   const { masterMode, toggleMasterMode } = useTradingModeStore()
   const { publicKey } = useWallet()
   const { masterVault, metrics } = useUserVaults()
-  const { hasMaterVault, setMasterTraderOpen, setClaimFeesOpen, setSelectedVaultPda } = useGeneralContext()
+  const {
+    hasMaterVault,
+    setMasterTraderOpen,
+    setClaimFeesOpen,
+    setSelectedVaultPda
+  } = useGeneralContext()
 
   const walletAddress = publicKey?.toBase58() || ''
-  const { data: userProfile, isLoading: profileLoading } = useUserProfile(walletAddress)
+  const { data: userProfile, isLoading: profileLoading } =
+    useUserProfile(walletAddress)
   const { data: tierState } = useMasterTierState(walletAddress)
-  useEffect(()=>{
-    console.log("User Profile:", userProfile)
-  },[walletAddress, userProfile])
+  useEffect(() => {
+    console.log('User Profile:', userProfile)
+  }, [walletAddress, userProfile])
 
   const masterVaultAddress = masterVault?.vaultPda || ''
 
@@ -86,7 +96,9 @@ export default function ProfileHeader () {
               <h2 className=' text-[24px] font-[900] leading-[32px]'>
                 {profileLoading ? (
                   <span className='text-gray-400'>Loading...</span>
-                ) : userProfile?.displayName || addressSnippet}
+                ) : (
+                  userProfile?.displayName || addressSnippet
+                )}
               </h2>
             </div>
 
@@ -130,7 +142,9 @@ export default function ProfileHeader () {
                 Last Active
               </p>
               <p className='text-[#22C55E] text-[14px] font-[700] leading-[20px]'>
-                {profileLoading ? '...' : userProfile?.updatedAt
+                {profileLoading
+                  ? '...'
+                  : userProfile?.updatedAt
                   ? getTimeAgo(userProfile.updatedAt)
                   : 'JUST NOW'}
               </p>
@@ -138,19 +152,39 @@ export default function ProfileHeader () {
           </div>
 
           {masterMode && metrics && (
-             <div className='flex items-center gap-6 mt-2 pt-4 border-t border-[#33564a]'>
-                <div className='flex flex-col'>
-                    <p className='text-[10px] text-[#50706c] uppercase tracking-widest font-bold'>AUM</p>
-                    <p className='text-white text-lg font-black'>{fmtCompactCurrency(metrics.totalAumUsd)}</p>
-                </div>
-                <div className='flex flex-col'>
-                    <p className='text-[10px] text-[#50706c] uppercase tracking-widest font-bold'>Volume</p>
-                    <p className='text-white text-lg font-black'>{fmtCompactCurrency(metrics.totalVolumeUsd)}</p>
-                </div>
-                <div className='flex flex-col'>
-                    <p className='text-[10px] text-[#50706c] uppercase tracking-widest font-bold'>Copiers</p>
-                    <p className='text-white text-lg font-black'>{metrics.totalCopiers}</p>
-                </div>
+            <div className='flex items-center gap-6 mt-2 pt-4 border-t border-[#33564a]'>
+              <div className='flex flex-col'>
+                <p className='text-[10px] text-[#50706c] uppercase tracking-widest font-bold'>
+                  AUM
+                </p>
+                <p className='text-white text-lg font-black'>
+                  {fmtCompactCurrency(metrics.totalAumUsd)}
+                </p>
+              </div>
+              <div className='flex flex-col'>
+                <p className='text-[10px] text-[#50706c] uppercase tracking-widest font-bold'>
+                  Volume
+                </p>
+                <p className='text-white text-lg font-black'>
+                  {fmtCompactCurrency(metrics.totalVolumeUsd)}
+                </p>
+              </div>
+              <div className='flex flex-col'>
+                <p className='text-[10px] text-[#50706c] uppercase tracking-widest font-bold'>
+                  Copiers
+                </p>
+                <p className='text-white text-lg font-black'>
+                  {metrics.totalCopiers}
+                </p>
+              </div>
+              <div className='flex items-center gap-2'>
+                <Link to={""} className='rounded-full h-8 w-8 flex justify-center items-center p-2 bg-blue-300 text-white'>
+                  <FaTelegram className='h-6 w-6' />
+                </Link>
+                <Link to={""} className='rounded-full h-9 w-9 flex justify-center items-center p-2 bg-black text-white'>
+                  <FaXTwitter className='h-5 w-5' />
+                </Link>
+              </div>
             </div>
           )}
         </div>
@@ -185,7 +219,10 @@ export default function ProfileHeader () {
           <span>{masterMode ? 'SWITCH TO COPIER' : 'SWITCH TO MASTER'}</span>
         </button>
 
-        <Link to={"/portfolio"} className='btns px-4 py-2 rounded-lg bg-profile_btn border border-[#23483b] text-sm flex items-center gap-2'>
+        <Link
+          to={'/portfolio'}
+          className='btns px-4 py-2 rounded-lg bg-profile_btn border border-[#23483b] text-sm flex items-center gap-2'
+        >
           <span
             style={{ backgroundImage: `url("/images/activity.svg")` }}
             className='bg-center bg-cover h-[16px] w-[16px] inline-block cursor-pointer '
@@ -193,7 +230,7 @@ export default function ProfileHeader () {
           <span>VIEW PORTFOLIO</span>
         </Link>
         {masterMode && (
-          <button 
+          <button
             onClick={() => {
               if (masterVault?.vaultPda) {
                 setSelectedVaultPda(masterVault.vaultPda)

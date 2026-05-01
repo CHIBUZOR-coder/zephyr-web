@@ -76,7 +76,7 @@ export default function Support () {
   const [open, setOpen] = useState<number | null>(null)
 
   return (
-    <div className='bg-supportBg min-h-screen text-supportText font-inter px-6 pt-12 pb-40 lg:pb-0'>
+    <div className='bg-supportBg min-h-screen text-supportText font-inter px-6 pt-12 mb-60 lg:mb-0'>
       <div className='max-w-5xl mx-auto'>
         {/* Header */}
         <h1 className='text-[30px] font-[900] leading-[72px] uppercase text-white mb-2'>

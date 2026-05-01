@@ -169,7 +169,7 @@ const DashboardView = () => {
     .sort((a, b) => (sortDir === 'desc' ? b.num - a.num : a.num - b.num))
 
   return (
-    <div className=' w-full flex flex-col lg:flex-row  justify-center p-5 gap-5 mb-10 lg:mb-0  '>
+    <div className=' w-full flex flex-col lg:flex-row  justify-center p-5 gap-5 mb-28 lg:mb-0  '>
       <div className=' w-full  lg:w-[60%] '>
         {/* Market overview */}
         <section className='w-full'>

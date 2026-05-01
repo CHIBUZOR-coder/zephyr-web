@@ -390,7 +390,7 @@ export default function Portfolio () {
   }
 
   return (
-    <div className='min-h-screen pb-32 lg:pb-0 '>
+    <div className='min-h-screen mb-48 lg:mb-0 '>
       {/* ── Header ── */}
       <header className='flex  flex-col lg:flex-row bg-[#091114] justify-between items-center px-2 lg:px-10 py-7 border-b border-[#111d27] gap-4 lg:gap-0'>
         {/* Left: title */}
