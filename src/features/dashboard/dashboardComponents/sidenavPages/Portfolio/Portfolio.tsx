@@ -541,7 +541,10 @@ export default function Portfolio () {
           </>
         ) : (
           <AllVaultsActivity
-          vaultPdas={masterMode ? (masterVault ? [masterVault.vaultPda] : []) : (copierVaults?.map(v => v.vaultPda) ?? [])}
+          vaultPdas={[
+            ...(masterVault ? [masterVault.vaultPda] : []),
+            ...(copierVaults?.map(v => v.vaultPda) ?? [])
+          ]}
           />
         )}
         

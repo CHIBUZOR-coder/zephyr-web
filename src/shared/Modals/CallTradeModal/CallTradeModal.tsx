@@ -30,7 +30,7 @@ const CallTradeModal: FC<Props> = ({ open, onClose }) => {
   const [slippage, setSlippage] = useState('0.5%')
   const [showImpact, setShowImpact] = useState(false)
 
-  const [amount, setAmount] = useState('10')
+  const [amount, setAmount] = useState('')
   const [tradeType, setTradeType] = useState<'Buy' | 'Sell'>('Buy')
 
   const [manualBootstrap, setManualBootstrap] = useState(false)
@@ -181,7 +181,7 @@ const CallTradeModal: FC<Props> = ({ open, onClose }) => {
       setStatus('idle')
       setLocalError(null)
       setManualBootstrap(false)
-      setAmount('0.5')
+      setAmount('')
       setTradeType('Buy')
       setTokenSymbol(null)
       setTokenQuote('USDC')

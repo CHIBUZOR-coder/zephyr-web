@@ -272,7 +272,7 @@ const NotificationPanel: FC<Props> = ({ isOpen, onClose }) => {
                       </span>
                       {activity.signature && (
                         <a
-                          href={`https://explorer.solana.com/tx/${activity.signature}`}
+                          href={`https://solscan.io/tx/${activity.signature}?cluster=devnet`}
                           target="_blank"
                           rel="noopener noreferrer"
                           onClick={(e) => e.stopPropagation()}

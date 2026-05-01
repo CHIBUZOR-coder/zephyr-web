@@ -9,6 +9,7 @@ export type VaultActivityType =
   | "TRADE_EXECUTED"
   | "TRADE_MIRRORED"
   | "FEE_COLLECTED"
+  | "FEE_CLAIMED"
   | "STATUS_CHANGED";
 
 export interface VaultActivity {
@@ -150,6 +151,7 @@ function formatEventType(type: VaultActivityType): string {
     TRADE_EXECUTED: "TRADE",
     TRADE_MIRRORED: "MIRRORED TRADE",
     FEE_COLLECTED: "FEE COLLECTED",
+    FEE_CLAIMED: "FEE CLAIMED",
     STATUS_CHANGED: "STATUS CHANGE",
   };
   return typeMap[type] ?? type;
@@ -180,10 +182,12 @@ function extractTokenAndAmount(
       const formattedAmount = formatAmount(copierAmount, assetMint);
       return { token: formatTokenSymbol(assetMint), amount: `+${formattedAmount}` };
     }
-    case "FEE_COLLECTED": {
-      const totalFee = (data?.totalFee as string) ?? (data?.traderFee as string) ?? "0";
+    case "FEE_COLLECTED":
+    case "FEE_CLAIMED": {
+      const totalFee = (data?.totalFee as string) ?? (data?.traderFee as string) ?? (data?.amount as string) ?? "0";
       const formattedAmount = formatAmount(totalFee);
-      return { token: "SOL", amount: `+${formattedAmount}` };
+      const prefix = type === "FEE_CLAIMED" ? "-" : "+";
+      return { token: "SOL", amount: `${prefix}${formattedAmount}` };
     }
     case "VAULT_CREATED":
       return { token: "N/A", amount: "N/A" };
@@ -196,7 +200,9 @@ function extractTokenAndAmount(
 
 function formatAmount(raw: string, mint?: string): string {
   try {
-    const num = BigInt(raw);
+    const num = /^[0-9a-fA-F]+$/.test(raw) && /[a-fA-F]/.test(raw)
+      ? BigInt(`0x${raw}`)
+      : BigInt(raw);
     if (num === 0n) return "0.00";
     
     // Simple decimal handling: SOL = 9, USDC = 6, others default to 9

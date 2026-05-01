@@ -80,7 +80,7 @@ export const VaultActivityList = ({ vaultPda, vaultPdas }: { vaultPda?: string, 
               <div className="flex items-center">
                 {formatted.signature !== 'N/A' ? (
                   <a
-                    href={`https://explorer.solana.com/tx/${formatted.signature}`}
+                    href={`https://solscan.io/tx/${formatted.signature}?cluster=devnet`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-xs text-[#1ED2AF] hover:underline flex items-center gap-1"

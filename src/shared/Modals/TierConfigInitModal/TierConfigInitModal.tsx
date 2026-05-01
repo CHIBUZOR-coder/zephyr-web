@@ -165,7 +165,7 @@ export const TierConfigInitModal: React.FC<TierConfigInitModalProps> = ({
                   
                   {txSignature && (
                     <a
-                      href={`https://explorer.solana.com/tx/${txSignature}?cluster=devnet`}
+                      href={`https://solscan.io/tx/${txSignature}?cluster=devnet`}
                       target='_blank'
                       rel='noopener noreferrer'
                       className='inline-flex items-center gap-2 text-[11px] text-[#FE9A00] hover:underline mt-2 font-[700]'

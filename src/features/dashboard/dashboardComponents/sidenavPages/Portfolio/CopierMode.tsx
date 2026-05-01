@@ -4,7 +4,6 @@ import { useGeneralContext } from '../../../../../Context/GeneralContext'
 import { fmtSol } from '../../../../../utils/currencyHelpers'
 import type { Strategy } from './portfolio.types'
 import EditRiskModal from '../../../../../shared/Modals/EditRiskModal/EditRiskModal'
-import { VaultActivityList } from './VaultActivity'
 
 interface MirroringVaultsProps {
   strategies: Strategy[]
@@ -261,14 +260,10 @@ export const MirroringVaults = ({
                     </button>
                   </div>
                 </div>
-                {/* Vault Activity Section */}
-                <div className='border-t border-[#162030] mt-4 pt-4'>
-                    <p className='text-[10px] font-[900] uppercase tracking-widest text-[#546462] mb-4'>Vault Activity</p>
-                    <VaultActivityList vaultPda={strategy.fullAddress} />
-                </div>
               </div>
             )
           })
+
         )}
       </div>
       <EditRiskModal />
