@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useWallet } from '@solana/wallet-adapter-react'
 import { useAuthLogin } from '../../../features/auth/useAuthLogin'
@@ -26,6 +26,10 @@ export const CustomWalletModal = ({ open, onClose }: Props) => {
   const loginMutation = useAuthLogin()
   const { authenticated } = useAuthStore()
 
+  // Stable ref so callbacks never go stale after mobile backgrounding
+  const onCloseRef = useRef(onClose)
+  useEffect(() => { onCloseRef.current = onClose }, [onClose])
+
   const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)
 
   const detectedWallets = wallets.filter(w => {
@@ -36,15 +40,31 @@ export const CustomWalletModal = ({ open, onClose }: Props) => {
     )
   })
 
-  // ── CHANGED: also watch loginMutation.isSuccess
-  // On mobile, Phantom/Solflare background the app during signing.
-  // When the app returns, onSuccess fires but onClose() ref is stale.
-  // Watching isSuccess as reactive state catches it on re-render.
+  // ── Desktop: normal reactive close
+  // Works fine on desktop because the app never gets backgrounded
   useEffect(() => {
-    if ((authenticated || loginMutation.isSuccess) && open) {
-      onClose()
+    if (!isMobile && authenticated && open) {
+      onCloseRef.current()
     }
-  }, [authenticated, loginMutation.isSuccess, open, onClose])
+  }, [authenticated, open, isMobile])
+
+  // ── Mobile only: poll Zustand store directly every 500ms
+  // React effects don't reliably re-run after the app returns from
+  // background (Phantom/Solflare signing screen), so we bypass React
+  // and read the store directly until auth is confirmed
+  useEffect(() => {
+    if (!isMobile || !open) return
+
+    const interval = setInterval(() => {
+      const { authenticated } = useAuthStore.getState()
+      if (authenticated) {
+        clearInterval(interval)
+        onCloseRef.current()
+      }
+    }, 500)
+
+    return () => clearInterval(interval)
+  }, [open, isMobile])
 
   const hasAttemptedAuth = authenticated
 
@@ -60,12 +80,9 @@ export const CustomWalletModal = ({ open, onClose }: Props) => {
       !hasAttemptedAuth
     ) {
       loginMutation.mutate(
+        { publicKey: publicKey.toBase58(), signMessage },
         {
-          publicKey: publicKey.toBase58(),
-          signMessage
-        },
-        {
-          onSuccess: () => onClose(),
+          onSuccess: () => onCloseRef.current(),
           onError: error => console.error('Authentication failed:', error)
         }
       )
@@ -76,7 +93,6 @@ export const CustomWalletModal = ({ open, onClose }: Props) => {
     signMessage,
     authenticated,
     loginMutation,
-    onClose,
     connecting,
     hasAttemptedAuth
   ])
@@ -87,10 +103,11 @@ export const CustomWalletModal = ({ open, onClose }: Props) => {
     select(adapterName)
   }
 
-  // Only force-connect on desktop — on mobile autoConnect handles it
+  // Force connect on mobile — autoConnect is off so we trigger manually
+  // Desktop reconnection is handled by useDesktopReconnect in App.tsx
   useEffect(() => {
     if (
-      !isMobile &&
+      isMobile &&
       wallet &&
       !connected &&
       !connecting &&
@@ -190,7 +207,7 @@ export const CustomWalletModal = ({ open, onClose }: Props) => {
                   </p>
                   <div className='flex gap-2 mt-1'>
                     
-                    <Link  to='https://phantom.app/download'
+                     <Link  to='https://phantom.app/download'
                       target='_blank'
                       rel='noreferrer'
                       className='text-[10px] text-[#00f5c4] border border-[#00f5c4] rounded px-3 py-1 hover:bg-[#00f5c4]/10 transition'
@@ -198,7 +215,7 @@ export const CustomWalletModal = ({ open, onClose }: Props) => {
                       Get Phantom
                     </Link>
                     
-                     <Link to='https://solflare.com/download'
+                      <Link to='https://solflare.com/download'
                       target='_blank'
                       rel='noreferrer'
                       className='text-[10px] text-[#00f5c4] border border-[#00f5c4] rounded px-3 py-1 hover:bg-[#00f5c4]/10 transition'

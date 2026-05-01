@@ -42,6 +42,7 @@ import Onboarding from './shared/Modals/OnboardingModal/Onboarding'
 import { FaInstagram, FaTelegram } from 'react-icons/fa'
 import { FaXTwitter } from 'react-icons/fa6'
 import { Toastify } from './shared/Toast/Toastify'
+import { useDesktopReconnect } from './features/wallet/useDesktopReconnect'
 
 function App () {
 // useEffect(() => {
@@ -51,6 +52,8 @@ function App () {
 
   const { connected } = useWallet()
   useWalletAuthSync()
+  useDesktopReconnect()
+
   useAuthRefresh() // ← Replaces useRestoreAuth + useAuthSession
   useWalletPersistSync()
   useRealtimeUpdates() // ← Listen for real-time vault updates
