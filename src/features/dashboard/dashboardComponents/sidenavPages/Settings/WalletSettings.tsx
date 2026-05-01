@@ -52,7 +52,7 @@ const WalletSettings: React.FC = () => {
             py-10
             '
           >
-            <div className='w-full bg-pink-500 flex flex-col gap-6'>
+            <div className='w-full  flex flex-col gap-6'>
               <div>
                 <h1 className='text-xl font-semibold tracking-wide'>
                   CONNECTED WALLETS

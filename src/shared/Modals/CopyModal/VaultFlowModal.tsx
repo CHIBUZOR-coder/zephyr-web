@@ -10,6 +10,7 @@ import { StepOne } from './Steps/Stepone/StepOne'
 import { StepTwo } from './Steps/StepTwo'
 import { StepThree } from './Steps/StepThree'
 import { StepFour } from './Steps/StepFour'
+import { useDefaultRiskStore } from '../../../features/dashboard/dashboardComponents/sidenavPages/Settings/stores/defaultRiskStore'
 
 const stepVariants = {
   initial: { opacity: 0, x: 40 },
@@ -22,12 +23,14 @@ const VaultFlowModal = () => {
     useGeneralContext()
   const navigate = useNavigate()
 
+  const { maxDrawdownSol, maxTradeSizeSol, slippagePct, takeProfitPct, maxLossSol } = useDefaultRiskStore()
+
   const [form, setForm] = useState({
-    maxVaultDrawdown: '20',
-    maxTradeSize: '0.5',
-    maxEntrySlippage: '0.5',
-    takeProfitTriggerBps: '',
-    stopLossTriggerBps: '',
+    maxVaultDrawdown: maxDrawdownSol || '20',
+    maxTradeSize: maxTradeSizeSol || '0.5',
+    maxEntrySlippage: (slippagePct || '0.5').replace('%', ''),
+    takeProfitTriggerBps: takeProfitPct || '',
+    stopLossTriggerBps: maxLossSol || '',
     depositAmount: '',
     vaultPda: ''
   })

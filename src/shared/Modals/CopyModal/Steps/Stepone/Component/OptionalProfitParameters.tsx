@@ -5,6 +5,7 @@ import { IoMdOptions } from 'react-icons/io'
 import type { Dispatch, SetStateAction } from 'react'
 
 import type { VaultFormData } from '../StepOne'
+import { useDefaultRiskStore } from '../../../../../../features/dashboard/dashboardComponents/sidenavPages/Settings/stores/defaultRiskStore'
 
 const dropdown = {
   hidden: { height: 0, opacity: 0 },
@@ -19,6 +20,7 @@ interface OptionalProfitParametersProps {
 
 export default function OptionalProfitParameters ({ form, setForm }: OptionalProfitParametersProps) {
   const [open, setOpen] = useState(false)
+  const { takeProfitPct, maxLossSol } = useDefaultRiskStore()
 
   const handleInputChange = (key: string, value: string) => {
     setForm({ ...form, [key]: value })
@@ -89,7 +91,7 @@ export default function OptionalProfitParameters ({ form, setForm }: OptionalPro
                 </div>
 
                 <input
-                  placeholder='e.g., 25'
+                  placeholder={takeProfitPct || 'e.g., 25'}
                   value={form.takeProfitTriggerBps}
                   onChange={(e) => handleInputChange('takeProfitTriggerBps', e.target.value)}
                   className='
@@ -124,7 +126,7 @@ export default function OptionalProfitParameters ({ form, setForm }: OptionalPro
                   </span>
                 </div>
                 <input
-                  placeholder='e.g., 1.0'
+                  placeholder={maxLossSol || 'e.g., 1.0'}
                   value={form.stopLossTriggerBps}
                   onChange={(e) => handleInputChange('stopLossTriggerBps', e.target.value)}
                   className='

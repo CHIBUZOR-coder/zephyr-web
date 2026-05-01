@@ -7,6 +7,7 @@ import { useEffect, useState, useMemo } from 'react'
 import { useVaultOperations } from '../../../features/master/useVaultOperations'
 import { useUserVaults } from '../../../features/master/useUserVaults'
 import { toast } from '../../../core/store/useToastStore'
+import { useDefaultRiskStore } from '../../../features/dashboard/dashboardComponents/sidenavPages/Settings/stores/defaultRiskStore'
 
 type RiskLevel = 'safe' | 'warning' | 'blocked'
 
@@ -45,6 +46,7 @@ export default function EditRiskModal () {
   const { editRiskvisible, setEditRiskvisible, selectedVaultPda } = useGeneralContext()
   const { updateCopierRiskParams } = useVaultOperations()
   const { copierVaults } = useUserVaults()
+  const { setFromSettings } = useDefaultRiskStore()
   
   const [loading, setLoading] = useState(false)
   
@@ -54,12 +56,15 @@ export default function EditRiskModal () {
     [copierVaults, selectedVaultPda]
   )
 
-  const [riskParams, setRiskParams] = useState({
-    maxTradeSizePct: '10',
-    maxLossPct: '5',
-    maxDrawdownPct: '15',
-    takeProfitPct: '20',
-    maxEntrySlippage: '0.5'
+  const [riskParams, setRiskParams] = useState(() => {
+    const saved = useDefaultRiskStore.getState()
+    return {
+      maxTradeSizePct: saved.maxTradeSizeSol,
+      maxLossPct: saved.maxLossSol,
+      maxDrawdownPct: saved.maxDrawdownSol,
+      takeProfitPct: saved.takeProfitPct,
+      maxEntrySlippage: saved.slippagePct.replace('%', ''),
+    }
   })
 
   // Update params when vault selection changes or data loads
@@ -174,6 +179,16 @@ export default function EditRiskModal () {
         maxTradeSizePct,
         maxDrawdownPct,
       })
+      
+      // Update global default placeholders
+      setFromSettings({
+        maxTradeSizeSol: riskParams.maxTradeSizePct,
+        maxLossSol: riskParams.maxLossPct,
+        maxDrawdownSol: riskParams.maxDrawdownPct,
+        takeProfitPct: riskParams.takeProfitPct,
+        slippagePct: riskParams.maxEntrySlippage,
+      })
+
       toast.success('Risk parameters updated successfully!')
       setEditRiskvisible(false)
     } catch (e) {

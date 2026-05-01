@@ -111,10 +111,10 @@ export function useLeaderboard(params: {
       if (!response?.success) throw new Error("Failed to fetch leaderboard");
       
       return {
-        traders: response?.data?.traders?.map(mapLeaderboardEntryToTrader),
-        total: response?.data?.total,
-        page: response?.data?.page,
-        limit: response?.data?.limit,
+        traders: (response.data.traders ?? []).map(mapLeaderboardEntryToTrader),
+        total: response.data.total,
+        page: response.data.page,
+        limit: response.data.limit,
       };
     },
     staleTime: 60000, // 60s

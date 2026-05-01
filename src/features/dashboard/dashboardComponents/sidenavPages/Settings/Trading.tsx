@@ -5,6 +5,7 @@ import { MdOutlineAutoGraph } from 'react-icons/md'
 import { useWallet } from '@solana/wallet-adapter-react'
 import { useVaultOperations } from '../../../../master/useVaultOperations'
 import { useUserVaults } from '../../../../master/useUserVaults'
+import { useDefaultRiskStore } from './stores/defaultRiskStore'
 import { toast } from '../../../../../core/store/useToastStore'
 
 type RiskLevel = 'safe' | 'warning' | 'blocked'
@@ -15,23 +16,29 @@ interface RiskAnalysis {
 }
 
 const Trading: React.FC = () => {
-  const [slippage, setSlippage] = useState('1.0%')
+  const [riskParams, setRiskParams] = useState(() => {
+    const saved = useDefaultRiskStore.getState()
+    return {
+      maxTradeSizeSol: saved.maxTradeSizeSol,
+      maxLossSol: saved.maxLossSol,
+      maxDrawdownSol: saved.maxDrawdownSol,
+      takeProfitPct: saved.takeProfitPct,
+    }
+  })
+
+  const [slippage, setSlippage] = useState(() => {
+    const saved = useDefaultRiskStore.getState().slippagePct
+    return saved ? (saved.includes('%') ? saved : `${saved}%`) : '0.5%'
+  })
   const [execution, setExecution] = useState('standard')
   const [saving, setSaving] = useState(false)
   const [masterVaultForCheck, setMasterVaultForCheck] = useState('')
 
-  const [riskParams, setRiskParams] = useState({
-    maxTradeSizePct: '10',
-    maxLossPct: '5',
-    maxDrawdownPct: '15',
-    takeProfitPct: '20'
-  })
-
   const analyzeRisk = (params: typeof riskParams, masterVault?: string): RiskAnalysis => {
     const reasons: string[] = []
-    let maxTradeSize = parseFloat(params.maxTradeSizePct.replace(/[^\d.]/g, '')) || 0
-    const maxLoss = parseFloat(params.maxLossPct.replace(/[^\d.]/g, '')) || 0
-    const maxDrawdown = parseFloat(params.maxDrawdownPct.replace(/[^\d.]/g, '')) || 0
+    const maxTradeSize = parseFloat(params.maxTradeSizeSol) || 0
+    const maxLoss = parseFloat(params.maxLossSol) || 0
+    const maxDrawdown = parseFloat(params.maxDrawdownSol) || 0
 
     const isInvalid = maxTradeSize === 0 && maxLoss === 0 && maxDrawdown === 0
     
@@ -42,12 +49,10 @@ const Trading: React.FC = () => {
       }
     }
 
-    // Validate maxTradeSize as SOL amount
     if (maxTradeSize < 0.01) {
       reasons.push(`Max trade size (${maxTradeSize} SOL) is too low`)
     } else if (maxTradeSize > 50) {
       reasons.push(`Max trade size capped at 50 SOL`)
-      maxTradeSize = 50
     }
 
     if (maxLoss < 1.0 && maxLoss > 0) {
@@ -66,7 +71,6 @@ const Trading: React.FC = () => {
       reasons.push(`Watching master vault: ${masterVault.slice(0, 8)}...${masterVault.slice(-4)}`)
     }
 
-    // Risk level based on absolute SOL amounts
     if (maxDrawdown >= 10 && maxLoss >= 5) {
       return { level: 'safe', reasons: ['All limits are permissive'] }
     }
@@ -111,8 +115,8 @@ const Trading: React.FC = () => {
   const { connected } = useWallet()
   const { updateCopierRiskParams } = useVaultOperations()
   const { copierVaults } = useUserVaults()
+  const { setFromSettings } = useDefaultRiskStore()
 
-  // Get the first active copier vault's master address as a default
   const activeMasterAddress = useMemo(() => {
     if (copierVaults && copierVaults.length > 0) {
       return copierVaults[0].masterExecutionVaultPda
@@ -169,7 +173,6 @@ const Trading: React.FC = () => {
                 </div>
               </div>
 
-              {/* Master vault input for risk simulation */}
               <div className='flex flex-col gap-2 p-3 bg-[#061B19] rounded-lg'>
                 <label className='text-xs text-[#7A9E9A]'>
                   MASTER VAULT TO COPY (for risk simulation)
@@ -183,7 +186,6 @@ const Trading: React.FC = () => {
                 />
               </div>
 
-              {/* Risk analysis reasons */}
               {riskAnalysis.reasons.length > 0 && (
                 <div className={`p-3 rounded-lg text-xs space-y-1 ${
                   riskAnalysis.level === 'safe' ? 'bg-green-900/20 text-green-400' :
@@ -199,23 +201,27 @@ const Trading: React.FC = () => {
               <div className='grid md:grid-cols-2 gap-4'>
                 <Input 
                   label='MAX TRADE SIZE (SOL)' 
-                  value={riskParams.maxTradeSizePct} 
-                  onChange={(v) => handleParamChange('maxTradeSizePct', v)} 
+                  value={riskParams.maxTradeSizeSol} 
+                  onChange={(v) => handleParamChange('maxTradeSizeSol', v)} 
+                  unit='SOL'
                 />
                 <Input 
                   label='MAX LOSS (SOL)' 
-                  value={riskParams.maxLossPct} 
-                  onChange={(v) => handleParamChange('maxLossPct', v)} 
+                  value={riskParams.maxLossSol} 
+                  onChange={(v) => handleParamChange('maxLossSol', v)} 
+                  unit='SOL'
                 />
                 <Input 
                   label='MAX DRAWDOWN (SOL)' 
-                  value={riskParams.maxDrawdownPct} 
-                  onChange={(v) => handleParamChange('maxDrawdownPct', v)} 
+                  value={riskParams.maxDrawdownSol} 
+                  onChange={(v) => handleParamChange('maxDrawdownSol', v)} 
+                  unit='SOL'
                 />
                 <Input 
                   label='TAKE-PROFIT %' 
                   value={riskParams.takeProfitPct} 
                   onChange={(v) => handleParamChange('takeProfitPct', v)} 
+                  unit='%'
                 />
               </div>
 
@@ -229,11 +235,11 @@ const Trading: React.FC = () => {
                     }
                     setSaving(true)
                     try {
-                      const maxTradeSizeSol = parseFloat(riskParams.maxTradeSizePct) || 0.5
-                      const maxLossSol = parseFloat(riskParams.maxLossPct) || 1.0
-                      const maxDrawdownSol = parseFloat(riskParams.maxDrawdownPct) || 2.0
+                      const maxTradeSizeSol = parseFloat(riskParams.maxTradeSizeSol) || 0.5
+                      const maxLossSol = parseFloat(riskParams.maxLossSol) || 1.0
+                      const maxDrawdownSol = parseFloat(riskParams.maxDrawdownSol) || 2.0
                       
-                      // Get copier vault balance to convert SOL to percentage
+                      // Convert SOL to percentage based on vault balance
                       let maxTradeSizePct = 5 
                       let maxLossPct = 10
                       let maxDrawdownPct = 15
@@ -260,6 +266,15 @@ const Trading: React.FC = () => {
                         maxTradeSizePct,
                         maxDrawdownPct,
                       })
+                      
+                      setFromSettings({
+                        maxTradeSizeSol: riskParams.maxTradeSizeSol,
+                        maxLossSol: riskParams.maxLossSol,
+                        maxDrawdownSol: riskParams.maxDrawdownSol,
+                        takeProfitPct: riskParams.takeProfitPct,
+                        slippagePct: slippage,
+                      })
+
                       toast.success('Risk parameters updated!')
                     } catch (e) {
                       console.error(e)
@@ -400,15 +415,15 @@ const Trading: React.FC = () => {
 
 export default Trading
 
-// ✅ Explicit interface instead of `any`
 interface InputProps {
   label: string
   defaultValue?: string
   value?: string
   onChange?: (value: string) => void
+  unit?: string
 }
 
-const Input = ({ label, defaultValue, value, onChange }: InputProps) => (
+const Input = ({ label, defaultValue, value, onChange, unit }: InputProps) => (
   <div className='flex flex-col gap-1'>
     {label && (
       <label className='text-xs text-[#7A9E9A] flex items-center gap-1'>
@@ -422,21 +437,21 @@ const Input = ({ label, defaultValue, value, onChange }: InputProps) => (
         defaultValue={defaultValue}
         value={value}
         onChange={(e) => onChange?.(e.target.value)}
-        className='w-full bg-[#061B19] border border-[#1A3D39] rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#11B89A]'
+        className={`w-full bg-[#061B19] border border-[#1A3D39] rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#11B89A] ${unit ? 'pr-10' : ''}`}
       />
-      <span className='absolute right-3 top-2 text-xs text-[#7A9E9A]'>%</span>
+      {unit && (
+        <span className='absolute right-3 top-2 text-xs text-[#7A9E9A]'>{unit}</span>
+      )}
     </div>
   </div>
 )
 
-// Store masterVault in window for the settings page to access
 declare global {
   interface Window {
     masterVault?: string
   }
 }
 
-// ✅ Explicit interface instead of `any`
 interface ToggleProps {
   title: string
   desc: string

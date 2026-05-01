@@ -120,8 +120,8 @@ const DashboardView = () => {
   };
 
   const socials = useMemo(() => {
-    return recentTrades.map(trade => {
-   
+    return (recentTrades ?? []).map(trade => {
+
       const timeAgo = Math.floor((now - new Date(trade.executedAt).getTime()));
       const timeText = formatTimeAgo(timeAgo);
       

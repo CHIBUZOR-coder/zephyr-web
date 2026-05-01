@@ -120,7 +120,7 @@ const WalletCard: React.FC<WalletCardProps> = ({
       </div>
 
       {!primary && (
-        <div className='flex items-center gap-3 bg-yellow-400'>
+        <div className='flex items-center gap-3 '>
           <button
             onClick={onSetPrimary}
             className='

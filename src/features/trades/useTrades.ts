@@ -77,7 +77,7 @@ export const useRecentTrades = (limit = 20) => {
       const response = await fetch(`${API_BASE_URL}/api/trades/recent?limit=${limit}`);
       const data = await response.json();
       if (data.success) {
-        setTrades(data.data);
+        setTrades(data.data ?? []);
       } else {
         setError(data.message || 'Failed to fetch trades');
       }
@@ -108,7 +108,7 @@ export const useVaultTrades = (vaultPda: string, limit = 50) => {
       const response = await fetch(`${API_BASE_URL}/api/trades/vault/${vaultPda}?limit=${limit}`);
       const data = await response.json();
       if (data.success) {
-        setTrades(data.data);
+        setTrades(data.data ?? []);
       } else {
         setError(data.message || 'Failed to fetch trades');
       }
@@ -139,7 +139,7 @@ export const useMasterTrades = (masterWallet: string, limit = 50) => {
       const response = await fetch(`${API_BASE_URL}/api/trades/master/${masterWallet}?limit=${limit}`);
       const data = await response.json();
       if (data.success) {
-        setTrades(data.data);
+        setTrades(data.data ?? []);
       } else {
         setError(data.message || 'Failed to fetch trades');
       }
@@ -170,7 +170,7 @@ export const useCopierTrades = (copierWallet: string, limit = 50) => {
       const response = await fetch(`${API_BASE_URL}/api/trades/copier/${copierWallet}?limit=${limit}`);
       const data = await response.json();
       if (data.success) {
-        setTrades(data.data);
+        setTrades(data.data ?? []);
       } else {
         setError(data.message || 'Failed to fetch trades');
       }
@@ -232,7 +232,7 @@ export const useCopiedTrades = (masterSignature: string) => {
       const response = await fetch(`${API_BASE_URL}/api/trades/master/${masterSignature}/copiers`);
       const data = await response.json();
       if (data.success) {
-        setCopiedTrades(data.data);
+        setCopiedTrades(data.data ?? []);
       } else {
         setError(data.message || 'Failed to fetch copied trades');
       }

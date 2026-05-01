@@ -21,7 +21,7 @@ import { useRealtimeUpdates } from './core/hooks/useRealtimeUpdates'
 import StateScreen from './shared/components/StateScreen'
 
 import ScrollToTop from './utils/ScrollToTop'
-// import VaultFlowModal from './shared/Modals/CopyModal/VaultFlowModal'
+import VaultFlowModal from './shared/Modals/CopyModal/VaultFlowModal'
 import type { UserProfile } from './features/users/user.types'
 import { CustomWalletModal } from './shared/Modals/walletModal/CustomWalletModal'
 import { DepositModal } from './shared/Modals/DepositModal/DepositModal'
@@ -44,6 +44,11 @@ import { FaXTwitter } from 'react-icons/fa6'
 import { Toastify } from './shared/Toast/Toastify'
 
 function App () {
+// useEffect(() => {
+//   localStorage.clear()
+// }, [])
+
+
   const { connected } = useWallet()
   useWalletAuthSync()
   useAuthRefresh() // ← Replaces useRestoreAuth + useAuthSession
@@ -351,7 +356,7 @@ function App () {
           onClose={() => setOpenNotifications(false)}
         />
         <MobileSideNav isOpen={openMenu} onClose={() => setOpenMenu(false)} />
-        {/* <VaultFlowModal /> */}
+        <VaultFlowModal />
         <RiskAlertModal
           showRiskModal={showRiskModal}
           setShowRiskModal={() => setShowRiskModal(false)}

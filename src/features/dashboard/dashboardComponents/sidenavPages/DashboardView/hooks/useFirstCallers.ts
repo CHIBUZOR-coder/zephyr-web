@@ -33,7 +33,7 @@ export function useFirstCallers(limit = 10) {
     queryFn: async () => {
       const response = await authFetch<FirstCallersResponse>(`/api/trades/first-callers?limit=${limit}`);
       if (!response.success) throw new Error("Failed to fetch first callers");
-      return response.data;
+      return response.data ?? [];
     },
     staleTime: 30000,
     refetchInterval: 60000,
