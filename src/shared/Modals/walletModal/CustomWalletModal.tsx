@@ -13,7 +13,6 @@ type Props = {
 }
 
 export const CustomWalletModal = ({ open, onClose }: Props) => {
-  // touch
   const {
     wallets,
     select,
@@ -29,10 +28,6 @@ export const CustomWalletModal = ({ open, onClose }: Props) => {
 
   const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)
 
-  // ── CHANGED: only show wallets actually installed/usable in current environment
-  // Desktop → Installed extensions only
-  // Mobile  → Loadable wallets (phantom/solflare in-app browser)
-  // Mobile Wallet Adapter → only on mobile
   const detectedWallets = wallets.filter(w => {
     if (w.adapter.name === 'Mobile Wallet Adapter') return isMobile
     return (
@@ -41,17 +36,16 @@ export const CustomWalletModal = ({ open, onClose }: Props) => {
     )
   })
 
-  // 🔹 AUTO-CLOSE modal when user is authenticated
+  // AUTO-CLOSE when authenticated
   useEffect(() => {
     if (authenticated && open) {
       onClose()
     }
   }, [authenticated, open, onClose])
 
-  // Track if we've attempted auth this session to prevent infinite loops
-  const hasAttemptedAuth = loginMutation.isError || authenticated
+  const hasAttemptedAuth = authenticated
 
-  // EFFECT: Trigger login when wallet connects and signs
+  // Trigger login when wallet connects and is ready to sign
   useEffect(() => {
     if (
       connected &&
@@ -62,19 +56,14 @@ export const CustomWalletModal = ({ open, onClose }: Props) => {
       !connecting &&
       !hasAttemptedAuth
     ) {
-      console.log('Wallet connected, triggering authentication flow...')
       loginMutation.mutate(
         {
           publicKey: publicKey.toBase58(),
-          signMessage: signMessage
+          signMessage
         },
         {
-          onSuccess: () => {
-            onClose()
-          },
-          onError: error => {
-            console.error('Authentication failed:', error)
-          }
+          onSuccess: () => onClose(),
+          onError: error => console.error('Authentication failed:', error)
         }
       )
     }
@@ -90,20 +79,18 @@ export const CustomWalletModal = ({ open, onClose }: Props) => {
   ])
 
   const handleWalletSelect = async (adapterName: WalletName) => {
-    if (connecting) {
-      await disconnect()
-    }
-
-    if (connected && wallet?.adapter.name !== adapterName) {
-      await disconnect()
-    }
-
+    if (connecting) await disconnect()
+    if (connected && wallet?.adapter.name !== adapterName) await disconnect()
     select(adapterName)
   }
 
-  // Force connection if selection didn't trigger auto-connect
+  // ── CHANGED: isMobile guard added so this effect is skipped on mobile
+  // On desktop:  autoConnect handles reconnection, this effect is not needed
+  // On mobile:   autoConnect + this effect were both firing, causing a race
+  //              condition on Phantom that showed a connection error
   useEffect(() => {
     if (
+      !isMobile &&
       wallet &&
       !connected &&
       !connecting &&
@@ -116,7 +103,7 @@ export const CustomWalletModal = ({ open, onClose }: Props) => {
       }, 100)
       return () => clearTimeout(timeout)
     }
-  }, [wallet, connected, connecting])
+  }, [wallet, connected, connecting, isMobile])
 
   return (
     <AnimatePresence>
@@ -191,7 +178,6 @@ export const CustomWalletModal = ({ open, onClose }: Props) => {
                 </p>
               </div>
 
-              {/* ── CHANGED: show empty state when no wallets detected */}
               {detectedWallets.length === 0 ? (
                 <div className='flex flex-col items-center gap-3 py-4'>
                   <p className='text-[12px] text-[#b7e9df] text-center'>
@@ -203,16 +189,16 @@ export const CustomWalletModal = ({ open, onClose }: Props) => {
                       : 'Install a Solana wallet extension from the Chrome Web Store to continue.'}
                   </p>
                   <div className='flex gap-2 mt-1'>
-                    <Link 
-                      to='https://phantom.app/download'
+                    
+                     <Link to='https://phantom.app/download'
                       target='_blank'
                       rel='noreferrer'
                       className='text-[10px] text-[#00f5c4] border border-[#00f5c4] rounded px-3 py-1 hover:bg-[#00f5c4]/10 transition'
                     >
                       Get Phantom
                     </Link>
-                    <Link
-                      to='https://solflare.com/download'
+                    
+                     <Link to='https://solflare.com/download'
                       target='_blank'
                       rel='noreferrer'
                       className='text-[10px] text-[#00f5c4] border border-[#00f5c4] rounded px-3 py-1 hover:bg-[#00f5c4]/10 transition'
@@ -222,8 +208,6 @@ export const CustomWalletModal = ({ open, onClose }: Props) => {
                   </div>
                 </div>
               ) : (
-                // ── CHANGED: map over detectedWallets instead of visibleWallets
-                // UI of each button is exactly the same as before
                 <div className='flex flex-col gap-2'>
                   {detectedWallets.map(w => (
                     <button
