@@ -1,19 +1,16 @@
-import { useState, type FC } from 'react'
-import { FiBell, FiX, FiSettings } from 'react-icons/fi'
+import { type FC, useMemo, useState, useEffect } from 'react'
+import { FiBell, FiX, FiSettings, FiClock } from 'react-icons/fi'
+import { FaChartLine, FaUserFriends } from 'react-icons/fa'
 import { AiOutlineWarning } from 'react-icons/ai'
 import { RiLineChartLine } from 'react-icons/ri'
 import { HiOutlineWallet } from 'react-icons/hi2'
+import { TbRefresh } from 'react-icons/tb'
 import { useNavigate } from 'react-router-dom'
-import { useGeneralContext } from '../../../Context/GeneralContext'
-
 import { useSettingsStore } from '../../../features/dashboard/dashboardComponents/sidenavPages/Settings/stores/settingsStore'
+import { useAuthStore } from '../../../features/auth/auth.store'
 
-import {
-  useNotificationStore,
-  type NotificationItem,
-  type NotifyCategory
-} from './useNotificationStore'
-import { CiVault } from 'react-icons/ci'
+import { useUserVaults } from '../../../features/master/useUserVaults'
+import { useAllVaultActivities, formatVaultActivity, type VaultActivity } from '../../../features/dashboard/dashboardComponents/sidenavPages/Portfolio/useVaultActivities'
 
 interface Props {
   isOpen: boolean
@@ -22,39 +19,137 @@ interface Props {
 
 type Filter = 'ALL' | 'UNREAD' | 'READ'
 
-const categoryIcon: Record<NotifyCategory, React.ReactNode> = {
-  deposit: <HiOutlineWallet />,
-  withdrawal: <HiOutlineWallet />,
-  risk: <AiOutlineWarning className='text-[#FA6938]' />,
-  general: <RiLineChartLine />,
-  vault:     <CiVault />
-,   
+const getIcon = (type: string) => {
+  switch (type) {
+    case 'TRADE_EXECUTED':
+    case 'TRADE_MIRRORED':
+      return <FaChartLine />
+    case 'PROFIT_TAKE':
+      return <RiLineChartLine />
+    case 'STOP_LOSS':
+      return <AiOutlineWarning className='text-[#FA6938]' />
+    case 'DEPOSIT':
+    case 'DEPOSIT_MASTER':
+      return <HiOutlineWallet />
+    case 'WITHDRAWAL':
+      return <TbRefresh />
+    case 'NEW_FOLLOWER':
+      return <FaUserFriends />
+    case 'VAULT_CREATED':
+      return <FiBell />
+    case 'FEE_COLLECTED':
+      return <RiLineChartLine />
+    case 'STATUS_CHANGED':
+      return <FiBell />
+    default:
+      return <FiBell />
+  }
 }
 
-const timeAgo = (timestamp: number) => {
-  const diff = Math.floor((Date.now() - timestamp) / 1000)
-  if (diff < 60) return `${diff}s ago`
-  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`
-  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`
-  return `${Math.floor(diff / 86400)}d ago`
-}
+const getNotificationContent = (activity: VaultActivity) => {
+  const formatted = formatVaultActivity(activity);
+  const title = formatted.type; 
+  let message = "";
+
+  const shortVault = activity.vaultAddress 
+    ? `${activity.vaultAddress.slice(0, 4)}...${activity.vaultAddress.slice(-4)}` 
+    : 'Unknown Vault';
+
+  switch (activity.type) {
+    case 'VAULT_CREATED':
+      message = `Your vault (${shortVault}) has been successfully created.`;
+      break;
+    case 'DEPOSIT':
+    case 'DEPOSIT_MASTER':
+      message = `Deposited ${formatted.amount} ${formatted.token} into ${shortVault}.`;
+      break;
+    case 'WITHDRAWAL':
+      message = `Withdrew ${formatted.amount} ${formatted.token} from ${shortVault}.`;
+      break;
+    case 'TRADE_EXECUTED':
+      message = `Trade executed in ${shortVault}: ${formatted.amount} ${formatted.token}.`;
+      break;
+    case 'TRADE_MIRRORED':
+      message = `Mirrored Trade from ${shortVault}. Copied: ${formatted.amount} ${formatted.token}. View transaction at solscan signature.`;
+      break;
+    case 'FEE_COLLECTED':
+      message = `Collected ${formatted.amount} ${formatted.token} in fees from ${shortVault}.`;
+      break;
+    case 'STATUS_CHANGED':
+      message = `Vault (${shortVault}) status has been updated.`;
+      break;
+    default:
+      message = `New vault activity recorded in ${shortVault}.`;
+  }
+
+  return { title, message, time: formatted.time };
+};
 
 const NotificationPanel: FC<Props> = ({ isOpen, onClose }) => {
-  const { setShowRiskModal } = useGeneralContext()
   const setActiveTab = useSettingsStore(s => s.setActiveTab)
   const navigate = useNavigate()
+  const { authenticated } = useAuthStore()
 
-  const { notifications, markAsRead, markAllAsRead, unreadCount } =
-    useNotificationStore()
   const [activeFilter, setActiveFilter] = useState<Filter>('ALL')
-
-  const visibleNotifications = notifications.filter((n: NotificationItem) => {
-    if (activeFilter === 'UNREAD') return !n.read
-    if (activeFilter === 'READ') return n.read
-    return true
+  const [readIds, setReadIds] = useState<Set<string>>(() => {
+    const stored = localStorage.getItem('zephyr_read_activities')
+    if (stored) {
+      try {
+        return new Set(JSON.parse(stored))
+      } catch {
+        // ignore
+      }
+    }
+    return new Set()
   })
 
-  const unread = unreadCount()
+  useEffect(() => {
+    localStorage.setItem('zephyr_read_activities', JSON.stringify(Array.from(readIds)))
+    window.dispatchEvent(new Event('zephyr_read_activities_updated'))
+  }, [readIds])
+
+  const { masterVault, copierVaults } = useUserVaults()
+
+  const vaultPdas = useMemo(() => {
+    if (!authenticated) return []
+    const pdas = []
+    if (masterVault) pdas.push(masterVault.vaultPda)
+    if (copierVaults) pdas.push(...copierVaults.map(v => v.vaultPda))
+    return pdas
+  }, [masterVault, copierVaults, authenticated])
+
+  // Fetch up to 20 recent activities across all user vaults
+  const { activities, isLoading } = useAllVaultActivities(vaultPdas, 20)
+
+  const unreadCount = useMemo(() => {
+    return activities.filter(a => !readIds.has(a.id)).length
+  }, [activities, readIds])
+
+  const visibleActivities = useMemo(() => {
+    return activities.filter(a => {
+      const isRead = readIds.has(a.id)
+      if (activeFilter === 'UNREAD') return !isRead
+      if (activeFilter === 'READ') return isRead
+      return true
+    })
+  }, [activities, activeFilter, readIds])
+
+  const handleMarkAsRead = (id: string) => {
+    if (readIds.has(id)) return
+    setReadIds(prev => {
+      const newSet = new Set(prev)
+      newSet.add(id)
+      return newSet
+    })
+  }
+
+  const handleMarkAllAsRead = () => {
+    setReadIds(prev => {
+      const newSet = new Set(prev)
+      activities.forEach(a => newSet.add(a.id))
+      return newSet
+    })
+  }
 
   const tabClass = (filter: Filter) =>
     activeFilter === filter
@@ -86,7 +181,9 @@ const NotificationPanel: FC<Props> = ({ isOpen, onClose }) => {
               <h2 className='text-white text-[15px] font-semibold tracking-wide'>
                 NOTIFICATIONS
               </h2>
-              <p className='text-[12px] text-[#6B8F88]'>{unread} unread</p>
+              <p className='text-[12px] text-[#6B8F88]'>
+                {unreadCount} unread
+              </p>
             </div>
           </div>
           <button
@@ -111,9 +208,9 @@ const NotificationPanel: FC<Props> = ({ isOpen, onClose }) => {
               onClick={() => setActiveFilter('UNREAD')}
             >
               UNREAD
-              {unread > 0 && (
+              {unreadCount > 0 && (
                 <span className='bg-[#F24E4E] text-white text-[9px] px-1.5 rounded ml-1'>
-                  {unread}
+                  {unreadCount}
                 </span>
               )}
             </button>
@@ -126,8 +223,8 @@ const NotificationPanel: FC<Props> = ({ isOpen, onClose }) => {
           </div>
 
           <button
-            className='text-[#11C5A3] text-[11px] mt-3'
-            onClick={markAllAsRead}
+            className='text-[#11C5A3] text-[11px] mt-3 hover:text-white transition-colors'
+            onClick={handleMarkAllAsRead}
           >
             Mark all as read
           </button>
@@ -135,41 +232,63 @@ const NotificationPanel: FC<Props> = ({ isOpen, onClose }) => {
 
         {/* LIST */}
         <div className='flex-1 overflow-y-auto mt-4 side'>
-          {visibleNotifications.length === 0 ? (
+          {isLoading ? (
+            <div className='flex flex-col items-center justify-center mt-20 gap-3'>
+              <p className='text-center text-[#11C5A3] text-[16px] font-semibold tracking-wide animate-pulse'>
+                Loading activities...
+              </p>
+              <div className='text-[#557A74] text-[28px] animate-pulse'>
+                <FiClock />
+              </div>
+            </div>
+          ) : visibleActivities.length === 0 ? (
             <p className='text-center text-[#557A74] text-[13px] mt-10'>
               No notifications here.
             </p>
           ) : (
-            visibleNotifications.map((n: NotificationItem) => (
-              <div
-                key={n.id}
-                onClick={() => {
-                  markAsRead(n.id)
-                  if (n.category === 'risk') setShowRiskModal(true)
-                }}
-                className='flex gap-4 px-6 py-5 border-t border-[#0D3B37] hover:bg-[#0A2B27] transition cursor-pointer'
-              >
-                <div className='flex items-center justify-center w-[36px] h-[36px] rounded-full bg-[#0B2A27] text-[#1ED2AF] text-[16px]'>
-                  {categoryIcon[n.category]}
-                </div>
-                <div className='flex-1'>
-                  <p className='text-white text-[13px] font-semibold'>
-                    {n.title}
-                  </p>
-                  <p className='text-[#7FAAA2] text-[12px] mt-1 leading-relaxed'>
-                    {n.message}
-                  </p>
-                  <div className='flex items-center justify-between mt-2'>
-                    <span className='text-[11px] text-[#557A74]'>
-                      {timeAgo(n.timestamp)}
-                    </span>
+            visibleActivities.map(activity => {
+              const { title, message, time } = getNotificationContent(activity)
+              const isRead = readIds.has(activity.id)
+              
+              return (
+                <div
+                  key={activity.id}
+                  onClick={() => handleMarkAsRead(activity.id)}
+                  className='flex gap-4 px-6 py-5 border-t border-[#0D3B37] hover:bg-[#0A2B27] transition cursor-pointer'
+                >
+                  <div className='flex items-center justify-center w-[36px] h-[36px] shrink-0 rounded-full bg-[#0B2A27] text-[#1ED2AF] text-[16px]'>
+                    {getIcon(activity.type)}
                   </div>
+                  <div className='flex-1'>
+                    <p className='text-white text-[13px] font-semibold'>
+                      {title}
+                    </p>
+                    <p className='text-[#7FAAA2] text-[12px] mt-1 leading-relaxed'>
+                      {message}
+                    </p>
+                    <div className='flex items-center justify-between mt-2'>
+                      <span className='text-[11px] text-[#557A74]'>
+                          {time}
+                      </span>
+                      {activity.signature && (
+                        <a
+                          href={`https://explorer.solana.com/tx/${activity.signature}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={(e) => e.stopPropagation()}
+                          className="text-[10px] text-[#1ED2AF] hover:underline"
+                        >
+                          View Tx
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                  {!isRead && (
+                    <span className='w-[6px] h-[6px] shrink-0 rounded-full bg-[#11C5A3] mt-2'></span>
+                  )}
                 </div>
-                {!n.read && (
-                  <span className='w-[6px] h-[6px] rounded-full bg-[#11C5A3] mt-2'></span>
-                )}
-              </div>
-            ))
+              )
+            })
           )}
         </div>
 

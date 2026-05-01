@@ -108,13 +108,13 @@ export function useLeaderboard(params: {
       if (tier !== undefined) url += `&tier=${tier}`;
 
       const response = await authFetch<LeaderboardResponse>(url);
-      if (!response.success) throw new Error("Failed to fetch leaderboard");
+      if (!response?.success) throw new Error("Failed to fetch leaderboard");
       
       return {
-        traders: response.data.traders.map(mapLeaderboardEntryToTrader),
-        total: response.data.total,
-        page: response.data.page,
-        limit: response.data.limit,
+        traders: response?.data?.traders?.map(mapLeaderboardEntryToTrader),
+        total: response?.data?.total,
+        page: response?.data?.page,
+        limit: response?.data?.limit,
       };
     },
     staleTime: 60000, // 60s
@@ -126,10 +126,10 @@ export function useDashboardLeaderboard() {
   const query = useLeaderboard({ period: "30d", sort: "pnl", limit: 10 });
   
   return {
-    leaders: query.data?.traders ?? [],
-    loading: query.isLoading,
-    error: query.error instanceof Error ? query.error.message : null,
-    refetch: query.refetch,
+    leaders: query?.data?.traders ?? [],
+    loading: query?.isLoading,
+    error: query?.error instanceof Error ? query.error.message : null,
+    refetch: query?.refetch,
   };
 }
 
@@ -148,10 +148,10 @@ export function useTraderProfile(vaultAddress: string | undefined) {
         const response = await authFetch<TraderProfileResponse>(
           `/api/leaderboard/trader/${vaultAddress}`
         );
-        if (!response.success || !response.data) {
-          throw new Error(response.error || "Trader not found");
+        if (!response?.success || !response.data) {
+          throw new Error(response?.error || "Trader not found");
         }
-        return mapLeaderboardEntryToTrader(response.data);
+        return mapLeaderboardEntryToTrader(response?.data);
       } catch (err: unknown) {
         const msg = err instanceof Error ? err.message : String(err);
         if (msg.includes("Trader not found")) return null;
@@ -163,8 +163,8 @@ export function useTraderProfile(vaultAddress: string | undefined) {
   });
 
   return {
-    trader: query.data,
-    loading: query.isLoading,
-    error: query.error instanceof Error ? query.error.message : null,
+    trader: query?.data,
+    loading: query?.isLoading,
+    error: query?.error instanceof Error ? query.error.message : null,
   };
 }

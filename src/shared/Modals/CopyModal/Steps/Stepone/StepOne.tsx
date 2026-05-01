@@ -8,6 +8,7 @@ import Input from '../../Components/Input'
 import { useWallet } from '@solana/wallet-adapter-react'
 import { useGeneralContext } from '../../../../../Context/GeneralContext'
 import OptionalProfitParameters from './Component/OptionalProfitParameters'
+import { useDefaultRiskStore } from '../../../../../features/dashboard/dashboardComponents/sidenavPages/Settings/stores/defaultRiskStore'
 
 // 1. Define the specific shape of your Vault form
 export interface VaultFormData {
@@ -87,6 +88,7 @@ type StepOneProps = {
 export const StepOne = ({ onNext, form, setForm }: StepOneProps) => {
   const { selectedTrader, closeVaultFlow, setWalletModal } = useGeneralContext()
   const { connected, publicKey } = useWallet()
+  const { maxDrawdownSol, maxTradeSizeSol, slippagePct } = useDefaultRiskStore()
 
   // Get master vault address for risk simulation
   const masterVaultAddress = selectedTrader?.vaultAddress
@@ -193,21 +195,21 @@ export const StepOne = ({ onNext, form, setForm }: StepOneProps) => {
         <div className='grid grid-col-1 md:grid-cols-2 gap-6 mt-2'>
           <Input
             label='Max Vault Drawdown (SOL)'
-            placeholder='5.0'
+            placeholder={maxDrawdownSol}
             info='Hard stop if your vault equity drops by this amount of SOL.'
             value={form.maxVaultDrawdown}
             onChange={(e) => handleInputChange('maxVaultDrawdown', e.target.value)}
           />
           <Input
             label='Max Trade Size (SOL)'
-            placeholder='0.5'
+            placeholder={maxTradeSizeSol}
             info='Maximum SOL per single copied trade.'
             value={form.maxTradeSize}
             onChange={(e) => handleInputChange('maxTradeSize', e.target.value)}
           />
           <Input 
             label='Max Entry Slippage' 
-            placeholder='0.5'
+            placeholder={slippagePct}
             info='Recommended: 0.5% for conservative risk profile.'
             value={form.maxEntrySlippage}
             onChange={(e) => handleInputChange('maxEntrySlippage', e.target.value)}

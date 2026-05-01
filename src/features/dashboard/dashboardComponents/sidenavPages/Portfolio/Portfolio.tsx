@@ -8,7 +8,7 @@ import CopierMode from './CopierMode'
 import { useGeneralContext } from '../../../../../Context/GeneralContext'
 import { useUserVaults } from '../../../../master/useUserVaults'
 import { useSolPrice } from '../../../../../core/hooks/usePrice'
-import { AllVaultsActivity } from './VaultActivity'
+import { VaultActivityList as AllVaultsActivity } from './VaultActivity'
 import { authFetch } from '../../../../../core/query/authClient'
 import { useQuery } from '@tanstack/react-query'
 
@@ -541,8 +541,7 @@ export default function Portfolio () {
           </>
         ) : (
           <AllVaultsActivity
-          masterVaultPda={masterMode ? masterVault?.vaultPda : undefined}
-          copierVaultsPdas={!masterMode ? (copierVaults?.map(v => v.vaultPda) ?? []) : []}
+          vaultPdas={masterMode ? (masterVault ? [masterVault.vaultPda] : []) : (copierVaults?.map(v => v.vaultPda) ?? [])}
           />
         )}
         

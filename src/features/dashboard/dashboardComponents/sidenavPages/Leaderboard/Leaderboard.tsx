@@ -177,7 +177,7 @@ const Leaderboard: React.FC = () => {
 
             {tierOpen && (
               <div className='absolute mt-2 w-full bg-[#0f2a2f] border border-[#123c42] rounded-xl shadow-xl z-50 overflow-hidden'>
-                {tiers.map(tier => (
+                {tiers?.map(tier => (
                   <button
                     key={tier.label}
                     onClick={() => {
@@ -266,14 +266,14 @@ const Leaderboard: React.FC = () => {
                     Error: {error instanceof Error ? error.message : 'Failed to load leaderboard'}
                   </td>
                 </tr>
-              ) : filteredTraders.length === 0 ? (
+              ) : filteredTraders?.length === 0 ? (
                 <tr>
                   <td colSpan={10} className='p-10 text-center text-gray-500'>
                     No active master traders found matching your criteria.
                   </td>
                 </tr>
               ) : (
-                filteredTraders.map(trader => {
+                filteredTraders?.map(trader => {
                   const displayRank = trader.rank
 
                   return (

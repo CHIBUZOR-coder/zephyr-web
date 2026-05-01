@@ -80,8 +80,8 @@ const DashboardView = () => {
 
   const firstCall = useMemo(() => {
     return firstCallers?.map((trade) => {
-      // eslint-disable-next-line react-hooks/purity
-      const timeAgo = Math.floor((Date.now() - new Date(trade.executedAt).getTime()) / (60 * 60 * 1000));
+   
+      const timeAgo = Math.floor((now - new Date(trade.executedAt).getTime()) / (60 * 60 * 1000));
       const timeText = timeAgo < 1 ? 'RECENT' : timeAgo < 24 ? `${timeAgo} HOURS` : `${Math.floor(timeAgo/24)} DAYS`;
       
       return {
@@ -121,8 +121,8 @@ const DashboardView = () => {
 
   const socials = useMemo(() => {
     return recentTrades.map(trade => {
-      // eslint-disable-next-line react-hooks/purity
-      const timeAgo = Math.floor((Date.now() - new Date(trade.executedAt).getTime()));
+   
+      const timeAgo = Math.floor((now - new Date(trade.executedAt).getTime()));
       const timeText = formatTimeAgo(timeAgo);
       
       const isMaster = trade.vaultType === 'MASTER';

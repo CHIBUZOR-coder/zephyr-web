@@ -110,12 +110,17 @@ type GeneralContextType = {
   //TierConfig Initialization
   tierConfigInitOpen: boolean
   setTierConfigInitOpen: (val: boolean) => void
-  // Claim Performance Fees
+  //Claim Fees
   claimFeesOpen: boolean
   setClaimFeesOpen: (val: boolean) => void
 
+  // Prefilled Token Address for Call Trade Modal
+  prefilledTokenAddress: string | null
+  setPrefilledTokenAddress: (address: string | null) => void
+
   //EditRiskvisible
   editRiskvisible: boolean
+
   setEditRiskvisible: (val: boolean) => void
 
   //Marked as read for risk alert
@@ -184,6 +189,7 @@ export const GeneralProvider = ({ children }: { children: ReactNode }) => {
   const [selectedVaultPda, setSelectedVaultPda] = useState<string | null>(null)
   const [tierConfigInitOpen, setTierConfigInitOpen] = useState(false)
   const [claimFeesOpen, setClaimFeesOpen] = useState(false)
+  const [prefilledTokenAddress, setPrefilledTokenAddress] = useState<string | null>(null)
   const [editRiskvisible, setEditRiskvisible] = useState(false)
   const [markedAsRead, setMarkedAsRead] = useState(false)
   const [callTradeToast, setCallTradeToast] = useState(false)
@@ -254,6 +260,8 @@ export const GeneralProvider = ({ children }: { children: ReactNode }) => {
         setTierConfigInitOpen,
         claimFeesOpen,
         setClaimFeesOpen,
+        prefilledTokenAddress,
+        setPrefilledTokenAddress,
         editRiskvisible,
         setEditRiskvisible,
         markedAsRead,

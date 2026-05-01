@@ -4,6 +4,7 @@ import { useGeneralContext } from '../../../../../Context/GeneralContext'
 import { fmtSol } from '../../../../../utils/currencyHelpers'
 import type { Strategy } from './portfolio.types'
 import EditRiskModal from '../../../../../shared/Modals/EditRiskModal/EditRiskModal'
+import { VaultActivityList } from './VaultActivity'
 
 interface MirroringVaultsProps {
   strategies: Strategy[]
@@ -51,7 +52,7 @@ export const MirroringVaults = ({
   }
 
   return (
-    <div className='mt-10'>
+    <div className='mt-6'>
       <div className='flex items-center gap-4'>
         <span
           className='h-[20px] w-[20px] bg-center bg-cover'
@@ -79,7 +80,7 @@ export const MirroringVaults = ({
             return (
               <div
                 key={strategy.id}
-                className='bg-[#102221] border border-[#162030] rounded-xl flex items-center justify-between overflow-hidden hover:border-[#1e3040] transition-colors p-4 cursor-pointer relative'
+                className='bg-[#102221] border border-[#162030] rounded-xl overflow-hidden hover:border-[#1e3040] transition-colors p-4 cursor-pointer relative'
                 onClick={() => onViewVault?.(strategy.fullAddress)}
               >
                 <div className='flex gap-6 lg:gap-0 items-center justify-between py-5 w-full flex-col md:flex-row flex-wrap lg:flex-nowrap'>
@@ -259,6 +260,11 @@ export const MirroringVaults = ({
                       </span>
                     </button>
                   </div>
+                </div>
+                {/* Vault Activity Section */}
+                <div className='border-t border-[#162030] mt-4 pt-4'>
+                    <p className='text-[10px] font-[900] uppercase tracking-widest text-[#546462] mb-4'>Vault Activity</p>
+                    <VaultActivityList vaultPda={strategy.fullAddress} />
                 </div>
               </div>
             )

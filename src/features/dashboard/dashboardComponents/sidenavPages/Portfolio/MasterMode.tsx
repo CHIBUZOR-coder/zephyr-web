@@ -299,11 +299,11 @@ const MasterMode = ({
                 </svg>
               </button>
             </div>
-          </div>
-        )
-      })}
+           </div>
+         )
+       })}
 
-      <div className='mt-8'>
+      <div className=''>
         <MirroringVaults
             strategies={strategies}
             removeStrategy={removeStrategy}

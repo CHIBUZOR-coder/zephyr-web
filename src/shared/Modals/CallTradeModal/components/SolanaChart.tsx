@@ -311,6 +311,27 @@ const SolanaChart = ({ interval = '15M', pair = 'SOL/USDC' }: Props) => {
               )
               const dexData = await dexRes.json()
               // Find matching pool with SOL quote (most common for memecoins)
+              const matchingPool = dexData.pairs?.find((p: DexPool) => 
+                p.baseToken?.symbol?.toUpperCase() === symbol.toUpperCase()
+              )
+
+              if (matchingPool?.priceUsd) {
+                price = parseFloat(matchingPool.priceUsd)
+              }
+            } catch {
+              console.error('Failed to fetch price from DexScreener')
+            }
+          }
+
+          // 3. Fallback to Jupiter
+          if (price === 0) {
+            const symbol = extractSymbol(pair)
+            try {
+              const dexRes = await fetch(
+                `${DEXSCREENER_API}/pairs/solana?search=${symbol}`
+              )
+              const dexData = await dexRes.json()
+              // Find matching pool with SOL quote (most common for memecoins)
               // const matchingPool = dexData.pairs?.find((p: any) =>
               //   p.baseToken?.symbol?.toUpperCase() === symbol.toUpperCase()
               // )

@@ -41,7 +41,12 @@ const CallTradeModal: FC<Props> = ({ open, onClose }) => {
   const [tokenQuote, setTokenQuote] = useState<string>('USDC')
   const [tokenPrice, setTokenPrice] = useState<number | null>(null)
   const [tokenError, setTokenError] = useState<string | null>(null)
+
   const [tradeMode, setTradeMode] = useState<'percent' | 'fixed'>('percent')
+
+  useEffect(() => {
+    setTradeMode('percent')
+  }, [])
 
   const [status, setStatus] = useState<
     'idle' | 'loading' | 'success' | 'error'
@@ -58,6 +63,8 @@ const CallTradeModal: FC<Props> = ({ open, onClose }) => {
   } = useVaultOperations()
   const { masterVault, metrics, refetchAll } = useUserVaults()
   const { data: solPrice } = useSolPrice()
+  const { prefilledTokenAddress, setPrefilledTokenAddress } =
+    useGeneralContext()
 
   const vaultBalance = masterVault?.balance ?? 0
 
@@ -169,7 +176,6 @@ const CallTradeModal: FC<Props> = ({ open, onClose }) => {
     }
   }, [tokenAddress])
 
-  // Reset state when modal opens
   useEffect(() => {
     if (open) {
       setStatus('idle')
@@ -177,12 +183,21 @@ const CallTradeModal: FC<Props> = ({ open, onClose }) => {
       setManualBootstrap(false)
       setAmount('0.5')
       setTradeType('Buy')
-      setTokenAddress('')
       setTokenSymbol(null)
       setTokenQuote('USDC')
       setTokenPrice(null)
       setTokenError(null)
+
+      if (prefilledTokenAddress) {
+        setTokenAddress(prefilledTokenAddress)
+        setPrefilledTokenAddress(null)
+      } else {
+        setTokenAddress('')
+      }
     }
+    // Intentionally omitting prefilledTokenAddress to prevent clearing the input
+    // when setPrefilledTokenAddress(null) is called.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open])
 
   const isTierConfigError =
@@ -450,29 +465,6 @@ const CallTradeModal: FC<Props> = ({ open, onClose }) => {
                   Trade Size ({tradeMode === 'percent' ? '%' : 'SOL'})
                 </span>
                 <div>
-                  <div className='flex items-center bg-[#062421] border border-[#123F3A] rounded-md overflow-hidden text-[9px] font-[900] uppercase tracking-wider'>
-                    <button
-                      onClick={() => setTradeMode('percent')}
-                      className={`px-2 py-1 transition-colors rounded-md ${
-                        tradeMode === 'percent'
-                          ? 'bg-[#1f4d47] text-[#6ef3d6]'
-                          : 'text-[#50706c] hover:text-[#6ef3d6]'
-                      }`}
-                    >
-                      % of Vault
-                    </button>
-                    <button
-                      onClick={() => setTradeMode('fixed')}
-                      className={`px-2 py-1 transition-colors rounded-md
- ${
-   tradeMode === 'fixed'
-     ? 'bg-[#1f4d47] text-[#6ef3d6]'
-     : 'text-[#50706c] hover:text-[#6ef3d6]'
- }`}
-                    >
-                      Fixed Amount
-                    </button>
-                  </div>
                   <span className='text-[9px] text-[#50706c] font-[700]'>
                     Vault Balance:{' '}
                     <span className='text-[#E8F6F3]'>
@@ -485,9 +477,10 @@ const CallTradeModal: FC<Props> = ({ open, onClose }) => {
               <div className='w-full relative flex items-center'>
                 <input
                   type='number'
-                  value={amount}
+                  // value={amount}
                   onChange={e => setAmount(e.target.value)}
-                  className='w-full bg-[#062421] font-[900] border border-[#123F3A] p-3 rounded-lg text-[20px] outline-none pr-16'
+                  className='w-full placeholder:text-gray-500 bg-[#062421] font-[900] border border-[#123F3A] p-3 rounded-lg text-[20px] outline-none pr-16'
+                  placeholder='0.5'
                 />
                 <button
                   onClick={handleMax}
@@ -613,7 +606,9 @@ const CallTradeModal: FC<Props> = ({ open, onClose }) => {
 
             <div className='flex justify-between items-center my-4'>
               <div className='flex items-center gap-2 text-[#6e8885]'>
-                <p className='text-[#009883] text-[11px] font-[500] '>Success Fee: Performance-based (profit only)</p>
+                <p className='text-[#009883] text-[11px] font-[500] '>
+                  Success Fee: Performance-based (profit only)
+                </p>
                 <span>
                   <IoInformationCircleOutline />
                 </span>

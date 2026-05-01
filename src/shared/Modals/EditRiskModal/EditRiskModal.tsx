@@ -207,7 +207,7 @@ export default function EditRiskModal () {
             >
               <motion.div
                 onClick={e => e.stopPropagation()}
-                className='w-full max-w-[600px] bg-[#0d1f1f] rounded-2xl border border-[#1c3535] shadow-2xl overflow-hidden flex flex-col max-h-[90vh]'
+                className='w-full max-w-[600px] bg-[#0d1f1f] rounded-2xl border border-[#1c3535] shadow-2xl overflow-hidden flex flex-col max-h-[90vh] side'
               >
                 {/* Header */}
                 <div className='flex justify-between items-center px-6 py-5 border-b border-[#1c3535]'>

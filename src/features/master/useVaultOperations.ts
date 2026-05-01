@@ -940,6 +940,18 @@ export const useVaultOperations = () => {
         })
         .rpc();
       console.log('Copier risk params updated:', tx);
+
+      try {
+        await authFetch(`/api/vaults/copier/${copierVaultPda.toBase58()}/risk-params`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(newParams),
+        });
+        console.log('Copier risk params updated in database');
+      } catch (dbErr) {
+        console.warn('Failed to update risk params in database (on-chain update succeeded):', dbErr);
+      }
+
       return tx;
     } catch (err: unknown) {
       console.error('Update risk params failed:', err);

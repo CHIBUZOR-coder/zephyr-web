@@ -1,7 +1,7 @@
 import React from 'react'
 import { FiCopy, FiExternalLink, FiTrash2, FiCreditCard } from 'react-icons/fi'
 
-type WalletType = 'SOLANA' | 'ETHEREUM'
+type WalletType = 'SOLANA'
 
 interface WalletCardProps {
   name?: string
@@ -20,6 +20,14 @@ const WalletCard: React.FC<WalletCardProps> = ({
   onSetPrimary,
   onRemove
 }) => {
+  const [copied, setCopied] = React.useState(false)
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(address)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000) // resets after 2s
+  }
+
   return (
     <div
       className='
@@ -62,8 +70,11 @@ const WalletCard: React.FC<WalletCardProps> = ({
             <FiCopy
               size={14}
               className='cursor-pointer opacity-70 hover:opacity-100'
-              onClick={() => navigator.clipboard.writeText(address)}
+              onClick={handleCopy}
             />
+            {copied && (
+              <span className='text-[10px] text-[#7FE8D6]'>Copied!</span>
+            )}
 
             <FiExternalLink
               size={14}

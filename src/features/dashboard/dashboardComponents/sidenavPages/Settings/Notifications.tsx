@@ -42,9 +42,9 @@ export default function Notifications () {
   useEffect(() => {
     if (!connected || !publicKey) return
 
-    authFetch<Record<string, boolean>>(`/api/notifications/preferences?wallet=${publicKey.toBase58()}`)
-      .then((data: Record<string, boolean>) => {
-        // data = { trade_execution: true, vault_activity: false, copy_trading: true }
+    authFetch<{ success: boolean; data: Record<string, boolean> }>(`/api/social/notifications/preferences?wallet=${publicKey.toBase58()}`)
+      .then((res) => {
+        const data = res.data
         setSettings(prev =>
           prev.map(s => ({ ...s, enabled: data[s.key] ?? s.enabled }))
         )
@@ -61,7 +61,7 @@ export default function Notifications () {
       const payload = Object.fromEntries(updated.map(s => [s.key, s.enabled]))
       // payload = { trade_execution: true, vault_activity: false, copy_trading: true }
 
-      authFetch('/api/notifications/preferences', {
+      authFetch('/api/social/notifications/preferences', {
         method: 'PUT',
         body: JSON.stringify({
           wallet: publicKey.toBase58(),
