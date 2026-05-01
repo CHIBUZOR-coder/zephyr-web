@@ -34,7 +34,8 @@ const WalletCard: React.FC<WalletCardProps> = ({
       w-full
       rounded-xl
       border border-[#184A45]
-      bg-gradient-to-r from-[#071F1D] to-[#0A2C28]
+  bg-gradient-to-r from-[#071F1D] to-[#0A2C28]
+
       p-5
       flex
       items-center
@@ -43,7 +44,7 @@ const WalletCard: React.FC<WalletCardProps> = ({
       flex-wrap
       '
     >
-      <div className='flex items-center gap-4 min-w-0'>
+      <div className='flex items-center gap-4'>
         <div
           className='
           w-10
@@ -59,12 +60,12 @@ const WalletCard: React.FC<WalletCardProps> = ({
           <FiCreditCard size={18} className='text-[#7FE8D6]' />
         </div>
 
-        <div className='flex flex-col gap-1 min-w-0'>
+        <div className='flex flex-col gap-1 '>
           {name && (
             <p className='text-white font-medium text-sm truncate'>{name}</p>
           )}
 
-          <div className='flex items-center gap-2 text-xs text-[#7A9E9A]'>
+          <div className='flex items-center gap-2 text-xs text-[#7A9E9A] min-w-0 max-w-[200px] md:max-w-lg'>
             <span className='truncate'>{address}</span>
 
             <FiCopy
@@ -119,7 +120,7 @@ const WalletCard: React.FC<WalletCardProps> = ({
       </div>
 
       {!primary && (
-        <div className='flex items-center gap-3'>
+        <div className='flex items-center gap-3 bg-yellow-400'>
           <button
             onClick={onSetPrimary}
             className='

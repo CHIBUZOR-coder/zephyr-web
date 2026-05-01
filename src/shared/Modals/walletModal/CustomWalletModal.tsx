@@ -4,6 +4,8 @@ import { useWallet } from '@solana/wallet-adapter-react'
 import { useAuthLogin } from '../../../features/auth/useAuthLogin'
 import { useAuthStore } from '../../../features/auth/auth.store'
 import type { WalletName } from '@solana/wallet-adapter-base'
+import { WalletReadyState } from '@solana/wallet-adapter-base'
+import { Link } from 'react-router-dom'
 
 type Props = {
   open: boolean
@@ -27,9 +29,17 @@ export const CustomWalletModal = ({ open, onClose }: Props) => {
 
   const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)
 
-  const visibleWallets = isMobile
-    ? wallets.filter(w => w.adapter.name === 'Mobile Wallet Adapter')
-    : wallets.filter(w => w.adapter.name !== 'Mobile Wallet Adapter')
+  // ── CHANGED: only show wallets actually installed/usable in current environment
+  // Desktop → Installed extensions only
+  // Mobile  → Loadable wallets (phantom/solflare in-app browser)
+  // Mobile Wallet Adapter → only on mobile
+  const detectedWallets = wallets.filter(w => {
+    if (w.adapter.name === 'Mobile Wallet Adapter') return isMobile
+    return (
+      w.readyState === WalletReadyState.Installed ||
+      w.readyState === WalletReadyState.Loadable
+    )
+  })
 
   // 🔹 AUTO-CLOSE modal when user is authenticated
   useEffect(() => {
@@ -181,58 +191,86 @@ export const CustomWalletModal = ({ open, onClose }: Props) => {
                 </p>
               </div>
 
-              <div className='flex flex-col gap-2'>
-                {visibleWallets.map(w => (
-                  <button
-                    key={w.adapter.name}
-                    onClick={() => handleWalletSelect(w.adapter.name)}
-                    disabled={
-                      !connecting &&
-                      w.readyState !== 'Installed' &&
-                      w.readyState !== 'Loadable'
-                    }
-                    className='
-                      flex items-center justify-between
-                      rounded-lg px-3 py-2.5
-                      bg-[#03463d] hover:bg-[#13443e]
-                      transition
-                      disabled:opacity-40 disabled:cursor-not-allowed
-                    '
-                  >
-                    <div className='flex items-center gap-3'>
-                      <img
-                        src={w.adapter.icon}
-                        alt={w.adapter.name}
-                        className='h-5 w-5'
-                      />
-                      <div className='flex flex-col items-start'>
-                        <span className='text-[11px] font-semibold text-white'>
-                          {w.adapter.name === 'Mobile Wallet Adapter'
-                            ? 'Connect Wallet App'
-                            : w.adapter.name}
-                        </span>
-                        {w.adapter.name === 'Phantom' && (
-                          <span className='text-[9px] text-[#00f5c4]'>
-                            Recommended
+              {/* ── CHANGED: show empty state when no wallets detected */}
+              {detectedWallets.length === 0 ? (
+                <div className='flex flex-col items-center gap-3 py-4'>
+                  <p className='text-[12px] text-[#b7e9df] text-center'>
+                    No wallets detected.
+                  </p>
+                  <p className='text-[10px] text-[#6f9f97] text-center leading-relaxed'>
+                    {isMobile
+                      ? "Install Phantom or Solflare from the App Store, then open this site inside the wallet's browser."
+                      : 'Install a Solana wallet extension from the Chrome Web Store to continue.'}
+                  </p>
+                  <div className='flex gap-2 mt-1'>
+                    <Link 
+                      to='https://phantom.app/download'
+                      target='_blank'
+                      rel='noreferrer'
+                      className='text-[10px] text-[#00f5c4] border border-[#00f5c4] rounded px-3 py-1 hover:bg-[#00f5c4]/10 transition'
+                    >
+                      Get Phantom
+                    </Link>
+                    <Link
+                      to='https://solflare.com/download'
+                      target='_blank'
+                      rel='noreferrer'
+                      className='text-[10px] text-[#00f5c4] border border-[#00f5c4] rounded px-3 py-1 hover:bg-[#00f5c4]/10 transition'
+                    >
+                      Get Solflare
+                    </Link>
+                  </div>
+                </div>
+              ) : (
+                // ── CHANGED: map over detectedWallets instead of visibleWallets
+                // UI of each button is exactly the same as before
+                <div className='flex flex-col gap-2'>
+                  {detectedWallets.map(w => (
+                    <button
+                      key={w.adapter.name}
+                      onClick={() => handleWalletSelect(w.adapter.name)}
+                      className='
+                        flex items-center justify-between
+                        rounded-lg px-3 py-2.5
+                        bg-[#03463d] hover:bg-[#13443e]
+                        transition
+                      '
+                    >
+                      <div className='flex items-center gap-3'>
+                        <img
+                          src={w.adapter.icon}
+                          alt={w.adapter.name}
+                          className='h-5 w-5'
+                        />
+                        <div className='flex flex-col items-start'>
+                          <span className='text-[11px] font-semibold text-white'>
+                            {w.adapter.name === 'Mobile Wallet Adapter'
+                              ? 'Connect Wallet App'
+                              : w.adapter.name}
                           </span>
-                        )}
+                          {w.adapter.name === 'Phantom' && (
+                            <span className='text-[9px] text-[#00f5c4]'>
+                              Recommended
+                            </span>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                    {connecting && wallet?.adapter.name === w.adapter.name ? (
-                      <span className='text-[10px] text-[#00f5c4] animate-pulse'>
-                        Connecting...
-                      </span>
-                    ) : loginMutation.isPending &&
-                      wallet?.adapter.name === w.adapter.name ? (
-                      <span className='text-[10px] text-[#00f5c4] animate-pulse'>
-                        Signing....
-                      </span>
-                    ) : (
-                      <span className='text-[#6f9f97] text-sm'>→</span>
-                    )}
-                  </button>
-                ))}
-              </div>
+                      {connecting && wallet?.adapter.name === w.adapter.name ? (
+                        <span className='text-[10px] text-[#00f5c4] animate-pulse'>
+                          Connecting...
+                        </span>
+                      ) : loginMutation.isPending &&
+                        wallet?.adapter.name === w.adapter.name ? (
+                        <span className='text-[10px] text-[#00f5c4] animate-pulse'>
+                          Signing....
+                        </span>
+                      ) : (
+                        <span className='text-[#6f9f97] text-sm'>→</span>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              )}
 
               <p className='mt-4 text-center text-[10px] text-[#9fd5cc]'>
                 New to Solana?

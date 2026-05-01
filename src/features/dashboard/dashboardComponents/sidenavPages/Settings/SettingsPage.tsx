@@ -41,10 +41,10 @@ export default function SettingsPage () {
   }
 
   return (
-    <div className='flex min-h-screen bg-bgMain text-textMain'>
+    <div className=' bg-bgMain text-textMain pb-32 lg:pb-0 '>
       <Sidebar open={open} setOpen={setOpen} />
 
-      <div className='flex-1'>
+      <div className=''>
         {/* MOBILE HEADER */}
         <div className='lg:hidden flex items-center gap-3 p-4 border-b border-borderSubtle'>
           <button onClick={() => setOpen(true)}>
@@ -54,7 +54,7 @@ export default function SettingsPage () {
           <h1 className='font-semibold'>Settings</h1>
         </div>
 
-        <main className='p-6 lg:p-12'>{renderContent()}</main>
+        <main className='px-2 lg:px-6 lg:p-12'>{renderContent()}</main>
       </div>
     </div>
   )

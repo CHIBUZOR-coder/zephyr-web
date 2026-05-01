@@ -1,4 +1,3 @@
-
 import React from 'react'
 import { useWallet } from '@solana/wallet-adapter-react'
 import { useWalletStore } from '../../../../../wallet/wallet.store'
@@ -18,7 +17,7 @@ const WalletSettings: React.FC = () => {
   const removeWallet = useWalletStore(s => s.removeWallet)
 
   return (
-    <div>
+    <div className=''>
       {!connected ? (
         <>
           <div className='w-full max-w-3xl'>
@@ -42,15 +41,18 @@ const WalletSettings: React.FC = () => {
             className='
             w-full
             min-h-screen
-            bg-[#020A09]
+    
+ bg-[#020A09]  
+
+
             text-white
             flex
             justify-center
-            px-4
+    
             py-10
             '
           >
-            <div className='w-full max-w-4xl flex flex-col gap-6'>
+            <div className='w-full  flex flex-col gap-6 '>
               <div>
                 <h1 className='text-xl font-semibold tracking-wide'>
                   CONNECTED WALLETS

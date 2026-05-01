@@ -390,7 +390,7 @@ export default function Portfolio () {
   }
 
   return (
-    <div className='min-h-screen   '>
+    <div className='min-h-screen pb-32 lg:pb-0 '>
       {/* ── Header ── */}
       <header className='flex  flex-col lg:flex-row bg-[#091114] justify-between items-center px-2 lg:px-10 py-7 border-b border-[#111d27] gap-4 lg:gap-0'>
         {/* Left: title */}
@@ -553,7 +553,7 @@ export default function Portfolio () {
               backgroundImage: `url("/images/badgechek.svg")`
             }}
           />
-          <p className='text-[#46514f] font-[900] text-[8px] leading-[15px] tracking-[3px] uppercase lg:mb-0'>
+          <p className='text-[#46514f] font-[900] text-[8px] leading-[15px] tracking-[3px] uppercase '>
             All assets remain in your control via Vault PDAs • No counterparty
             risk • Verify on Solscan
           </p>

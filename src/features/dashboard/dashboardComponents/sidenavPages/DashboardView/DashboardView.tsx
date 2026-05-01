@@ -248,10 +248,10 @@ const DashboardView = () => {
                 }}
                 className='w-full relative px-3'
               >
-                <button className='flex justify-center items-center swiper-prev bg-swipnav border-[1.5px] border-[#23483B] z-30 rounded-full absolute top-1/2 left-5 cursor-pointer'>
+                <button className='flex justify-center items-center swiper-prev bg-swipnav border-[1.5px] border-[#23483B]  rounded-full absolute top-1/2 left-5 cursor-pointer'>
                   <MdKeyboardArrowLeft className='h-6 w-6 text-white' />
                 </button>
-                <button className='flex justify-center items-center swiper-next bg-swipnav border-[1.5px] border-[#23483B] z-30 rounded-full absolute top-1/2 right-5 cursor-pointer'>
+                <button className='flex justify-center items-center swiper-next bg-swipnav border-[1.5px] border-[#23483B]  rounded-full absolute top-1/2 right-5 cursor-pointer'>
                   <MdKeyboardArrowRight className='h-6 w-6 text-white' />
                 </button>
 

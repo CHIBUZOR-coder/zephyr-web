@@ -59,10 +59,10 @@ const Navbar = () => {
 
   useEffect(() => {
     const interval = setInterval(() => {
-      setPlaceholderIndex((prev) => (prev + 1) % placeholders.length)
+      setPlaceholderIndex(prev => (prev + 1) % placeholders.length)
     }, 4000)
     return () => clearInterval(interval)
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const handleSearch = async (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -74,7 +74,9 @@ const Navbar = () => {
       if (query.startsWith('@trader_')) {
         const traderName = query.replace('@trader_', '').toLowerCase()
         try {
-          const res = await fetch(`${API_BASE}/api/search/trader?query=${traderName}`)
+          const res = await fetch(
+            `${API_BASE}/api/search/trader?query=${traderName}`
+          )
           const data = await res.json()
           if (data.success) {
             navigate(`/profile/${data.data.walletAddress}`)
@@ -141,7 +143,8 @@ const Navbar = () => {
       }
     }
     window.addEventListener('zephyr_read_activities_updated', handler)
-    return () => window.removeEventListener('zephyr_read_activities_updated', handler)
+    return () =>
+      window.removeEventListener('zephyr_read_activities_updated', handler)
   }, [])
 
   const hasUnread = useMemo(() => {
@@ -162,12 +165,12 @@ const Navbar = () => {
 
   // bg-[#101B22]
   return (
-    <div className='w-full'>
-      <div className='w-full sticky top-0 z-[80] bg-[#0c1414]  p-3 lg:pb-0 '>
+    <div className='w-full sticky top-0 z-[80] bg-[#0c1414] '>
+      <div className='w-full sticky  z-[80]   pb-0 lg:p-3  '>
         {/* Top bar  LargeScreen*/}
         <div className='w-full hidden lg:block'>
           <div
-            className={`  sticky top-0 w-full flex items-center ${
+            className={`  w-full flex items-center ${
               visible ? 'justify-between' : 'justify-end'
             }   px-5 py-3  `}
           >
@@ -333,166 +336,165 @@ const Navbar = () => {
             </div>
           </div>
         </div>
+      </div>
+      {/* Mobile */}
+      <div className='lg:hidden  block '>
+        <div className='flex justify-between gap-4  px-1'>
+          <div className='flex items-center gap-4'>
+            <div
+              onClick={() => setOpenMenu(true)}
+              className='w-[40px] h-[40px] flex justify-center items-center border-[2px] border-[#23483B] bg-[#102221] rounded-md'
+            >
+              <span
+                className='bg-cover bg-center h-[32px] w-[32px]'
+                style={{ backgroundImage: `url("/images/hamburger.svg")` }}
+              ></span>
+            </div>
+            <div className=' '>
+              <span
+                className='inline-block bg-center bg-cover w-[40px] h-[40px]'
+                style={{
+                  backgroundImage: `url("/images/zeflogo.png")`
+                }}
+              ></span>
 
-        {/* Mobile */}
-        <div className='lg:hidden  block'>
-          <div className='flex justify-between gap-4  px-1 b'>
-            <div className='flex items-center gap-4'>
-              <div
-                onClick={() => setOpenMenu(true)}
-                className='w-[40px] h-[40px] flex justify-center items-center border-[2px] border-[#23483B] bg-[#102221] rounded-md'
-              >
-                <span
-                  className='bg-cover bg-center h-[32px] w-[32px]'
-                  style={{ backgroundImage: `url("/images/hamburger.svg")` }}
-                ></span>
-              </div>
-              <div className=' '>
-                <span
-                  className='inline-block bg-center bg-cover w-[40px] h-[40px]'
-                  style={{
-                    backgroundImage: `url("/images/zeflogo.png")`
-                  }}
-                ></span>
-
-                <div className='text-[12px] font-[700] text-teal-400 -mt-4'>
-                  Zephyr
-                </div>
+              <div className='text-[12px] font-[700] text-teal-400 -mt-4'>
+                Zephyr
               </div>
             </div>
+          </div>
 
-            <div
-              className={` flex ${
-                !connected ? 'justify-end' : 'justify-between'
-              }  items-center gap-2  w-[90%] `}
-            >
-              <div className='w-[50%]  hidden md:flex lg:hidden justify-between items-center px-5 py-2   '>
-                {/* <input
+          <div
+            className={` flex ${
+              !connected ? 'justify-end' : 'justify-between'
+            }  items-center gap-2  w-[90%] `}
+          >
+            <div className='w-[50%]  hidden md:flex lg:hidden justify-between items-center px-5 py-2   '>
+              {/* <input
                   placeholder={`Search traders, tokens, org addresses'
                   className='${
                     visible ? '' : 'hidden'
                   } w-full bg-[#102221] px-4 py-2 rounded-lg outline-none placeholder:text-xs`}
                 /> */}
-              </div>
-              {connected && balance !== null && (
-                <button
-                  onClick={() => setShowUsdc(!showUsdc)}
-                  className='inline-flex text-[8px] bg-[#0f1a18] px-2 py-2 rounded-lg border-[1px] border-[#0A3F46] items-center gap-1 text-white cursor-pointer hover:opacity-80 transition-opacity'
-                >
-                  <span
-                    style={{
-                      backgroundImage: `url("/images/${
-                        showUsdc ? 'usdc.svg' : 'solana.svg'
-                      }")`
-                    }}
-                    className='inline-block bg-enter bg-cover h-[14px] w-[14px] md:h-[16px] md:w-[16px]'
-                  ></span>
-                  {showUsdc
-                    ? `${(balance * solPrice).toFixed(2)} USDC`
-                    : `${balance.toFixed(2)} SOL`}
-                </button>
-              )}
-
-              {!connected ? (
-                // NOT CONNECTED
-                <button
-                  onClick={() => setWalletModal(true)}
-                  className='bg-teal-500  shadow-[0_0_25px_0px_rgba(20,184,166,0.3)]  px-3 py-1 rounded-lg text-[10px] font-[700] text-white hover:bg-teal-600 transition flex justify-between gap-4'
-                >
-                  <span> Connect Wallet</span>
-                  <span
-                    className='h-[12px] w-[12px]'
-                    style={{ backgroundImage: `url("/images/connect.svg")` }}
-                  ></span>
-                </button>
-              ) : (
-                // CONNECTED
-                <div className='relative'>
-                  <div className='relative'>
-                    <button className='flex items-center cursor-pointer  bg-[#0f1a18] border border-[#23483B] px-1 md:px-4 py-1 rounded-lg text-[10px] font-[700] text-[#00A991] gap-2 '>
-                      {/* ADDRESS */}
-                      <div className='flex items-center gap-1'>
-                        <span>
-                          {publicKey?.toBase58().slice(0, 2)}…
-                          {publicKey?.toBase58().slice(-2)}
-                        </span>
-                        {/* COPY ICON */}
-                        {copied ? (
-                          <>
-                            <span className=' text-[9px] md:text-[12px] text-[#00A991] flex items-center gap-1 '>
-                              <span className='absolute top-[1px]'>Copied</span>{' '}
-                              <span>✓</span>
-                            </span>
-                          </>
-                        ) : (
-                          <>
-                            <span
-                              onClick={handleCopy}
-                              style={{
-                                backgroundImage: 'url("/images/copy.svg")'
-                              }}
-                              className='inline-block  h-[12px] w-[12px] md:h-[16px] md:w-[16px] bg-center bg-cover cursor-pointer opacity-80 hover:opacity-100'
-                              title={copied ? 'Copied!' : 'Copy address'}
-                            ></span>
-                          </>
-                        )}
-                      </div>
-
-                      {/* DROPDOWN ARROW */}
-                      <span
-                        onClick={e => {
-                          e.stopPropagation()
-                          setWalletMenuOpen(prev => !prev)
-                        }}
-                        className='cursor-pointer text-xl'
-                      >
-                        ▾
-                      </span>
-                    </button>
-
-                    <WalletMenu
-                      open={walletMenuOpen}
-                      onClose={() => setWalletMenuOpen(false)}
-                    />
-                  </div>
-                </div>
-              )}
-              {connected && (
-                <>
-                  <div className='h-[26px] w-[26px] rounded-full p-[1px]  border-[1.5px] border-[#f5e2d9] flex justify-center items-center'>
-                    <span
-                      style={{
-                        backgroundImage: `url("/images/mode.png")`
-                      }}
-                      className='inline-block bg-center bg-cover h-[19px] w-[19px] rounded-full '
-                    ></span>
-                  </div>
-                </>
-              )}
-              {connected && (
-                <>
-                  <span
-                    onClick={() => {
-                      setOpenNotifications(true)
-                      setMarkedAsRead(true)
-                    }}
-                    style={{
-                      backgroundImage: `url("/images/bell.svg")`
-                    }}
-                    className='inline-block cursor-pointer relative bg-center bg-cover w-[20px] h-[20px]'
-                  >
-                    {hasUnread && (
-                      <span className='absolute right-[1.3px] top-1 bg-[#FB2C36] h-[6px] w-[6px] rounded-full'></span>
-                    )}
-                  </span>
-                </>
-              )}
             </div>
+            {connected && balance !== null && (
+              <button
+                onClick={() => setShowUsdc(!showUsdc)}
+                className='inline-flex text-[8px] bg-[#0f1a18] px-2 py-2 rounded-lg border-[1px] border-[#0A3F46] items-center gap-1 text-white cursor-pointer hover:opacity-80 transition-opacity'
+              >
+                <span
+                  style={{
+                    backgroundImage: `url("/images/${
+                      showUsdc ? 'usdc.svg' : 'solana.svg'
+                    }")`
+                  }}
+                  className='inline-block bg-enter bg-cover h-[14px] w-[14px] md:h-[16px] md:w-[16px]'
+                ></span>
+                {showUsdc
+                  ? `${(balance * solPrice).toFixed(2)} USDC`
+                  : `${balance.toFixed(2)} SOL`}
+              </button>
+            )}
+
+            {!connected ? (
+              // NOT CONNECTED
+              <button
+                onClick={() => setWalletModal(true)}
+                className='bg-teal-500  shadow-[0_0_25px_0px_rgba(20,184,166,0.3)]  px-3 py-1 rounded-lg text-[10px] font-[700] text-white hover:bg-teal-600 transition flex justify-between gap-4'
+              >
+                <span> Connect Wallet</span>
+                <span
+                  className='h-[12px] w-[12px]'
+                  style={{ backgroundImage: `url("/images/connect.svg")` }}
+                ></span>
+              </button>
+            ) : (
+              // CONNECTED
+              <div className='relative'>
+                <div className='relative'>
+                  <button className='flex items-center cursor-pointer  bg-[#0f1a18] border border-[#23483B] px-1 md:px-4 py-1 rounded-lg text-[10px] font-[700] text-[#00A991] gap-2 '>
+                    {/* ADDRESS */}
+                    <div className='flex items-center gap-1'>
+                      <span>
+                        {publicKey?.toBase58().slice(0, 2)}…
+                        {publicKey?.toBase58().slice(-2)}
+                      </span>
+                      {/* COPY ICON */}
+                      {copied ? (
+                        <>
+                          <span className=' text-[9px] md:text-[12px] text-[#00A991] flex items-center gap-1 '>
+                            <span className='absolute top-[1px]'>Copied</span>{' '}
+                            <span>✓</span>
+                          </span>
+                        </>
+                      ) : (
+                        <>
+                          <span
+                            onClick={handleCopy}
+                            style={{
+                              backgroundImage: 'url("/images/copy.svg")'
+                            }}
+                            className='inline-block  h-[12px] w-[12px] md:h-[16px] md:w-[16px] bg-center bg-cover cursor-pointer opacity-80 hover:opacity-100'
+                            title={copied ? 'Copied!' : 'Copy address'}
+                          ></span>
+                        </>
+                      )}
+                    </div>
+
+                    {/* DROPDOWN ARROW */}
+                    <span
+                      onClick={e => {
+                        e.stopPropagation()
+                        setWalletMenuOpen(prev => !prev)
+                      }}
+                      className='cursor-pointer text-xl'
+                    >
+                      ▾
+                    </span>
+                  </button>
+
+                  <WalletMenu
+                    open={walletMenuOpen}
+                    onClose={() => setWalletMenuOpen(false)}
+                  />
+                </div>
+              </div>
+            )}
+            {connected && (
+              <>
+                <div className='h-[26px] w-[26px] rounded-full p-[1px]  border-[1.5px] border-[#f5e2d9] flex justify-center items-center'>
+                  <span
+                    style={{
+                      backgroundImage: `url("/images/mode.png")`
+                    }}
+                    className='inline-block bg-center bg-cover h-[19px] w-[19px] rounded-full '
+                  ></span>
+                </div>
+              </>
+            )}
+            {connected && (
+              <>
+                <span
+                  onClick={() => {
+                    setOpenNotifications(true)
+                    setMarkedAsRead(true)
+                  }}
+                  style={{
+                    backgroundImage: `url("/images/bell.svg")`
+                  }}
+                  className='inline-block cursor-pointer relative bg-center bg-cover w-[20px] h-[20px]'
+                >
+                  {hasUnread && (
+                    <span className='absolute right-[1.3px] top-1 bg-[#FB2C36] h-[6px] w-[6px] rounded-full'></span>
+                  )}
+                </span>
+              </>
+            )}
           </div>
         </div>
       </div>
 
-      <div className='w-full   flex lg:hidden justify-between items-center px-5 py-2  md:mt-4 bg-[#000000] '>
+      <div className='w-full   flex lg:hidden justify-between items-center px-5 py-2 mt-2 md:mt-4 bg-[#000000] '>
         <input
           placeholder={placeholders[placeholderIndex]}
           onKeyDown={handleSearch}
