@@ -45,7 +45,7 @@ export const CustomWalletModal = ({ open, onClose }: Props) => {
     )
   })
 
-  // ── Desktop: normal reactive close
+  // ── Desktop: normal reactive close jjjj
   useEffect(() => {
     if (!isMobile && authenticated && open) {
       onCloseRef.current()
