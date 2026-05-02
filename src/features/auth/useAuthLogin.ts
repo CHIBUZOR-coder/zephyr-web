@@ -13,6 +13,7 @@ export function useAuthLogin() {
     {
       publicKey: string;
       signMessage: (msg: Uint8Array) => Promise<Uint8Array>;
+      onSuccessCallback?: () => void;
     }
   >({
     mutationFn: async ({ publicKey, signMessage }) => {
@@ -73,8 +74,9 @@ export function useAuthLogin() {
       return user;
     },
 
-    onSuccess: async () => {
+    onSuccess: async (_, variables) => {
       await queryClient.invalidateQueries({ queryKey: ["auth-me"] });
+      variables.onSuccessCallback?.(); // ← add this
     },
   });
 }

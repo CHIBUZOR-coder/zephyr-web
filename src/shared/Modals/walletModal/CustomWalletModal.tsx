@@ -28,7 +28,9 @@ export const CustomWalletModal = ({ open, onClose }: Props) => {
 
   // Stable ref so callbacks never go stale after mobile backgrounding
   const onCloseRef = useRef(onClose)
-  useEffect(() => { onCloseRef.current = onClose }, [onClose])
+  useEffect(() => {
+    onCloseRef.current = onClose
+  }, [onClose])
 
   const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)
 
@@ -52,6 +54,26 @@ export const CustomWalletModal = ({ open, onClose }: Props) => {
   // React effects don't reliably re-run after the app returns from
   // background (Phantom/Solflare signing screen), so we bypass React
   // and read the store directly until auth is confirmed
+  // ── Mobile: visibilitychange listener (primary fix)
+  // Fires the moment the user returns from Phantom/Solflare signing screen
+  useEffect(() => {
+    if (!isMobile || !open) return
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        const { authenticated } = useAuthStore.getState()
+        if (authenticated) {
+          onCloseRef.current()
+        }
+      }
+    }
+
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    return () =>
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+  }, [open, isMobile])
+
+  // ── Mobile: polling as fallback (catches edge cases on some Android browsers)
   useEffect(() => {
     if (!isMobile || !open) return
 
@@ -61,10 +83,17 @@ export const CustomWalletModal = ({ open, onClose }: Props) => {
         clearInterval(interval)
         onCloseRef.current()
       }
-    }, 500)
+    }, 300)
 
     return () => clearInterval(interval)
   }, [open, isMobile])
+
+  // ── Both platforms: watch isSuccess directly
+  useEffect(() => {
+    if (loginMutation.isSuccess && open) {
+      onCloseRef.current()
+    }
+  }, [loginMutation.isSuccess, open])
 
   const hasAttemptedAuth = authenticated
 
@@ -80,9 +109,12 @@ export const CustomWalletModal = ({ open, onClose }: Props) => {
       !hasAttemptedAuth
     ) {
       loginMutation.mutate(
-        { publicKey: publicKey.toBase58(), signMessage },
         {
-          onSuccess: () => onCloseRef.current(),
+          publicKey: publicKey.toBase58(),
+          signMessage,
+          onSuccessCallback: () => onCloseRef.current()
+        },
+        {
           onError: error => console.error('Authentication failed:', error)
         }
       )
@@ -206,16 +238,17 @@ export const CustomWalletModal = ({ open, onClose }: Props) => {
                       : 'Install a Solana wallet extension from the Chrome Web Store to continue.'}
                   </p>
                   <div className='flex gap-2 mt-1'>
-                    
-                     <Link  to='https://phantom.app/download'
+                    <Link
+                      to='https://phantom.app/download'
                       target='_blank'
                       rel='noreferrer'
                       className='text-[10px] text-[#00f5c4] border border-[#00f5c4] rounded px-3 py-1 hover:bg-[#00f5c4]/10 transition'
                     >
                       Get Phantom
                     </Link>
-                    
-                      <Link to='https://solflare.com/download'
+
+                    <Link
+                      to='https://solflare.com/download'
                       target='_blank'
                       rel='noreferrer'
                       className='text-[10px] text-[#00f5c4] border border-[#00f5c4] rounded px-3 py-1 hover:bg-[#00f5c4]/10 transition'
