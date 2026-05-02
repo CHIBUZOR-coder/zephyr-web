@@ -37,13 +37,14 @@ export const CustomWalletModal = ({ open, onClose }: Props) => {
 
   const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)
 
-  const detectedWallets = wallets.filter(w => {
-    if (w.adapter.name === 'Mobile Wallet Adapter') return false
-    return (
-      w.readyState === WalletReadyState.Installed ||
-      w.readyState === WalletReadyState.Loadable
-    )
-  })
+const detectedWallets = wallets.filter(w => {
+  if (w.adapter.name === 'Mobile Wallet Adapter') return isMobile // ← back to original
+  return (
+    w.readyState === WalletReadyState.Installed ||
+    w.readyState === WalletReadyState.Loadable
+  )
+})
+
 
   // ── Desktop: normal reactive close jjjj
   useEffect(() => {
