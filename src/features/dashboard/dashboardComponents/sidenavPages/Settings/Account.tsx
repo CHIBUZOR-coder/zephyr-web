@@ -284,7 +284,7 @@ export default function Account () {
                 type='text'
                 value={twitter}
                 onChange={e => setTwitter(e.target.value)}
-                placeholder='Input your Twitter profile link'
+                placeholder='Paste your Twitter profile link'
                 className='
                 flex-1
                 px-3 py-2
@@ -336,7 +336,7 @@ export default function Account () {
                 type='text'
                 value={telegram}
                 onChange={e => setTelegram(e.target.value)}
-                placeholder='Input your Telegram profile link'
+                placeholder='Paste your Telegram profile link'
                 className='
                 flex-1
                 px-3 py-2

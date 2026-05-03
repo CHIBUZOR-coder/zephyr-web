@@ -73,7 +73,7 @@ export default function Profile () {
   const consistencyColor = consistencyScore >= 60 ? 'text-emerald-400' : consistencyScore >= 40 ? 'text-yellow-400' : 'text-red-400'
 
   return (
-    <div className='min-h-screen bg-[#020c0c] text-white p-3 md:p-6 '>
+    <div className='min-h-screen bg-[#020c0c] text-white p-3 md:p-6 mb-40 lg:mb-0'>
       <div className='max-w-6xl mx-auto space-y-6'>
         <ProfileHeader />
         {/* STATS */}

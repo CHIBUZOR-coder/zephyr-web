@@ -22,7 +22,7 @@ export default function VisitorProfile () {
   if (!trader) return <div className='text-white'>Trader not found</div>
 
   return (
-    <div className='min-h-screen bg-[#061414] text-white p-4 md:p-6'>
+    <div className='min-h-screen bg-[#061414] text-white p-4 md:p-6 pb-40 lg:pb-0'>
       <div className='max-w-7xl mx-auto space-y-6'>
         <ProfileHeader trader={trader} />
         <StatsGrid trader={trader} />

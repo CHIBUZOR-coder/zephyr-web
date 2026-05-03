@@ -2004,3 +2004,34 @@ User stays logged in ✓
 
 
 text-[#00A991]
+const handleSearch = async (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      const query = e.currentTarget.value.trim()
+      e.currentTarget.value = ''
+      if (!query) return
+
+      if (query.startsWith('@trader_')) {
+        const traderName = query.replace('@trader_', '').toLowerCase()
+        try {
+          const res = await fetch(
+            `${API_BASE}/api/search/trader?query=${traderName}`
+          )
+          const data = await res.json()
+          if (data.success) {
+            navigate(`/profile/${data.data.walletAddress}`)
+          }
+        } catch (err) {
+          console.error('Trader search failed', err)
+        }
+      } else if (query.startsWith('@token_')) {
+        const tokenAddress = query.replace('@token_', '')
+        setPrefilledTokenAddress(tokenAddress)
+        requestAnimationFrame(() => setOpenCallTrade(true))
+      } else if (query.startsWith('@address_')) {
+        const address = query.replace('@address_', '')
+        navigate(`/profile/${address}`)
+      }
+    }
+  }
+
+

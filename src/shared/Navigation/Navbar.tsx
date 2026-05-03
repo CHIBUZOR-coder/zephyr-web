@@ -20,6 +20,103 @@ import { useAllVaultActivities } from '../../features/dashboard/dashboardCompone
 import { API_BASE } from '../../core/query/authClient'
 // import { useNotificationStore } from '../Modals/Notification/useNotificationStore'
 
+// ── Search mode type
+type SearchMode = 'trader' | 'token' | 'address'
+
+const searchModes: {
+  id: SearchMode
+  label: string
+  emoji: string
+  placeholder: string
+}[] = [
+  {
+    id: 'trader',
+    label: 'Trader',
+    emoji: '👤',
+    placeholder: 'Enter trader name (e.g. PatricK_The_dev)'
+  },
+  {
+    id: 'token',
+    label: 'Token',
+    emoji: '🪙',
+    placeholder: 'Enter token address (e.g. So111...)'
+  },
+  {
+    id: 'address',
+    label: 'Address',
+    emoji: '📋',
+    placeholder: 'Enter vault address (e.g. 7tqB...)'
+  }
+]
+
+// ── Declared outside Navbar to prevent re-creation on every render
+interface SearchModeDropdownProps {
+  searchMode: SearchMode
+  searchModeOpen: boolean
+  setSearchMode: (mode: SearchMode) => void
+  setSearchModeOpen: (open: boolean | ((prev: boolean) => boolean)) => void
+}
+
+const SearchModeDropdown = ({
+  searchMode,
+  searchModeOpen,
+  setSearchMode,
+  setSearchModeOpen
+}: SearchModeDropdownProps) => {
+  const activeMode = searchModes.find(m => m.id === searchMode)!
+
+  return (
+    <div className='relative flex items-center'>
+      {/* Trigger Button */}
+      <button
+        onClick={() => setSearchModeOpen(prev => !prev)}
+        className='flex items-center gap-1 bg-[#102221] border border-[#0A3F46] hover:border-[#00A991] transition-colors px-2 py-[6px] rounded-lg text-[10px] font-[700] text-[#00A991] whitespace-nowrap'
+      >
+        <span>{activeMode.emoji}</span>
+        <span className='hidden sm:inline'>{activeMode.label}</span>
+        <span
+          className={`transition-transform duration-200 text-[8px] ${
+            searchModeOpen ? 'rotate-180' : 'rotate-0'
+          }`}
+        >
+          ▾
+        </span>
+      </button>
+
+      {/* Animated Dropdown */}
+      <div
+        className={`absolute top-[calc(100%+6px)] left-0 z-[100] bg-[#0c1e1e] border border-[#23483B] rounded-lg overflow-hidden shadow-[0_8px_32px_rgba(0,169,145,0.15)] transition-all duration-200 origin-top ${
+          searchModeOpen
+            ? 'opacity-100 scale-y-100 pointer-events-auto'
+            : 'opacity-0 scale-y-0 pointer-events-none'
+        }`}
+        style={{ minWidth: '130px' }}
+      >
+        {searchModes.map(mode => (
+          <button
+            key={mode.id}
+            onClick={() => {
+              setSearchMode(mode.id)
+              setSearchModeOpen(false)
+            }}
+            className={`w-full flex items-center gap-2 px-3 py-2 text-[11px] font-[600] transition-colors hover:bg-[#102221] ${
+              searchMode === mode.id
+                ? 'text-[#00A991] bg-[#102221]'
+                : 'text-gray-400'
+            }`}
+          >
+            <span>{mode.emoji}</span>
+            <span>{mode.label}</span>
+            {searchMode === mode.id && (
+              <span className='ml-auto text-[#00A991] text-[10px]'>✓</span>
+            )}
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 const Navbar = () => {
   const [walletMenuOpen, setWalletMenuOpen] = useState(false)
   const navigate = useNavigate()
@@ -38,7 +135,7 @@ const Navbar = () => {
   const { masterMode, toggleMasterMode } = useTradingModeStore()
   const { publicKey, connected } = useWallet()
   const { setWallet } = useWalletStore()
-  const { user } = useAuthStore() // get auth state
+  const { user } = useAuthStore()
 
   const [copied, setCopied] = useState(false)
   const [showUsdc, setShowUsdc] = useState(false)
@@ -46,36 +143,25 @@ const Navbar = () => {
   const balance = balanceData?.balance ?? null
   const { data: solPriceData } = useSolPrice()
   const solPrice = solPriceData?.price ?? 0
-  // const unread = useNotificationStore(s => s.unreadCount())
 
-  // ── Search Logic
-  const [placeholderIndex, setPlaceholderIndex] = useState(0)
-  const placeholders = [
-    'Search traders, tokens, or addresses',
-    '@trader_name (e.g. @trader_PatricK_The_dev)',
-    '@token_address (e.g. @token_So111...)',
-    '@address_vault (e.g. @address_7tqB...)'
-  ]
+  const [searchMode, setSearchMode] = useState<SearchMode>('trader')
+  const [searchModeOpen, setSearchModeOpen] = useState(false)
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setPlaceholderIndex(prev => (prev + 1) % placeholders.length)
-    }, 4000)
-    return () => clearInterval(interval)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  const activePlaceholder = searchModes.find(
+    m => m.id === searchMode
+  )!.placeholder
 
+  // ── handleSearch — directly uses active search mode
   const handleSearch = async (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
       const query = e.currentTarget.value.trim()
       e.currentTarget.value = ''
       if (!query) return
 
-      if (query.startsWith('@trader_')) {
-        const traderName = query.replace('@trader_', '').toLowerCase()
+      if (searchMode === 'trader') {
         try {
           const res = await fetch(
-            `${API_BASE}/api/search/trader?query=${traderName}`
+            `${API_BASE}/api/search/trader?query=${query.toLowerCase()}`
           )
           const data = await res.json()
           if (data.success) {
@@ -84,13 +170,11 @@ const Navbar = () => {
         } catch (err) {
           console.error('Trader search failed', err)
         }
-      } else if (query.startsWith('@token_')) {
-        const tokenAddress = query.replace('@token_', '')
-        setPrefilledTokenAddress(tokenAddress)
+      } else if (searchMode === 'token') {
+        setPrefilledTokenAddress(query)
         requestAnimationFrame(() => setOpenCallTrade(true))
-      } else if (query.startsWith('@address_')) {
-        const address = query.replace('@address_', '')
-        navigate(`/profile/${address}`)
+      } else if (searchMode === 'address') {
+        navigate(`/profile/${query}`)
       }
     }
   }
@@ -101,10 +185,6 @@ const Navbar = () => {
     if (connected) {
       setWallet(publicKey.toBase58(), true)
     }
-
-    // if (user) {
-    //   console.log('user:', user)
-    // }
   }, [connected, publicKey, setWallet])
 
   // Notification Logic
@@ -163,28 +243,40 @@ const Navbar = () => {
 
   const { setWalletModal } = useGeneralContext()
 
-  // bg-[#101B22]
   return (
-    <div className='w-full sticky top-0 z-[80] bg-[#0c1414] '>
-      <div className='w-full sticky  z-[80]   pb-0 lg:p-3  '>
-        {/* Top bar  LargeScreen*/}
+    <div className='w-full sticky top-0 z-[80] bg-[#0c1414]'>
+      <div className='w-full sticky z-[80] pb-0 lg:p-3'>
+        {/* ─────────────────────────────────────────
+            Top bar — Large Screen/////////
+        ───────────────────────────────────────── */}
         <div className='w-full hidden lg:block'>
           <div
-            className={`  w-full flex items-center ${
+            className={`w-full flex items-center ${
               visible ? 'justify-between' : 'justify-end'
-            }   px-5 py-3  `}
+            } px-5 py-3`}
           >
-            <input
-              placeholder={placeholders[placeholderIndex]}
-              onKeyDown={handleSearch}
-              className={` ${
+            {/* SEARCH — Desktop (UPDATED: wrapped with SearchModeDropdown) */}
+            <div
+              className={`${
                 visible ? '' : 'hidden'
-              }  w-1/2 lg:w-1/4 bg-[#102221] px-4 py-2 rounded-lg outline-none placeholder:text-xs text-white caret-white transition-all duration-500`}
-              style={{ caretShape: 'block' } as React.CSSProperties}
-            />
+              } flex items-center gap-2 w-1/2 lg:w-1/4`}
+            >
+              <SearchModeDropdown
+                searchMode={searchMode}
+                searchModeOpen={searchModeOpen}
+                setSearchMode={setSearchMode}
+                setSearchModeOpen={setSearchModeOpen}
+              />
+              <input
+                placeholder={activePlaceholder}
+                onKeyDown={handleSearch}
+                className='flex-1 bg-[#102221] px-4 py-2 rounded-lg outline-none placeholder:text-xs text-white caret-white transition-all duration-500'
+                style={{ caretShape: 'block' } as React.CSSProperties}
+              />
+            </div>
 
             <div className='flex items-center gap-5'>
-              <div className={` flex items-center gap-5`}>
+              <div className='flex items-center gap-5'>
                 {connected && balance !== null && (
                   <button
                     onClick={() => setShowUsdc(!showUsdc)}
@@ -209,7 +301,7 @@ const Navbar = () => {
                     {masterMode ? (
                       <div
                         onClick={toggleMasterMode}
-                        className='rounded-md border-[1.5px] bg-master border-masterb shadow-[0_0_25px_0px_rgba(245,158,11,0.2)] p-2 flex justify-between items-center gap-2 cursor-pointer '
+                        className='rounded-md border-[1.5px] bg-master border-masterb shadow-[0_0_25px_0px_rgba(245,158,11,0.2)] p-2 flex justify-between items-center gap-2 cursor-pointer'
                       >
                         <p className='h-[5px] w-[5px] rounded-full bg-[#00A991] animate-pulse'></p>
                         <p className='text-[9px] font-[900] leading-[9.875px] tracking-[0.988px] text-[#FE9A00]'>
@@ -225,7 +317,7 @@ const Navbar = () => {
                             toggleMasterMode()
                           }
                         }}
-                        className='rounded-md border-[1.5px] border-modeboreder shadow-[0_0_25px_0px_rgba(0,169,145,0.3)] p-2 flex justify-between items-center gap-2 cursor-pointer '
+                        className='rounded-md border-[1.5px] border-modeboreder shadow-[0_0_25px_0px_rgba(0,169,145,0.3)] p-2 flex justify-between items-center gap-2 cursor-pointer'
                       >
                         <p className='h-[5px] w-[5px] rounded-full bg-[#00A991] animate-pulse'></p>
                         <p className='text-[9px] font-[900] leading-[9.875px] tracking-[0.988px] text-[#00a991]'>
@@ -237,53 +329,42 @@ const Navbar = () => {
                 )}
 
                 {!connected ? (
-                  // NOT CONNECTED
                   <button
                     onClick={() => setWalletModal(true)}
-                    className='bg-teal-500  shadow-[0_0_25px_0px_rgba(20,184,166,0.3)]  px-3 py-1 rounded-lg text-[10px] font-[700] text-white hover:bg-teal-600 transition flex justify-between gap-2'
+                    className='bg-teal-500 shadow-[0_0_25px_0px_rgba(20,184,166,0.3)] px-3 py-1 rounded-lg text-[10px] font-[700] text-white hover:bg-teal-600 transition flex justify-between gap-2'
                   >
-                    <span> Connect Wallet</span>
+                    <span>Connect Wallet</span>
                     <span
                       className='h-[12px] w-[12px]'
                       style={{ backgroundImage: `url("/images/connect.svg")` }}
                     ></span>
                   </button>
                 ) : (
-                  // CONNECTED
                   <div className='relative'>
                     <div className='relative'>
-                      <button className='flex items-center cursor-pointer  bg-[#0f1a18] border border-[#23483B] px-3 py-1 rounded-lg text-[10px] font-[700] text-[#00A991] gap-2'>
-                        {/* ADDRESS */}
+                      <button className='flex items-center cursor-pointer bg-[#0f1a18] border border-[#23483B] px-3 py-1 rounded-lg text-[10px] font-[700] text-[#00A991] gap-2'>
                         <div className='flex items-center gap-1'>
                           <span>
                             {publicKey?.toBase58().slice(0, 4)}…
                             {publicKey?.toBase58().slice(-4)}
                           </span>
-                          {/* COPY ICON */}
                           {copied ? (
-                            <>
-                              <span className=' text-[9px] text-[#00A991] flex items-center gap-1 '>
-                                <span className='absolute top-[1px]'>
-                                  Copied
-                                </span>{' '}
-                                <span>✓</span>
-                              </span>
-                            </>
+                            <span className='text-[9px] text-[#00A991] flex items-center gap-1'>
+                              <span className='absolute top-[1px]'>Copied</span>
+                              <span>✓</span>
+                            </span>
                           ) : (
-                            <>
-                              <span
-                                onClick={handleCopy}
-                                style={{
-                                  backgroundImage: 'url("/images/copy.svg")'
-                                }}
-                                className='inline-block  h-[12px] w-[12px] bg-center bg-cover cursor-pointer opacity-80 hover:opacity-100'
-                                title={copied ? 'Copied!' : 'Copy address'}
-                              ></span>
-                            </>
+                            <span
+                              onClick={handleCopy}
+                              style={{
+                                backgroundImage: 'url("/images/copy.svg")'
+                              }}
+                              className='inline-block h-[12px] w-[12px] bg-center bg-cover cursor-pointer opacity-80 hover:opacity-100'
+                              title={copied ? 'Copied!' : 'Copy address'}
+                            ></span>
                           )}
                         </div>
 
-                        {/* DROPDOWN ARROW */}
                         <span
                           onClick={e => {
                             e.stopPropagation()
@@ -303,8 +384,9 @@ const Navbar = () => {
                   </div>
                 )}
               </div>
+
               {connected && (
-                <div className='flex justify-between items-center gap-3 '>
+                <div className='flex justify-between items-center gap-3'>
                   <Link
                     to={'/profile'}
                     className='h-[36px] w-[36px] rounded-full p-[1px] border-[1.5px] border-[#f5e2d9] flex justify-center items-center'
@@ -322,9 +404,7 @@ const Navbar = () => {
                   </Link>
                   <span
                     onClick={() => setOpenNotifications(true)}
-                    style={{
-                      backgroundImage: `url("/images/bell.svg")`
-                    }}
+                    style={{ backgroundImage: `url("/images/bell.svg")` }}
                     className='inline-block relative bg-center bg-cover w-[20px] h-[20px] cursor-pointer'
                   >
                     {hasUnread && (
@@ -337,9 +417,12 @@ const Navbar = () => {
           </div>
         </div>
       </div>
-      {/* Mobile */}
-      <div className='lg:hidden  block '>
-        <div className='flex justify-between gap-4  px-1'>
+
+      {/* ─────────────────────────────────────────
+          Mobile
+      ───────────────────────────────────────── */}
+      <div className='lg:hidden block'>
+        <div className='flex justify-between gap-4 px-1'>
           <div className='flex items-center gap-4'>
             <div
               onClick={() => setOpenMenu(true)}
@@ -350,14 +433,11 @@ const Navbar = () => {
                 style={{ backgroundImage: `url("/images/hamburger.svg")` }}
               ></span>
             </div>
-            <div className=' '>
+            <div>
               <span
                 className='inline-block bg-center bg-cover w-[40px] h-[40px]'
-                style={{
-                  backgroundImage: `url("/images/zeflogo.png")`
-                }}
+                style={{ backgroundImage: `url("/images/zeflogo.png")` }}
               ></span>
-
               <div className='text-[12px] font-[700] text-teal-400 -mt-4'>
                 Zephyr
               </div>
@@ -365,18 +445,12 @@ const Navbar = () => {
           </div>
 
           <div
-            className={` flex ${
+            className={`flex ${
               !connected ? 'justify-end' : 'justify-between'
-            }  items-center gap-2  w-[90%] `}
+            } items-center gap-2 w-[90%]`}
           >
-            <div className='w-[50%]  hidden md:flex lg:hidden justify-between items-center px-5 py-2   '>
-              {/* <input
-                  placeholder={`Search traders, tokens, org addresses'
-                  className='${
-                    visible ? '' : 'hidden'
-                  } w-full bg-[#102221] px-4 py-2 rounded-lg outline-none placeholder:text-xs`}
-                /> */}
-            </div>
+            <div className='w-[50%] hidden md:flex lg:hidden justify-between items-center px-5 py-2'></div>
+
             {connected && balance !== null && (
               <button
                 onClick={() => setShowUsdc(!showUsdc)}
@@ -397,51 +471,42 @@ const Navbar = () => {
             )}
 
             {!connected ? (
-              // NOT CONNECTED
               <button
                 onClick={() => setWalletModal(true)}
-                className='bg-teal-500  shadow-[0_0_25px_0px_rgba(20,184,166,0.3)]  px-3 py-1 rounded-lg text-[10px] font-[700] text-white hover:bg-teal-600 transition flex justify-between gap-4'
+                className='bg-teal-500 shadow-[0_0_25px_0px_rgba(20,184,166,0.3)] px-3 py-1 rounded-lg text-[10px] font-[700] text-white hover:bg-teal-600 transition flex justify-between gap-4'
               >
-                <span> Connect Wallet</span>
+                <span>Connect Wallet</span>
                 <span
                   className='h-[12px] w-[12px]'
                   style={{ backgroundImage: `url("/images/connect.svg")` }}
                 ></span>
               </button>
             ) : (
-              // CONNECTED
               <div className='relative'>
                 <div className='relative'>
-                  <button className='flex items-center cursor-pointer  bg-[#0f1a18] border border-[#23483B] px-1 md:px-4 py-1 rounded-lg text-[10px] font-[700] text-[#00A991] gap-2 '>
-                    {/* ADDRESS */}
+                  <button className='flex items-center cursor-pointer bg-[#0f1a18] border border-[#23483B] px-1 md:px-4 py-1 rounded-lg text-[10px] font-[700] text-[#00A991] gap-2'>
                     <div className='flex items-center gap-1'>
                       <span>
                         {publicKey?.toBase58().slice(0, 2)}…
                         {publicKey?.toBase58().slice(-2)}
                       </span>
-                      {/* COPY ICON */}
                       {copied ? (
-                        <>
-                          <span className=' text-[9px] md:text-[12px] text-[#00A991] flex items-center gap-1 '>
-                            <span className='absolute top-[1px]'>Copied</span>{' '}
-                            <span>✓</span>
-                          </span>
-                        </>
+                        <span className='text-[9px] md:text-[12px] text-[#00A991] flex items-center gap-1'>
+                          <span className='absolute top-[1px]'>Copied</span>
+                          <span>✓</span>
+                        </span>
                       ) : (
-                        <>
-                          <span
-                            onClick={handleCopy}
-                            style={{
-                              backgroundImage: 'url("/images/copy.svg")'
-                            }}
-                            className='inline-block  h-[12px] w-[12px] md:h-[16px] md:w-[16px] bg-center bg-cover cursor-pointer opacity-80 hover:opacity-100'
-                            title={copied ? 'Copied!' : 'Copy address'}
-                          ></span>
-                        </>
+                        <span
+                          onClick={handleCopy}
+                          style={{
+                            backgroundImage: 'url("/images/copy.svg")'
+                          }}
+                          className='inline-block h-[12px] w-[12px] md:h-[16px] md:w-[16px] bg-center bg-cover cursor-pointer opacity-80 hover:opacity-100'
+                          title={copied ? 'Copied!' : 'Copy address'}
+                        ></span>
                       )}
                     </div>
 
-                    {/* DROPDOWN ARROW */}
                     <span
                       onClick={e => {
                         e.stopPropagation()
@@ -460,48 +525,53 @@ const Navbar = () => {
                 </div>
               </div>
             )}
+
             {connected && (
-              <>
-                <div className='h-[26px] w-[26px] rounded-full p-[1px]  border-[1.5px] border-[#f5e2d9] flex justify-center items-center'>
-                  <span
-                    style={{
-                      backgroundImage: `url("/images/mode.png")`
-                    }}
-                    className='inline-block bg-center bg-cover h-[19px] w-[19px] rounded-full '
-                  ></span>
-                </div>
-              </>
-            )}
-            {connected && (
-              <>
+              <div className='h-[26px] w-[26px] rounded-full p-[1px] border-[1.5px] border-[#f5e2d9] flex justify-center items-center'>
                 <span
-                  onClick={() => {
-                    setOpenNotifications(true)
-                    setMarkedAsRead(true)
-                  }}
-                  style={{
-                    backgroundImage: `url("/images/bell.svg")`
-                  }}
-                  className='inline-block cursor-pointer relative bg-center bg-cover w-[20px] h-[20px]'
-                >
-                  {hasUnread && (
-                    <span className='absolute right-[1.3px] top-1 bg-[#FB2C36] h-[6px] w-[6px] rounded-full'></span>
-                  )}
-                </span>
-              </>
+                  style={{ backgroundImage: `url("/images/mode.png")` }}
+                  className='inline-block bg-center bg-cover h-[19px] w-[19px] rounded-full'
+                ></span>
+              </div>
+            )}
+
+            {connected && (
+              <span
+                onClick={() => {
+                  setOpenNotifications(true)
+                  setMarkedAsRead(true)
+                }}
+                style={{ backgroundImage: `url("/images/bell.svg")` }}
+                className='inline-block cursor-pointer relative bg-center bg-cover w-[20px] h-[20px]'
+              >
+                {hasUnread && (
+                  <span className='absolute right-[1.3px] top-1 bg-[#FB2C36] h-[6px] w-[6px] rounded-full'></span>
+                )}
+              </span>
             )}
           </div>
         </div>
       </div>
 
-      <div className='w-full   flex lg:hidden justify-between items-center px-5 py-2 mt-2 md:mt-4 bg-[#000000] '>
-        <input
-          placeholder={placeholders[placeholderIndex]}
-          onKeyDown={handleSearch}
-          className={` ${
+      {/* SEARCH — Mobile (UPDATED: wrapped with SearchModeDropdown) */}
+      <div className='w-full flex lg:hidden justify-between items-center px-5 py-2 mt-2 md:mt-4 bg-[#000000]'>
+        <div
+          className={`${
             visible ? '' : 'hidden'
-          } w-[85%] md:w-1/3 bg-[#102221] px-4 py-2 rounded-lg outline-none placeholder:text-xs transition-all duration-500`}
-        />
+          } flex items-center gap-2 w-[85%] md:w-1/3`}
+        >
+          <SearchModeDropdown
+            searchMode={searchMode}
+            searchModeOpen={searchModeOpen}
+            setSearchMode={setSearchMode}
+            setSearchModeOpen={setSearchModeOpen}
+          />
+          <input
+            placeholder={activePlaceholder}
+            onKeyDown={handleSearch}
+            className='flex-1 bg-[#102221] px-4 py-2 rounded-lg outline-none placeholder:text-xs transition-all duration-500'
+          />
+        </div>
       </div>
     </div>
   )

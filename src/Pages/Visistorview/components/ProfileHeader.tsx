@@ -1,4 +1,10 @@
-import { FaCopy, FaUserPlus, FaShareAlt, FaTelegramPlane, FaTelegram } from 'react-icons/fa'
+import {
+  FaCopy,
+  FaUserPlus,
+  FaShareAlt,
+  FaTelegramPlane,
+  FaTelegram
+} from 'react-icons/fa'
 import { FaCheck } from 'react-icons/fa'
 import type { ReactNode } from 'react'
 import type { Trader } from '../../../features/dashboard/dashboardComponents/sidenavPages/Leaderboard/leaderboar.types'
@@ -87,7 +93,23 @@ export default function ProfileHeader ({ trader }: ProfileHeaderProps) {
             )}
           </div>
 
-          <p className='text-xs text-gray-400'>{trader.tag}</p>
+          <div className='flex items-center gap-4'>
+            <p className='text-xs text-gray-400'>{trader.tag}</p>
+            <div className='flex items-center gap-2'>
+              <Link
+                to={''}
+                className='rounded-full h-8 w-8 flex justify-center items-center bg-black text-white'
+              >
+                <FaTelegram className='h-4 w-4' />
+              </Link>
+              <Link
+                to={''}
+                className='rounded-full h-8 w-8 flex justify-center items-center bg-black text-white'
+              >
+                <FaXTwitter className='h-4 w-4' />
+              </Link>
+            </div>
+          </div>
 
           <p className='text-xs text-gray-400 max-w-md leading-relaxed'>
             Master trader on Zephyr Protocol.
@@ -131,21 +153,6 @@ export default function ProfileHeader ({ trader }: ProfileHeaderProps) {
               <p className='text-white text-base font-black'>
                 {trader.followsDisplay}
               </p>
-            </div>
-            
-            <div className='flex items-center gap-2'>
-              <Link
-                to={''}
-                className='rounded-full h-8 w-8 flex justify-center items-center p-2 bg-blue-300 text-white'
-              >
-                <FaTelegram className='h-6 w-6' />
-              </Link>
-              <Link
-                to={''}
-                className='rounded-full h-9 w-9 flex justify-center items-center p-2 bg-black text-white'
-              >
-                <FaXTwitter className='h-5 w-5' />
-              </Link>
             </div>
           </div>
           <div className='flex items-center gap-2'>
