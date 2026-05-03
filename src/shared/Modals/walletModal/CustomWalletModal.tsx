@@ -59,6 +59,9 @@ export const CustomWalletModal = ({ open, onClose }: Props) => {
   const showPhantomDeepLink =
     isMobile && !detectedWallets.some(w => w.adapter.name === 'Phantom')
 
+  const phantomIcon =
+    wallets.find(w => w.adapter.name === 'Phantom')?.adapter.icon ?? ''
+
   // Temporary debug info — remove once wallet detection is confirmed
   const debugInfo = wallets.map(w => ({
     name: w.adapter.name,
@@ -399,9 +402,9 @@ export const CustomWalletModal = ({ open, onClose }: Props) => {
                     >
                       <div className='flex items-center gap-3'>
                         <img
-                          src='https://ucarecdn.com/991904cc-4b2e-4e47-ninth-ab4f7e87c9d0/phantom.png'
+                          src={phantomIcon}
                           alt='Phantom'
-                          className='h-5 w-5 rounded-full'
+                          className='h-5 w-5'
                         />
                         <div className='flex flex-col items-start'>
                           <span className='text-[11px] font-semibold text-white'>
