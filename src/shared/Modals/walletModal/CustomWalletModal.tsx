@@ -32,27 +32,28 @@ export const CustomWalletModal = ({ open, onClose }: Props) => {
     onCloseRef.current = onClose
   }, [onClose])
 
-  // Lock ref — prevents force-reconnect from firing mid-signing
-  const isAuthInProgress = useRef(false)
-
   const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)
 
-const detectedWallets = wallets.filter(w => {
-  if (w.adapter.name === 'Mobile Wallet Adapter') return isMobile // ← back to original
-  return (
-    w.readyState === WalletReadyState.Installed ||
-    w.readyState === WalletReadyState.Loadable
-  )
-})
+  const detectedWallets = wallets.filter(w => {
+    if (w.adapter.name === 'Mobile Wallet Adapter') return isMobile
+    return (
+      w.readyState === WalletReadyState.Installed ||
+      w.readyState === WalletReadyState.Loadable
+    )
+  })
 
-
-  // ── Desktop: normal reactive close jjjj
+  // ── Desktop: normal reactive close
+  // Works fine on desktop because the app never gets backgrounded
   useEffect(() => {
     if (!isMobile && authenticated && open) {
       onCloseRef.current()
     }
   }, [authenticated, open, isMobile])
 
+  // ── Mobile only: poll Zustand store directly every 500ms
+  // React effects don't reliably re-run after the app returns from
+  // background (Phantom/Solflare signing screen), so we bypass React
+  // and read the store directly until auth is confirmed
   // ── Mobile: visibilitychange listener (primary fix)
   // Fires the moment the user returns from Phantom/Solflare signing screen
   useEffect(() => {
@@ -90,7 +91,6 @@ const detectedWallets = wallets.filter(w => {
   // ── Both platforms: watch isSuccess directly
   useEffect(() => {
     if (loginMutation.isSuccess && open) {
-      isAuthInProgress.current = false
       onCloseRef.current()
     }
   }, [loginMutation.isSuccess, open])
@@ -108,7 +108,6 @@ const detectedWallets = wallets.filter(w => {
       !connecting &&
       !hasAttemptedAuth
     ) {
-      isAuthInProgress.current = true
       loginMutation.mutate(
         {
           publicKey: publicKey.toBase58(),
@@ -116,10 +115,7 @@ const detectedWallets = wallets.filter(w => {
           onSuccessCallback: () => onCloseRef.current()
         },
         {
-          onError: error => {
-            isAuthInProgress.current = false
-            console.error('Authentication failed:', error)
-          }
+          onError: error => console.error('Authentication failed:', error)
         }
       )
     }
@@ -139,15 +135,14 @@ const detectedWallets = wallets.filter(w => {
     select(adapterName)
   }
 
-  // Force connect on mobile — guarded by isAuthInProgress lock
-  // to prevent reconnect attempts mid-signing which open the native wallet modal
+  // Force connect on mobile — autoConnect is off so we trigger manually
+  // Desktop reconnection is handled by useDesktopReconnect in App.tsx
   useEffect(() => {
     if (
       isMobile &&
       wallet &&
       !connected &&
       !connecting &&
-      !isAuthInProgress.current &&
       wallet.adapter.readyState !== 'NotDetected'
     ) {
       const timeout = setTimeout(() => {
@@ -251,6 +246,7 @@ const detectedWallets = wallets.filter(w => {
                     >
                       Get Phantom
                     </Link>
+
                     <Link
                       to='https://solflare.com/download'
                       target='_blank'
