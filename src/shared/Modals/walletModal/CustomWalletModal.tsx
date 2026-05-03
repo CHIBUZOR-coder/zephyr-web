@@ -12,8 +12,11 @@ type Props = {
   onClose: () => void
 }
 
-// ── FIX 1: Computed once at module level, not on every render
 const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)
+
+const currentUrl = encodeURIComponent(window.location.href)
+const phantomDeepLink = `https://phantom.app/ul/browse/${currentUrl}?ref=${currentUrl}`
+const solflareDeepLink = `https://solflare.com/ul/v1/browse/${currentUrl}?ref=${currentUrl}`
 
 export const CustomWalletModal = ({ open, onClose }: Props) => {
   const {
@@ -30,33 +33,26 @@ export const CustomWalletModal = ({ open, onClose }: Props) => {
   const loginMutation = useAuthLogin()
   const { authenticated } = useAuthStore()
 
-  // Stable ref so callbacks never go stale
   const onCloseRef = useRef(onClose)
   useEffect(() => {
     onCloseRef.current = onClose
   }, [onClose])
 
-  // ── FIX 2: Single ref guard that prevents login from firing more than once
-  // per modal session. Resets when the modal closes.
   const hasTriggeredLoginRef = useRef(false)
   useEffect(() => {
     if (!open) {
-      // Reset guard when modal closes so next open starts fresh
       hasTriggeredLoginRef.current = false
     }
   }, [open])
 
   const detectedWallets = wallets.filter(w => {
-    if (w.adapter.name === 'Mobile Wallet Adapter') return isMobile
+    if (w.adapter.name === 'Mobile Wallet Adapter') return false
     return (
       w.readyState === WalletReadyState.Installed ||
       w.readyState === WalletReadyState.Loadable
     )
   })
 
-  // ── FIX 3: Single unified close effect instead of 5 competing ones.
-  // Reads auth state directly from the store (not React state) to avoid
-  // stale closure issues on mobile after returning from the wallet app.
   useEffect(() => {
     if (!open) return
 
@@ -66,31 +62,24 @@ export const CustomWalletModal = ({ open, onClose }: Props) => {
       }
     }
 
-    // Desktop: standard reactive close via the `authenticated` value
     if (!isMobile && authenticated) {
       onCloseRef.current()
       return
     }
 
-    // Mobile: visibilitychange is the primary trigger (fires when user
-    // returns from Phantom/Solflare signing screen)
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') tryClose()
     }
     document.addEventListener('visibilitychange', handleVisibilityChange)
 
-    // Mobile: polling as a fallback for browsers that miss visibilitychange
     const interval = setInterval(tryClose, 300)
 
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange)
       clearInterval(interval)
     }
-  }, [open, authenticated]) // authenticated kept so desktop close is reactive
+  }, [open, authenticated])
 
-  // ── FIX 4: loginMutation split into stable primitives in the dep array.
-  // Using the full `loginMutation` object caused this to re-fire on every
-  // render because the object reference changes each time.
   const { mutate, isPending, isSuccess } = loginMutation
 
   useEffect(() => {
@@ -101,7 +90,7 @@ export const CustomWalletModal = ({ open, onClose }: Props) => {
       !authenticated &&
       !isPending &&
       !connecting &&
-      !hasTriggeredLoginRef.current // guard: fire only once per session
+      !hasTriggeredLoginRef.current
     ) {
       hasTriggeredLoginRef.current = true
       mutate(
@@ -113,7 +102,6 @@ export const CustomWalletModal = ({ open, onClose }: Props) => {
         {
           onError: error => {
             console.error('Authentication failed:', error)
-            // Reset guard on error so the user can retry
             hasTriggeredLoginRef.current = false
           }
         }
@@ -129,54 +117,36 @@ export const CustomWalletModal = ({ open, onClose }: Props) => {
     mutate
   ])
 
-  // Close immediately when mutation resolves (covers edge cases where
-  // the unified effect above missed the state transition)
   useEffect(() => {
     if (isSuccess && open) {
       onCloseRef.current()
     }
   }, [isSuccess, open])
 
-  // ── handleWalletSelect: properly disconnects before switching wallets.
-  // Key rules:
-  //   1. If already connected to THIS wallet — do nothing (no double-connect)
-  //   2. If mid-connection — bail early, never interrupt a connect in flight
-  //   3. If switching wallets — disconnect first, wait 100ms for the adapter
-  //      internal state to fully settle, THEN select the new one
   const handleWalletSelect = async (adapterName: WalletName) => {
-    // Already on this wallet — nothing to do
     if (wallet?.adapter.name === adapterName && (connected || connecting))
       return
-
-    // Never interrupt a connection already in flight
     if (connecting) return
 
-    // Switching from one wallet to another — clean disconnect first
     if (connected && wallet?.adapter.name !== adapterName) {
       try {
         await disconnect()
       } catch (err) {
         console.warn('Disconnect before wallet switch failed:', err)
-        // Continue anyway — adapter may already be in a disconnected state
       }
-      // Wait for adapter internal state to settle after disconnect.
-      // Without this gap, select() fires before the adapter is truly clean
-      // and causes a race condition on mobile (stuck "Connecting..." state).
       await new Promise(resolve => setTimeout(resolve, 100))
     }
 
     select(adapterName)
   }
 
-  // ── Mobile manual connect: fires after select() settles the adapter.
-  // A 150ms delay gives the adapter time to update readyState before
-  // we call connect(), preventing "wallet not ready" errors on Android.
   useEffect(() => {
     if (
       !isMobile ||
       !wallet ||
       connected ||
       connecting ||
+      wallet.adapter.name === 'Mobile Wallet Adapter' ||
       wallet.adapter.readyState === WalletReadyState.NotDetected
     ) {
       return
@@ -185,10 +155,8 @@ export const CustomWalletModal = ({ open, onClose }: Props) => {
     const timeout = setTimeout(() => {
       wallet.adapter.connect().catch(err => {
         console.warn('Manual connection attempt failed:', err)
-        // Don't reset hasTriggeredLoginRef here — the user needs to
-        // explicitly retry by picking a wallet again
       })
-    }, 150) // slight delay so adapter state is fully settled
+    }, 150)
 
     return () => clearTimeout(timeout)
   }, [wallet, connected, connecting])
@@ -246,7 +214,7 @@ export const CustomWalletModal = ({ open, onClose }: Props) => {
                   <button
                     onClick={() => {
                       loginMutation.reset()
-                      hasTriggeredLoginRef.current = false // allow retry
+                      hasTriggeredLoginRef.current = false
                     }}
                     className='mt-2 text-[10px] text-[#00f5c4] hover:underline'
                   >
@@ -271,33 +239,83 @@ export const CustomWalletModal = ({ open, onClose }: Props) => {
 
               {detectedWallets.length === 0 ? (
                 <div className='flex flex-col items-center gap-3 py-4'>
-                  <p className='text-[12px] text-[#b7e9df] text-center'>
-                    No wallets detected.
-                  </p>
-                  <p className='text-[10px] text-[#6f9f97] text-center leading-relaxed'>
-                    {isMobile
-                      ? "Install Phantom or Solflare from the App Store, then open this site inside the wallet's browser."
-                      : 'Install a Solana wallet extension from the Chrome Web Store to continue.'}
-                  </p>
-                  <div className='flex gap-2 mt-1'>
-                    <Link
-                      to='https://phantom.app/download'
-                      target='_blank'
-                      rel='noreferrer'
-                      className='text-[10px] text-[#00f5c4] border border-[#00f5c4] rounded px-3 py-1 hover:bg-[#00f5c4]/10 transition'
-                    >
-                      Get Phantom
-                    </Link>
-
-                    <Link
-                      to='https://solflare.com/download'
-                      target='_blank'
-                      rel='noreferrer'
-                      className='text-[10px] text-[#00f5c4] border border-[#00f5c4] rounded px-3 py-1 hover:bg-[#00f5c4]/10 transition'
-                    >
-                      Get Solflare
-                    </Link>
-                  </div>
+                  {isMobile ? (
+                    <>
+                      <p className='text-[12px] text-[#b7e9df] text-center font-semibold'>
+                        Open in your wallet's browser
+                      </p>
+                      <p className='text-[10px] text-[#6f9f97] text-center leading-relaxed'>
+                        For the best experience, open Zephyr directly inside
+                        your Phantom or Solflare app browser.
+                      </p>
+                      <div className='flex flex-col gap-2 w-full mt-1'>
+                        <Link
+                          to={phantomDeepLink}
+                          target='_blank'
+                          rel='noreferrer'
+                          className='w-full text-center text-[11px] font-[700] text-black bg-[#ab9ff2] rounded-lg px-3 py-2.5 hover:opacity-90 transition'
+                        >
+                          Open in Phantom
+                        </Link>
+                        <Link
+                          to={solflareDeepLink}
+                          target='_blank'
+                          rel='noreferrer'
+                          className='w-full text-center text-[11px] font-[700] text-black bg-[#FFC849] rounded-lg px-3 py-2.5 hover:opacity-90 transition'
+                        >
+                          Open in Solflare
+                        </Link>
+                      </div>
+                      <p className='text-[9px] text-[#6f9f97] text-center leading-relaxed mt-1'>
+                        Don't have a wallet yet? Install{' '}
+                        <Link
+                          to='https://phantom.app/download'
+                          target='_blank'
+                          rel='noreferrer'
+                          className='text-[#00f5c4] underline'
+                        >
+                          Phantom
+                        </Link>{' '}
+                        or{' '}
+                        <Link
+                          to='https://solflare.com/download'
+                          target='_blank'
+                          rel='noreferrer'
+                          className='text-[#00f5c4] underline'
+                        >
+                          Solflare
+                        </Link>
+                      </p>
+                    </>
+                  ) : (
+                    <>
+                      <p className='text-[12px] text-[#b7e9df] text-center'>
+                        No wallets detected.
+                      </p>
+                      <p className='text-[10px] text-[#6f9f97] text-center leading-relaxed'>
+                        Install a Solana wallet extension from the Chrome Web
+                        Store to continue.
+                      </p>
+                      <div className='flex gap-2 mt-1'>
+                        <Link
+                          to='https://phantom.app/download'
+                          target='_blank'
+                          rel='noreferrer'
+                          className='text-[10px] text-[#00f5c4] border border-[#00f5c4] rounded px-3 py-1 hover:bg-[#00f5c4]/10 transition'
+                        >
+                          Get Phantom
+                        </Link>
+                        <Link
+                          to='https://solflare.com/download'
+                          target='_blank'
+                          rel='noreferrer'
+                          className='text-[10px] text-[#00f5c4] border border-[#00f5c4] rounded px-3 py-1 hover:bg-[#00f5c4]/10 transition'
+                        >
+                          Get Solflare
+                        </Link>
+                      </div>
+                    </>
+                  )}
                 </div>
               ) : (
                 <div className='flex flex-col gap-2'>
@@ -320,9 +338,7 @@ export const CustomWalletModal = ({ open, onClose }: Props) => {
                         />
                         <div className='flex flex-col items-start'>
                           <span className='text-[11px] font-semibold text-white'>
-                            {w.adapter.name === 'Mobile Wallet Adapter'
-                              ? 'Connect Wallet App'
-                              : w.adapter.name}
+                            {w.adapter.name}
                           </span>
                           {w.adapter.name === 'Phantom' && (
                             <span className='text-[9px] text-[#00f5c4]'>
@@ -349,10 +365,15 @@ export const CustomWalletModal = ({ open, onClose }: Props) => {
               )}
 
               <p className='mt-4 text-center text-[10px] text-[#9fd5cc]'>
-                New to Solana?
-                <span className='ml-1 text-[#00f5c4] cursor-pointer hover:underline'>
+                New to Solana?{' '}
+                <Link
+                  to='https://solana.com/learn/wallets'
+                  target='_blank'
+                  rel='noreferrer'
+                  className='text-[#00f5c4] hover:underline'
+                >
                   Learn how to set up a wallet
-                </span>
+                </Link>
               </p>
             </div>
           </motion.div>
