@@ -54,7 +54,9 @@ const Leaderboard: React.FC = () => {
   const [activeSort, setSort] = useState<LeaderboardSort>('pnl')
   const [page, setPage] = useState(1)
   const [tierOpen, setTierOpen] = useState(false)
-  const getAvatarUrl = (url: string) => url.replace('/svg?', '/png?')
+const getAvatarUrl = (url: string) =>
+  url.replace('/svg?', '/png?').replace('seed=', 'size=128&seed=')
+
 
   const { data, isLoading, error } = useLeaderboard({
     period: activePeriod,

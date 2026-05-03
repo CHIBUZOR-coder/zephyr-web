@@ -46,7 +46,9 @@ const DashboardView = () => {
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
   const [showModal, setShowModal] = useState(false)
   const [openIndex, setOpenIndex] = useState<number | null>(null)
-  const getAvatarUrl = (url: string) => url.replace('/svg?', '/png?')
+const getAvatarUrl = (url: string) =>
+  url.replace('/svg?', '/png?').replace('seed=', 'size=128&seed=')
+
 
   const formatVolume = (val?: number) => {
     if (val === undefined || val === 0) return '$0.00'
