@@ -47,12 +47,17 @@ export const CustomWalletModal = ({ open, onClose }: Props) => {
 
   const detectedWallets = wallets.filter(w => {
     if (w.adapter.name === 'Mobile Wallet Adapter') return false
-    if (isMobile) return w.readyState !== WalletReadyState.Unsupported
     return (
       w.readyState === WalletReadyState.Installed ||
       w.readyState === WalletReadyState.Loadable
     )
   })
+
+  // On mobile browser Phantom reports NotDetected (it only injects inside
+  // its own in-app browser). Show a deep link button instead so the user
+  // can reopen the site inside Phantom where it will inject properly.
+  const showPhantomDeepLink =
+    isMobile && !detectedWallets.some(w => w.adapter.name === 'Phantom')
 
   // Temporary debug info — remove once wallet detection is confirmed
   const debugInfo = wallets.map(w => ({
@@ -259,7 +264,7 @@ export const CustomWalletModal = ({ open, onClose }: Props) => {
                 </p>
               </div>
 
-              {detectedWallets.length === 0 ? (
+              {detectedWallets.length === 0 && !showPhantomDeepLink ? (
                 <div className='flex flex-col items-center gap-3 py-4'>
                   {isMobile ? (
                     <>
@@ -383,6 +388,33 @@ export const CustomWalletModal = ({ open, onClose }: Props) => {
                       )}
                     </button>
                   ))}
+
+                  {/* Phantom not injected in this browser — offer deep link */}
+                  {showPhantomDeepLink && (
+                    <Link
+                      to={phantomDeepLink}
+                      target='_blank'
+                      rel='noreferrer'
+                      className='flex items-center justify-between rounded-lg px-3 py-2.5 bg-[#03463d] hover:bg-[#13443e] transition'
+                    >
+                      <div className='flex items-center gap-3'>
+                        <img
+                          src='https://ucarecdn.com/991904cc-4b2e-4e47-ninth-ab4f7e87c9d0/phantom.png'
+                          alt='Phantom'
+                          className='h-5 w-5 rounded-full'
+                        />
+                        <div className='flex flex-col items-start'>
+                          <span className='text-[11px] font-semibold text-white'>
+                            Phantom
+                          </span>
+                          <span className='text-[9px] text-[#00f5c4]'>
+                            Open in Phantom browser
+                          </span>
+                        </div>
+                      </div>
+                      <span className='text-[#6f9f97] text-sm'>→</span>
+                    </Link>
+                  )}
                 </div>
               )}
 
