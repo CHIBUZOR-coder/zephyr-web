@@ -1,17 +1,25 @@
 import { useQuery } from "@tanstack/react-query";
 import { authFetch } from "../../../../../core/query/authClient";
-import type { Trader, LeaderboardPeriod, LeaderboardSort } from "./leaderboar.types";
+import type {
+  Trader,
+  LeaderboardPeriod,
+  LeaderboardSort,
+} from "./leaderboar.types";
 
 const MAX_DISPLAY_PCT = 99999; // Cap display at 99,999%
 
 function formatRoiPct(roiPct: number): string {
-  const capped = Math.abs(roiPct) > MAX_DISPLAY_PCT ? Math.sign(roiPct) * MAX_DISPLAY_PCT : roiPct;
+  const capped =
+    Math.abs(roiPct) > MAX_DISPLAY_PCT
+      ? Math.sign(roiPct) * MAX_DISPLAY_PCT
+      : roiPct;
   return `${capped >= 0 ? "+" : ""}${capped.toFixed(1)}%`;
 }
 
 function formatCompactNumber(num: number | undefined | null): string {
-  if (num === undefined || num === null || isNaN(num)) return '0';
-  if (Math.abs(num) >= 1_000_000_000) return `${(num / 1_000_000_000).toFixed(1)}B`;
+  if (num === undefined || num === null || isNaN(num)) return "0";
+  if (Math.abs(num) >= 1_000_000_000)
+    return `${(num / 1_000_000_000).toFixed(1)}B`;
   if (Math.abs(num) >= 1_000_000) return `${(num / 1_000_000).toFixed(1)}M`;
   if (Math.abs(num) >= 1_000) return `${(num / 1_000).toFixed(1)}K`;
   return num.toFixed(0);
@@ -67,7 +75,9 @@ function mapLeaderboardEntryToTrader(entry: LeaderboardEntry): Trader {
     id: entry.rank,
     rank: entry.rank,
     name: entry.user.displayName || `Trader ${entry.masterWallet.slice(0, 4)}`,
-    image: entry.user.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${entry.masterWallet}`,
+    image:
+      entry.user.avatar ||
+      `https://api.dicebear.com/7.x/avataaars/svg?seed=${entry.masterWallet}`,
     tag: entry.tierShortLabel,
     tiers: entry.tierLabel,
     type: "PRO",
@@ -92,13 +102,15 @@ function mapLeaderboardEntryToTrader(entry: LeaderboardEntry): Trader {
   };
 }
 
-export function useLeaderboard(params: {
-  period?: LeaderboardPeriod;
-  sort?: LeaderboardSort;
-  tier?: number;
-  page?: number;
-  limit?: number;
-} = {}) {
+export function useLeaderboard(
+  params: {
+    period?: LeaderboardPeriod;
+    sort?: LeaderboardSort;
+    tier?: number;
+    page?: number;
+    limit?: number;
+  } = {},
+) {
   const { period = "30d", sort = "pnl", tier, page = 1, limit = 20 } = params;
 
   return useQuery({
@@ -109,7 +121,11 @@ export function useLeaderboard(params: {
 
       const response = await authFetch<LeaderboardResponse>(url);
       if (!response?.success) throw new Error("Failed to fetch leaderboard");
-      
+      console.log(
+        "trd",
+        (response.data.traders ?? []).map(mapLeaderboardEntryToTrader),
+      );
+
       return {
         traders: (response.data.traders ?? []).map(mapLeaderboardEntryToTrader),
         total: response.data.total,
@@ -124,7 +140,7 @@ export function useLeaderboard(params: {
 /** Lean version for dashboard display */
 export function useDashboardLeaderboard() {
   const query = useLeaderboard({ period: "30d", sort: "pnl", limit: 10 });
-  
+
   return {
     leaders: query?.data?.traders ?? [],
     loading: query?.isLoading,
@@ -146,7 +162,7 @@ export function useTraderProfile(vaultAddress: string | undefined) {
       if (!vaultAddress) return null;
       try {
         const response = await authFetch<TraderProfileResponse>(
-          `/api/leaderboard/trader/${vaultAddress}`
+          `/api/leaderboard/trader/${vaultAddress}`,
         );
         if (!response?.success || !response.data) {
           throw new Error(response?.error || "Trader not found");

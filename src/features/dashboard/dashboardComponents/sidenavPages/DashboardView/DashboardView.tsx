@@ -27,8 +27,10 @@ const DashboardView = () => {
     loading: leadersLoading,
     error: leadersError
   } = useDashboardLeaderboard()
-  const { data: firstCallers, isLoading: topTradesLoading } = useFirstCallers(10)
-  const { trades: recentTrades, loading: recentTradesLoading } = useRecentTrades(50)
+  const { data: firstCallers, isLoading: topTradesLoading } =
+    useFirstCallers(10)
+  const { trades: recentTrades, loading: recentTradesLoading } =
+    useRecentTrades(50)
   const {
     solPrice,
     solChange,
@@ -44,6 +46,7 @@ const DashboardView = () => {
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
   const [showModal, setShowModal] = useState(false)
   const [openIndex, setOpenIndex] = useState<number | null>(null)
+  const getAvatarUrl = (url: string) => url.replace('/svg?', '/png?')
 
   const formatVolume = (val?: number) => {
     if (val === undefined || val === 0) return '$0.00'
@@ -79,77 +82,106 @@ const DashboardView = () => {
   }
 
   const firstCall = useMemo(() => {
-    return firstCallers?.map((trade) => {
-   
-      const timeAgo = Math.floor((now - new Date(trade.executedAt).getTime()) / (60 * 60 * 1000));
-      const timeText = timeAgo < 1 ? 'RECENT' : timeAgo < 24 ? `${timeAgo} HOURS` : `${Math.floor(timeAgo/24)} DAYS`;
-      
-      return {
-        name: `Token ${trade.tokenOut.slice(0, 4)}`,
-        person: trade.masterExecutionVault?.user?.displayName || `Trader ${trade.masterExecutionVault?.masterWallet?.slice(0, 4) || '??'}`,
-        img: trade.masterExecutionVault?.user?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${trade.masterExecutionVault?.masterWallet || trade.id}`,
-        text: trade.tokenOut.slice(0, 4).toUpperCase(),
-        time: timeText,
-        num: parseFloat(trade.amountOutDecimal) || 0,
-        col: 'yel',
-        wallet: trade.masterExecutionVault?.masterWallet ? `${trade.masterExecutionVault.masterWallet.slice(0, 4)}...${trade.masterExecutionVault.masterWallet.slice(-4)}` : 'N/A',
-        cap: 100, 
-        peackCap: 150, 
-        titer: trade.masterExecutionVault?.currentTier === 5 ? 'Institutional' : 'Verifieda',
-        date: new Date(trade.executedAt).toLocaleDateString(),
-        timestamp: new Date(trade.executedAt).toLocaleString(),
-        signature: trade.signature,
-        isFirstCaller: trade.isFirstCaller,
-      };
-    }) || []
-  }, [firstCallers, now]);
+    return (
+      firstCallers?.map(trade => {
+        const timeAgo = Math.floor(
+          (now - new Date(trade.executedAt).getTime()) / (60 * 60 * 1000)
+        )
+        const timeText =
+          timeAgo < 1
+            ? 'RECENT'
+            : timeAgo < 24
+            ? `${timeAgo} HOURS`
+            : `${Math.floor(timeAgo / 24)} DAYS`
+
+        return {
+          name: `Token ${trade.tokenOut.slice(0, 4)}`,
+          person:
+            trade.masterExecutionVault?.user?.displayName ||
+            `Trader ${
+              trade.masterExecutionVault?.masterWallet?.slice(0, 4) || '??'
+            }`,
+          img:
+            trade.masterExecutionVault?.user?.avatar ||
+            `https://api.dicebear.com/7.x/avataaars/svg?seed=${
+              trade.masterExecutionVault?.masterWallet || trade.id
+            }`,
+          text: trade.tokenOut.slice(0, 4).toUpperCase(),
+          time: timeText,
+          num: parseFloat(trade.amountOutDecimal) || 0,
+          col: 'yel',
+          wallet: trade.masterExecutionVault?.masterWallet
+            ? `${trade.masterExecutionVault.masterWallet.slice(
+                0,
+                4
+              )}...${trade.masterExecutionVault.masterWallet.slice(-4)}`
+            : 'N/A',
+          cap: 100,
+          peackCap: 150,
+          titer:
+            trade.masterExecutionVault?.currentTier === 5
+              ? 'Institutional'
+              : 'Verifieda',
+          date: new Date(trade.executedAt).toLocaleDateString(),
+          timestamp: new Date(trade.executedAt).toLocaleString(),
+          signature: trade.signature,
+          isFirstCaller: trade.isFirstCaller
+        }
+      }) || []
+    )
+  }, [firstCallers, now])
 
   const formatTimeAgo = (ms: number): string => {
-    const minutes = Math.floor(ms / (60 * 1000));
-    const hours = Math.floor(ms / (60 * 60 * 1000));
-    const days = Math.floor(ms / (24 * 60 * 60 * 1000));
-    const weeks = Math.floor(ms / (7 * 24 * 60 * 60 * 1000));
-    const months = Math.floor(ms / (30 * 24 * 60 * 60 * 1000));
-    
-    if (minutes < 1) return 'just now';
-    if (minutes < 60) return `${minutes}m ago`;
-    if (hours < 24) return `${hours}h ago`;
-    if (days < 7) return `${days}d ago`;
-    if (weeks < 4) return `${weeks}w ago`;
-    return `${months}mo ago`;
-  };
+    const minutes = Math.floor(ms / (60 * 1000))
+    const hours = Math.floor(ms / (60 * 60 * 1000))
+    const days = Math.floor(ms / (24 * 60 * 60 * 1000))
+    const weeks = Math.floor(ms / (7 * 24 * 60 * 60 * 1000))
+    const months = Math.floor(ms / (30 * 24 * 60 * 60 * 1000))
+
+    if (minutes < 1) return 'just now'
+    if (minutes < 60) return `${minutes}m ago`
+    if (hours < 24) return `${hours}h ago`
+    if (days < 7) return `${days}d ago`
+    if (weeks < 4) return `${weeks}w ago`
+    return `${months}mo ago`
+  }
 
   const socials = useMemo(() => {
     return (recentTrades ?? []).map(trade => {
+      const timeAgo = Math.floor(now - new Date(trade.executedAt).getTime())
+      const timeText = formatTimeAgo(timeAgo)
 
-      const timeAgo = Math.floor((now - new Date(trade.executedAt).getTime()));
-      const timeText = formatTimeAgo(timeAgo);
-      
-      const isMaster = trade.vaultType === 'MASTER';
-      const name = isMaster 
-        ? (trade.masterExecutionVault?.user?.displayName || `Trader ${trade.masterExecutionVault?.masterWallet?.slice(0, 4)}`)
-        : (trade.copierVault?.copier?.displayName || `Copier ${trade.copierVault?.copier?.walletAddress?.slice(0, 4)}`);
-      
+      const isMaster = trade.vaultType === 'MASTER'
+      const name = isMaster
+        ? trade.masterExecutionVault?.user?.displayName ||
+          `Trader ${trade.masterExecutionVault?.masterWallet?.slice(0, 4)}`
+        : trade.copierVault?.copier?.displayName ||
+          `Copier ${trade.copierVault?.copier?.walletAddress?.slice(0, 4)}`
+
       const img = isMaster
-        ? (trade.masterExecutionVault?.user?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${trade.masterExecutionVault?.masterWallet}`)
-        : (trade.copierVault?.copier?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${trade.copierVault?.copier?.walletAddress}`);
+        ? trade.masterExecutionVault?.user?.avatar ||
+          `https://api.dicebear.com/7.x/avataaars/svg?seed=${trade.masterExecutionVault?.masterWallet}`
+        : trade.copierVault?.copier?.avatar ||
+          `https://api.dicebear.com/7.x/avataaars/svg?seed=${trade.copierVault?.copier?.walletAddress}`
 
       return {
         name,
         action: isMaster ? 'executed a trade' : 'mirrored a trade',
         time: timeText,
         sell: Number(trade.amountInDecimal).toFixed(2),
-        buy: `${Number(trade.amountOutDecimal).toFixed(2)} $${trade.tokenOut.slice(0, 4).toUpperCase()}`,
+        buy: `${Number(trade.amountOutDecimal).toFixed(2)} $${trade.tokenOut
+          .slice(0, 4)
+          .toUpperCase()}`,
         comment: 0,
         likes: 0,
         message: '',
         img,
-        price: 0, 
+        price: 0,
         signature: trade.signature,
         tokenOut: trade.tokenOut
-      };
-    });
-  }, [recentTrades, now]);
+      }
+    })
+  }, [recentTrades, now])
 
   const filteredCalls = firstCall
     .filter(item => {
@@ -161,8 +193,10 @@ const DashboardView = () => {
     })
     .filter(item => {
       if (range === 'ALL') return true
-      if (range === '24H') return item.time.includes('HOURS') || item.time === 'RECENT'
-      if (range === '7D') return !item.time.includes('DAYS') || parseInt(item.time) <= 7
+      if (range === '24H')
+        return item.time.includes('HOURS') || item.time === 'RECENT'
+      if (range === '7D')
+        return !item.time.includes('DAYS') || parseInt(item.time) <= 7
       if (range === '30D') return true
       return true
     })
@@ -278,7 +312,9 @@ const DashboardView = () => {
                       <Link
                         to={`/profile/${item.vaultAddress}`}
                         className='h-80 lg:h-44 w-full flex flex-col justify-end p-4 bg-center bg-cover relative cursor-pointer hover:opacity-90 transition-opacity'
-                        style={{ backgroundImage: `url(${item.image})` }}
+                        style={{
+                          backgroundImage: `url(${getAvatarUrl(item.image)})`
+                        }}
                       >
                         <div className='absolute top-0 left-0 w-full h-full bg-gradient-to-tr from-lead to-transparent'></div>
                         <div className='relative z-10'>
@@ -487,17 +523,19 @@ const DashboardView = () => {
                           <p className='text-[#6f9f97] text-[8px] uppercase font-bold tracking-tighter'>
                             Execution Status
                           </p>
-                          <p className='font-bold text-white text-[10px]'>CONFIRMED</p>
+                          <p className='font-bold text-white text-[10px]'>
+                            CONFIRMED
+                          </p>
                         </div>
 
                         <div>
                           <p className='text-[#6f9f97] text-[8px] uppercase font-bold tracking-tighter'>
                             On-Chain Proof
                           </p>
-                          <a 
+                          <a
                             href={`https://solscan.io/tx/${item.signature}?cluster=devnet`}
-                            target="_blank"
-                            rel="noopener noreferrer"
+                            target='_blank'
+                            rel='noopener noreferrer'
                             className='font-bold text-[#00A991] text-[10px] hover:underline'
                           >
                             VIEW SIG ↗
@@ -596,10 +634,10 @@ const DashboardView = () => {
                               OUT:
                               <span className='text-white'>{item.buy}</span>
                             </p>
-                            <a 
+                            <a
                               href={`https://solscan.io/tx/${item.signature}?cluster=devnet`}
-                              target="_blank"
-                              rel="noopener noreferrer"
+                              target='_blank'
+                              rel='noopener noreferrer'
                               className='text-[7.5px] font-[400] text-[#FA6938] flex gap-[3px] items-center hover:underline'
                             >
                               <span>Solscan</span>
@@ -890,10 +928,10 @@ const DashboardView = () => {
                                       <p className='text-[#6f9f97] text-[8px] uppercase font-[900]'>
                                         On-Chain Proof
                                       </p>
-                                      <a 
+                                      <a
                                         href={`https://solscan.io/tx/${item.signature}?cluster=devnet`}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
+                                        target='_blank'
+                                        rel='noopener noreferrer'
                                         className=' text-[#22C55E] text-[10px] font-[700] hover:underline'
                                       >
                                         VIEW TRANSACTION ↗
@@ -913,9 +951,9 @@ const DashboardView = () => {
 
                                 <p className='mt-4 w-full lg:w-1/2 rounded-lg  bg-[#FFFFFF08] p-3 text-[11px] text-[#9fd5cc]'>
                                   This trader was the FIRST to execute a trade
-                                  on this token in the last 24h. Zephyr
-                                  verifies all entries against on-chain
-                                  transaction data to ensure accuracy.
+                                  on this token in the last 24h. Zephyr verifies
+                                  all entries against on-chain transaction data
+                                  to ensure accuracy.
                                 </p>
                               </div>
                               <div className='flex  items-center p-4 gap-2'>

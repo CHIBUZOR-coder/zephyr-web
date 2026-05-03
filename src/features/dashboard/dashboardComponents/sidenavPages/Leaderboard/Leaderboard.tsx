@@ -10,7 +10,11 @@ import {
 import React, { useEffect, useRef, useState } from 'react'
 import { useGeneralContext } from '../../../../../Context/GeneralContext'
 import { useLeaderboard } from './useLeaderboard'
-import type { Trader, LeaderboardPeriod, LeaderboardSort } from './leaderboar.types'
+import type {
+  Trader,
+  LeaderboardPeriod,
+  LeaderboardSort
+} from './leaderboar.types'
 import { Link } from 'react-router-dom'
 import { TierBadge } from '../../../../../Pages/Components/TierBadge'
 
@@ -50,6 +54,7 @@ const Leaderboard: React.FC = () => {
   const [activeSort, setSort] = useState<LeaderboardSort>('pnl')
   const [page, setPage] = useState(1)
   const [tierOpen, setTierOpen] = useState(false)
+  const getAvatarUrl = (url: string) => url.replace('/svg?', '/png?')
 
   const { data, isLoading, error } = useLeaderboard({
     period: activePeriod,
@@ -103,7 +108,7 @@ const Leaderboard: React.FC = () => {
   }, [])
 
   // Local filtering for the search term since it's fast
-  const filteredTraders = leaders.filter(trader => 
+  const filteredTraders = leaders.filter(trader =>
     trader.name.toLowerCase().includes(searchTerm.toLowerCase())
   )
 
@@ -131,7 +136,10 @@ const Leaderboard: React.FC = () => {
             {(['7d', '30d', '90d', 'all'] as LeaderboardPeriod[]).map(p => (
               <button
                 key={p}
-                onClick={() => { setPeriod(p); setPage(1); }}
+                onClick={() => {
+                  setPeriod(p)
+                  setPage(1)
+                }}
                 className={`px-4 py-1.5 text-xs font-semibold rounded-lg transition uppercase ${
                   activePeriod === p
                     ? 'bg-[#19d3c5] text-black'
@@ -213,39 +221,57 @@ const Leaderboard: React.FC = () => {
                 <th className='thh'>Rank</th>
                 <th className='thh'>Trader</th>
                 <th className='thh'>Tiers</th>
-                <th 
+                <th
                   className='thh cursor-pointer hover:text-white transition'
-                  onClick={() => { setSort('pnl'); setPage(1); }}
+                  onClick={() => {
+                    setSort('pnl')
+                    setPage(1)
+                  }}
                 >
                   PnL {activeSort === 'pnl' && '▼'}
                 </th>
-                <th 
+                <th
                   className='thh cursor-pointer hover:text-white transition'
-                  onClick={() => { setSort('aum'); setPage(1); }}
+                  onClick={() => {
+                    setSort('aum')
+                    setPage(1)
+                  }}
                 >
                   AUM {activeSort === 'aum' && '▼'}
                 </th>
-                <th 
+                <th
                   className='thh cursor-pointer hover:text-white transition'
-                  onClick={() => { setSort('winRate'); setPage(1); }}
+                  onClick={() => {
+                    setSort('winRate')
+                    setPage(1)
+                  }}
                 >
                   Win Rate {activeSort === 'winRate' && '▼'}
                 </th>
-                <th 
+                <th
                   className='thh cursor-pointer hover:text-white transition'
-                  onClick={() => { setSort('maxDrawdown'); setPage(1); }}
+                  onClick={() => {
+                    setSort('maxDrawdown')
+                    setPage(1)
+                  }}
                 >
                   Drawdown {activeSort === 'maxDrawdown' && '▲'}
                 </th>
-                <th 
+                <th
                   className='thh cursor-pointer hover:text-white transition'
-                  onClick={() => { setSort('volume'); setPage(1); }}
+                  onClick={() => {
+                    setSort('volume')
+                    setPage(1)
+                  }}
                 >
                   Trades {activeSort === 'volume' && '▼'}
                 </th>
-                <th 
+                <th
                   className='thh cursor-pointer hover:text-white transition'
-                  onClick={() => { setSort('copiers'); setPage(1); }}
+                  onClick={() => {
+                    setSort('copiers')
+                    setPage(1)
+                  }}
                 >
                   Copiers {activeSort === 'copiers' && '▼'}
                 </th>
@@ -257,13 +283,18 @@ const Leaderboard: React.FC = () => {
               {isLoading ? (
                 <tr>
                   <td colSpan={10} className='p-10 text-center text-gray-400'>
-                    <div className='animate-pulse'>Fetching Real-time Leaderboard...</div>
+                    <div className='animate-pulse'>
+                      Fetching Real-time Leaderboard...
+                    </div>
                   </td>
                 </tr>
               ) : error ? (
                 <tr>
                   <td colSpan={10} className='p-10 text-center text-red-400'>
-                    Error: {error instanceof Error ? error.message : 'Failed to load leaderboard'}
+                    Error:{' '}
+                    {error instanceof Error
+                      ? error.message
+                      : 'Failed to load leaderboard'}
                   </td>
                 </tr>
               ) : filteredTraders?.length === 0 ? (
@@ -311,7 +342,11 @@ const Leaderboard: React.FC = () => {
                         <Link
                           to={`/profile/${trader.vaultAddress}`}
                           className='bg-center bg-cover h-[32px] w-[32px] rounded-full relative'
-                          style={{ backgroundImage: `url(${trader.image})` }}
+                          style={{
+                            backgroundImage: `url(${getAvatarUrl(
+                              trader.image
+                            )})`
+                          }}
                         >
                           <span className='absolute bottom-[1px] right-[1px] flex justify-center items-center h-[9.5px] w-[9.5px] border-[1.3px] rounded-full border-[#6A7282] bg-primary'>
                             <span className='animate-pulse h-[4px] w-[4px] bg-[#6A7282] rounded-full inline-block'></span>
@@ -399,13 +434,13 @@ const Leaderboard: React.FC = () => {
                   Trader of the Week
                 </span>
                 <div className='mt-3 flex items-center gap-2'>
-                  <h3 className='text-xl font-bold'>
-                    @{traderOfWeek.name}
-                  </h3>
+                  <h3 className='text-xl font-bold'>@{traderOfWeek.name}</h3>
                   <TierBadge tierLabel={traderOfWeek.tag} size='sm' />
                 </div>
                 <p className='text-xs text-[#7a9398] mt-3 max-w-xs'>
-                  {traderOfWeek.tag} ranked #{traderOfWeek.rank} with {traderOfWeek.trades} trades and {traderOfWeek.winRate} win rate.
+                  {traderOfWeek.tag} ranked #{traderOfWeek.rank} with{' '}
+                  {traderOfWeek.trades} trades and {traderOfWeek.winRate} win
+                  rate.
                 </p>
                 <div className='flex gap-4 mt-6'>
                   <div className='bg-[#0a1d20] px-4 py-3 rounded-xl text-center'>
@@ -444,69 +479,76 @@ const Leaderboard: React.FC = () => {
                   <span>Performance History</span>
                   <span className='text-[#19d3c5]'>● Cumulative ROI</span>
                 </div>
-                <div className='h-44 mt-6 min-h-[100px]' ref={chartContainerRef}>
+                <div
+                  className='h-44 mt-6 min-h-[100px]'
+                  ref={chartContainerRef}
+                >
                   {/* Check container has valid dimensions before rendering */}
                   {performanceData && performanceData.length > 0 ? (
-                    <ResponsiveContainer width='100%' height='100%' minWidth={0}>
-                      <AreaChart
-                      data={performanceData}
-                      margin={{ top: 10, right: 20, left: 5, bottom: 0 }}
+                    <ResponsiveContainer
+                      width='100%'
+                      height='100%'
+                      minWidth={0}
                     >
-                      <defs>
-                        <linearGradient
-                          id='colorRoi'
-                          x1='0'
-                          y1='0'
-                          x2='0'
-                          y2='1'
-                        >
-                          <stop
-                            offset='0%'
-                            stopColor='#19d3c5'
-                            stopOpacity={0.4}
-                          />
-                          <stop
-                            offset='100%'
-                            stopColor='#19d3c5'
-                            stopOpacity={0}
-                          />
-                        </linearGradient>
-                      </defs>
-                      <CartesianGrid
-                        stroke='#123c42'
-                        strokeDasharray='3 3'
-                        vertical={false}
-                      />
-                      <XAxis
-                        dataKey='date'
-                        tick={{ fill: '#5f7d84', fontSize: 10 }}
-                        axisLine={false}
-                        tickLine={false}
-                      />
-                      <YAxis
-                        tick={{ fill: '#5f7d84', fontSize: 10 }}
-                        axisLine={false}
-                        tickLine={false}
-                        width={10}
-                      />
-                      <Tooltip
-                        contentStyle={{
-                          backgroundColor: '#0a1d20',
-                          border: '1px solid #123c42',
-                          borderRadius: '8px',
-                          color: '#fff'
-                        }}
-                      />
-                      <Area
-                        type='monotone'
-                        dataKey='roi'
-                        stroke='#19d3c5'
-                        strokeWidth={3}
-                        fillOpacity={1}
-                        fill='url(#colorRoi)'
-                      />
-                    </AreaChart>
-                  </ResponsiveContainer>
+                      <AreaChart
+                        data={performanceData}
+                        margin={{ top: 10, right: 20, left: 5, bottom: 0 }}
+                      >
+                        <defs>
+                          <linearGradient
+                            id='colorRoi'
+                            x1='0'
+                            y1='0'
+                            x2='0'
+                            y2='1'
+                          >
+                            <stop
+                              offset='0%'
+                              stopColor='#19d3c5'
+                              stopOpacity={0.4}
+                            />
+                            <stop
+                              offset='100%'
+                              stopColor='#19d3c5'
+                              stopOpacity={0}
+                            />
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid
+                          stroke='#123c42'
+                          strokeDasharray='3 3'
+                          vertical={false}
+                        />
+                        <XAxis
+                          dataKey='date'
+                          tick={{ fill: '#5f7d84', fontSize: 10 }}
+                          axisLine={false}
+                          tickLine={false}
+                        />
+                        <YAxis
+                          tick={{ fill: '#5f7d84', fontSize: 10 }}
+                          axisLine={false}
+                          tickLine={false}
+                          width={10}
+                        />
+                        <Tooltip
+                          contentStyle={{
+                            backgroundColor: '#0a1d20',
+                            border: '1px solid #123c42',
+                            borderRadius: '8px',
+                            color: '#fff'
+                          }}
+                        />
+                        <Area
+                          type='monotone'
+                          dataKey='roi'
+                          stroke='#19d3c5'
+                          strokeWidth={3}
+                          fillOpacity={1}
+                          fill='url(#colorRoi)'
+                        />
+                      </AreaChart>
+                    </ResponsiveContainer>
                   ) : (
                     <div className='h-full flex items-center justify-center text-[#50706c] text-xs'>
                       No performance data
@@ -527,12 +569,16 @@ const Leaderboard: React.FC = () => {
                     </p>
                     <p className='font-bold text-lg'>{traderOfWeek.winRate}</p>
                   </div>
-                  <span className={`text-xs px-3 py-1 rounded-full ${
-                    parseFloat(traderOfWeek.winRate) >= 50 
-                      ? 'bg-[#0d3b40] text-[#19d3c5]' 
-                      : 'bg-[#3b0d0d] text-red-400'
-                  }`}>
-                    {parseFloat(traderOfWeek.winRate) >= 50 ? 'PROFITABLE' : 'UNPROFITABLE'}
+                  <span
+                    className={`text-xs px-3 py-1 rounded-full ${
+                      parseFloat(traderOfWeek.winRate) >= 50
+                        ? 'bg-[#0d3b40] text-[#19d3c5]'
+                        : 'bg-[#3b0d0d] text-red-400'
+                    }`}
+                  >
+                    {parseFloat(traderOfWeek.winRate) >= 50
+                      ? 'PROFITABLE'
+                      : 'UNPROFITABLE'}
                   </span>
                 </div>
                 <div className='flex justify-between items-center'>
@@ -540,14 +586,20 @@ const Leaderboard: React.FC = () => {
                     <p className='text-[10px] text-[#5f7d84] uppercase'>
                       Max Drawdown
                     </p>
-                    <p className='font-bold text-lg text-red-400'>-{traderOfWeek.drawdown}</p>
+                    <p className='font-bold text-lg text-red-400'>
+                      -{traderOfWeek.drawdown}
+                    </p>
                   </div>
-                  <span className={`text-xs px-3 py-1 rounded-full ${
-                    parseFloat(traderOfWeek.drawdown) <= 20 
-                      ? 'bg-[#0d3b40] text-[#19d3c5]' 
-                      : 'bg-[#3b0d0d] text-red-400'
-                  }`}>
-                    {parseFloat(traderOfWeek.drawdown) <= 20 ? 'LOW RISK' : 'HIGH RISK'}
+                  <span
+                    className={`text-xs px-3 py-1 rounded-full ${
+                      parseFloat(traderOfWeek.drawdown) <= 20
+                        ? 'bg-[#0d3b40] text-[#19d3c5]'
+                        : 'bg-[#3b0d0d] text-red-400'
+                    }`}
+                  >
+                    {parseFloat(traderOfWeek.drawdown) <= 20
+                      ? 'LOW RISK'
+                      : 'HIGH RISK'}
                   </span>
                 </div>
                 <div className='flex justify-between items-center'>
@@ -563,7 +615,11 @@ const Leaderboard: React.FC = () => {
                 </div>
               </div>
               <div className='mt-8 text-[10px] text-[#5f7d84] bg-[#0a1d20] p-4 rounded-xl'>
-                <p className='text-[#7a9398]'>"Ranked #{traderOfWeek.rank} on the leaderboard with {traderOfWeek.trades} total trades and {traderOfWeek.copiers} active copiers."</p>
+                <p className='text-[#7a9398]'>
+                  "Ranked #{traderOfWeek.rank} on the leaderboard with{' '}
+                  {traderOfWeek.trades} total trades and {traderOfWeek.copiers}{' '}
+                  active copiers."
+                </p>
               </div>
             </div>
           </div>
