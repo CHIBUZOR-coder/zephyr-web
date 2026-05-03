@@ -47,11 +47,18 @@ export const CustomWalletModal = ({ open, onClose }: Props) => {
 
   const detectedWallets = wallets.filter(w => {
     if (w.adapter.name === 'Mobile Wallet Adapter') return false
+    if (isMobile) return w.readyState !== WalletReadyState.Unsupported
     return (
       w.readyState === WalletReadyState.Installed ||
       w.readyState === WalletReadyState.Loadable
     )
   })
+
+  // Temporary debug info — remove once wallet detection is confirmed
+  const debugInfo = wallets.map(w => ({
+    name: w.adapter.name,
+    readyState: w.readyState
+  }))
 
   useEffect(() => {
     if (!open) return
@@ -205,6 +212,21 @@ export const CustomWalletModal = ({ open, onClose }: Props) => {
                   ✕
                 </button>
               </div>
+
+              {/* Temporary debug panel — remove once wallet detection is confirmed */}
+              {debugInfo.length > 0 && (
+                <div className='mb-3 p-2 rounded bg-black/60 border border-yellow-500'>
+                  <p className='text-[9px] text-yellow-400 font-bold mb-1'>
+                    DEBUG — all wallets:
+                  </p>
+                  {debugInfo.map(w => (
+                    <p key={w.name} className='text-[9px] text-yellow-300'>
+                      {w.name}:{' '}
+                      <span className='text-white'>{w.readyState}</span>
+                    </p>
+                  ))}
+                </div>
+              )}
 
               {loginMutation.isError && (
                 <div className='mb-4 p-2 rounded bg-red-900/50 border border-red-700'>
