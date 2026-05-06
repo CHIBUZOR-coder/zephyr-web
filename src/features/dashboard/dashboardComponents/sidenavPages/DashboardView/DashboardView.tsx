@@ -15,13 +15,15 @@ import { useDashboardLeaderboard } from '../Leaderboard/useLeaderboard'
 import { useMarketStats } from '../../../../../core/hooks/useMarketStats'
 import { useFirstCallers } from './hooks/useFirstCallers'
 import { useRecentTrades } from '../../../../trades/useTrades'
+import SearchModeDropdown from '../../../../../shared/SearchModeDropdown'
 
 type TimeRange = 'ALL' | '24H' | '7D' | '30D'
 
 const DashboardView = () => {
   const [now] = useState(() => Date.now())
 
-  const { openVaultFlow } = useGeneralContext()
+  const { openVaultFlow, activePlaceholder, handleSearch, visible } =
+    useGeneralContext()
   const {
     leaders,
     loading: leadersLoading,
@@ -46,9 +48,8 @@ const DashboardView = () => {
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
   const [showModal, setShowModal] = useState(false)
   const [openIndex, setOpenIndex] = useState<number | null>(null)
-const getAvatarUrl = (url: string) =>
-  url.replace('/svg?', '/png?').replace('seed=', 'size=128&seed=')
-
+  // const getAvatarUrl = (url: string) =>
+  //   url.replace('/svg?', '/png?').replace('seed=', 'size=128&seed=')
 
   const formatVolume = (val?: number) => {
     if (val === undefined || val === 0) return '$0.00'
@@ -209,6 +210,24 @@ const getAvatarUrl = (url: string) =>
       <div className=' w-full  lg:w-[60%] '>
         {/* Market overview */}
         <section className='w-full'>
+         
+            {/* SEARCH — Mobile (UPDATED: wrapped with SearchModeDropdown) */};
+            <div className='w-full flex lg:hidden justify-between items-center mt-2 mb-3 md:mt-4 bg-black'>
+              <div
+                className={`${
+                  visible ? '' : 'hidden'
+                } flex items-center gap-2 w-[85%] md:w-1/3`}
+              >
+                <SearchModeDropdown />
+              </div>
+
+              <input
+                placeholder={activePlaceholder}
+                onKeyDown={handleSearch}
+                className='flex-1 bg-[#102221] px-4 py-2 rounded-lg outline-none placeholder:text-xs transition-all duration-500 text-white placeholder:text-gray-400'
+              />
+            </div>
+  
           <div className='flex justify-between items-center'>
             <p className='font-[700] text-white'>Market overview</p>
           </div>
@@ -315,7 +334,7 @@ const getAvatarUrl = (url: string) =>
                         to={`/profile/${item.vaultAddress}`}
                         className='h-80 lg:h-44 w-full flex flex-col justify-end p-4 bg-center bg-cover relative cursor-pointer hover:opacity-90 transition-opacity'
                         style={{
-                          backgroundImage: `url(${getAvatarUrl(item.image)})`
+                          backgroundImage: `url(${item.image})`
                         }}
                       >
                         <div className='absolute top-0 left-0 w-full h-full bg-gradient-to-tr from-lead to-transparent'></div>

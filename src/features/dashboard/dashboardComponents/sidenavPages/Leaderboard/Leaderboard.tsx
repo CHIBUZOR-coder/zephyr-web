@@ -54,9 +54,8 @@ const Leaderboard: React.FC = () => {
   const [activeSort, setSort] = useState<LeaderboardSort>('pnl')
   const [page, setPage] = useState(1)
   const [tierOpen, setTierOpen] = useState(false)
-const getAvatarUrl = (url: string) =>
-  url.replace('/svg?', '/png?').replace('seed=', 'size=128&seed=')
-
+  // const getAvatarUrl = (url: string) =>
+  //   url.replace('/svg?', '/png?').replace('seed=', 'size=128&seed=')
 
   const { data, isLoading, error } = useLeaderboard({
     period: activePeriod,
@@ -345,9 +344,7 @@ const getAvatarUrl = (url: string) =>
                           to={`/profile/${trader.vaultAddress}`}
                           className='bg-center bg-cover h-[32px] w-[32px] rounded-full relative'
                           style={{
-                            backgroundImage: `url(${getAvatarUrl(
-                              trader.image
-                            )})`
+                            backgroundImage: `url(${trader.image})`
                           }}
                         >
                           <span className='absolute bottom-[1px] right-[1px] flex justify-center items-center h-[9.5px] w-[9.5px] border-[1.3px] rounded-full border-[#6A7282] bg-primary'>

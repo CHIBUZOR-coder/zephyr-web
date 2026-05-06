@@ -16,7 +16,7 @@ import { createBrowserRouter, RouterProvider } from 'react-router-dom'
 import { WalletProviders } from './features/wallet/WalletProviders.tsx'
 // import AuthGuard from './features/auth/auth.guard.tsx'
 import Loader from './shared/Loader.tsx'
-import { GeneralProvider } from './Context/GeneralContext.tsx'
+
 import VisitorProfile from './Pages/Visistorview/VisitorProfile.tsx'
 import How from './Pages/How_it_works/How.tsx'
 
@@ -106,7 +106,7 @@ const router = createBrowserRouter([
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <GeneralProvider>
+
       <WalletProviders>
         <Suspense fallback={<Loader />}>
           <QueryClientProvider client={queryClient}>
@@ -114,6 +114,6 @@ createRoot(document.getElementById('root')!).render(
           </QueryClientProvider>
         </Suspense>
       </WalletProviders>
-    </GeneralProvider>
+
   </StrictMode>
 )

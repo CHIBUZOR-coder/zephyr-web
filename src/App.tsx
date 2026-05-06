@@ -12,7 +12,7 @@ import { useWalletPersistSync } from './features/wallet/useWalletPersistSync'
 import { useTradingModeStore } from './features/dashboard/useTradingModeStore'
 
 import Layout from './shared/Layout/Layout'
-import { useGeneralContext } from './Context/GeneralContext'
+import { GeneralProvider, useGeneralContext } from './Context/GeneralContext'
 
 import { useAuthReady } from './features/auth/useAuthReady'
 import { API_BASE } from './core/query/authClient'
@@ -43,12 +43,10 @@ import { FaInstagram, FaTelegram } from 'react-icons/fa'
 import { FaXTwitter } from 'react-icons/fa6'
 import { Toastify } from './shared/Toast/Toastify'
 import { useDesktopReconnect } from './features/wallet/useDesktopReconnect'
-
-function App () {
-// useEffect(() => {
-//   localStorage.clear()
-// }, [])
-
+export function AppContent () {
+  // useEffect(() => {
+  //   localStorage.clear()
+  // }, [])
 
   const { connected } = useWallet()
   useWalletAuthSync()
@@ -402,4 +400,11 @@ function App () {
   )
 }
 
-export default App
+export default function App () {
+  return (
+    <GeneralProvider>
+      <AppContent />
+    </GeneralProvider>
+  )
+}
+

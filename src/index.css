@@ -2,7 +2,7 @@
 @import url("https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,100;0,400;0,700;1,400;1,700&display=swap");
 @import url("https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@100;200;300;400;500;600;700;800&display=swap");
 @import url("https://fonts.googleapis.com/css2?family=Manrope:wght@200;300;400;500;600;700;800&display=swap");
-@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap");
 
 /* Tailwind directives */
 @tailwind base;
@@ -191,6 +191,12 @@ body {
   font-family: "Manrope", sans-serif;
 }
 
-.grok{
-   font-family:"Space Grotesk", sans-serif;
+.grok {
+  font-family: "Space Grotesk", sans-serif;
+}
+
+@media (max-width: 322px) {
+  .smalli {
+    gap: 4px;
+  }
 }

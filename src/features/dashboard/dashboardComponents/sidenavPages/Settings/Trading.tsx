@@ -163,12 +163,13 @@ const Trading: React.FC = () => {
 
             {/* RISK SETTINGS */}
             <div className='rounded-xl border border-[#1A3D39] bg-gradient-to-r from-[#071F1D] to-[#0A2C28] p-6 space-y-5'>
-              <div className='flex items-center justify-between'>
-                <div className='flex items-center gap-2 text-sm font-semibold text-[#9CE6D9]'>
+              <div className='flex flex-col lg:flex-row items-center justify-between gap-3'>
+                <div className='flex items-center gap-2 text-xs lg:text-sm font-semibold text-[#9CE6D9] w-full lg:w-auto text-center b
+'>
                   <FiInfo />
                   DEFAULT VAULT RISK SETTINGS
                 </div>
-                <div className='text-sm font-semibold'>
+                <div className='text-xs lg:text-sm font-semibold w-full lg:w-auto text-center'>
                   {getRiskBadge(riskAnalysis.level)}
                 </div>
               </div>

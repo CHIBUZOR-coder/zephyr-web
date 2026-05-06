@@ -1,7 +1,7 @@
 import { useWallet } from '@solana/wallet-adapter-react'
 
 // import { WalletMultiButton } from '@solana/wallet-adapter-react-ui'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { useWalletStore } from '../../features/wallet/wallet.store'
 // import { CgMenuGridO } from 'react-icons/cg'
 
@@ -17,117 +17,23 @@ import { useAuthStore } from '../../features/auth/auth.store'
 import useRiskStore from '../../core/store/RiskStoreState'
 import { useUserVaults } from '../../features/master/useUserVaults'
 import { useAllVaultActivities } from '../../features/dashboard/dashboardComponents/sidenavPages/Portfolio/useVaultActivities'
-import { API_BASE } from '../../core/query/authClient'
+import SearchModeDropdown from '../SearchModeDropdown'
+
 // import { useNotificationStore } from '../Modals/Notification/useNotificationStore'
 
-// ── Search mode type
-type SearchMode = 'trader' | 'token' | 'address'
-
-const searchModes: {
-  id: SearchMode
-  label: string
-  emoji: string
-  placeholder: string
-}[] = [
-  {
-    id: 'trader',
-    label: 'Trader',
-    emoji: '👤',
-    placeholder: 'Enter trader name (e.g. PatricK_The_dev)'
-  },
-  {
-    id: 'token',
-    label: 'Token',
-    emoji: '🪙',
-    placeholder: 'Enter token address (e.g. So111...)'
-  },
-  {
-    id: 'address',
-    label: 'Address',
-    emoji: '📋',
-    placeholder: 'Enter vault address (e.g. 7tqB...)'
-  }
-]
-
 // ── Declared outside Navbar to prevent re-creation on every render
-interface SearchModeDropdownProps {
-  searchMode: SearchMode
-  searchModeOpen: boolean
-  setSearchMode: (mode: SearchMode) => void
-  setSearchModeOpen: (open: boolean | ((prev: boolean) => boolean)) => void
-}
-
-const SearchModeDropdown = ({
-  searchMode,
-  searchModeOpen,
-  setSearchMode,
-  setSearchModeOpen
-}: SearchModeDropdownProps) => {
-  const activeMode = searchModes.find(m => m.id === searchMode)!
-
-  return (
-    <div className='relative flex items-center'>
-      {/* Trigger Button */}
-      <button
-        onClick={() => setSearchModeOpen(prev => !prev)}
-        className='flex items-center gap-1 bg-[#102221] border border-[#0A3F46] hover:border-[#00A991] transition-colors px-2 py-[6px] rounded-lg text-[10px] font-[700] text-[#00A991] whitespace-nowrap'
-      >
-        <span>{activeMode.emoji}</span>
-        <span className='hidden sm:inline'>{activeMode.label}</span>
-        <span
-          className={`transition-transform duration-200 text-[8px] ${
-            searchModeOpen ? 'rotate-180' : 'rotate-0'
-          }`}
-        >
-          ▾
-        </span>
-      </button>
-
-      {/* Animated Dropdown */}
-      <div
-        className={`absolute top-[calc(100%+6px)] left-0 z-[100] bg-[#0c1e1e] border border-[#23483B] rounded-lg overflow-hidden shadow-[0_8px_32px_rgba(0,169,145,0.15)] transition-all duration-200 origin-top ${
-          searchModeOpen
-            ? 'opacity-100 scale-y-100 pointer-events-auto'
-            : 'opacity-0 scale-y-0 pointer-events-none'
-        }`}
-        style={{ minWidth: '130px' }}
-      >
-        {searchModes.map(mode => (
-          <button
-            key={mode.id}
-            onClick={() => {
-              setSearchMode(mode.id)
-              setSearchModeOpen(false)
-            }}
-            className={`w-full flex items-center gap-2 px-3 py-2 text-[11px] font-[600] transition-colors hover:bg-[#102221] ${
-              searchMode === mode.id
-                ? 'text-[#00A991] bg-[#102221]'
-                : 'text-gray-400'
-            }`}
-          >
-            <span>{mode.emoji}</span>
-            <span>{mode.label}</span>
-            {searchMode === mode.id && (
-              <span className='ml-auto text-[#00A991] text-[10px]'>✓</span>
-            )}
-          </button>
-        ))}
-      </div>
-    </div>
-  )
-}
 
 const Navbar = () => {
   const [walletMenuOpen, setWalletMenuOpen] = useState(false)
-  const navigate = useNavigate()
+
   const {
     setOpenNotifications,
     setOpenMenu,
     visible,
     setMasterTraderOpen,
     hasMaterVault,
-    setOpenCallTrade,
-    setPrefilledTokenAddress
+    activePlaceholder,
+    handleSearch
   } = useGeneralContext()
 
   const { setMarkedAsRead } = useRiskStore()
@@ -144,40 +50,7 @@ const Navbar = () => {
   const { data: solPriceData } = useSolPrice()
   const solPrice = solPriceData?.price ?? 0
 
-  const [searchMode, setSearchMode] = useState<SearchMode>('trader')
-  const [searchModeOpen, setSearchModeOpen] = useState(false)
-
-  const activePlaceholder = searchModes.find(
-    m => m.id === searchMode
-  )!.placeholder
-
   // ── handleSearch — directly uses active search mode
-  const handleSearch = async (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
-      const query = e.currentTarget.value.trim()
-      e.currentTarget.value = ''
-      if (!query) return
-
-      if (searchMode === 'trader') {
-        try {
-          const res = await fetch(
-            `${API_BASE}/api/search/trader?query=${query.toLowerCase()}`
-          )
-          const data = await res.json()
-          if (data.success) {
-            navigate(`/profile/${data.data.walletAddress}`)
-          }
-        } catch (err) {
-          console.error('Trader search failed', err)
-        }
-      } else if (searchMode === 'token') {
-        setPrefilledTokenAddress(query)
-        requestAnimationFrame(() => setOpenCallTrade(true))
-      } else if (searchMode === 'address') {
-        navigate(`/profile/${query}`)
-      }
-    }
-  }
 
   useEffect(() => {
     if (!publicKey) return
@@ -244,7 +117,7 @@ const Navbar = () => {
   const { setWalletModal } = useGeneralContext()
 
   return (
-    <div className='w-full sticky top-0 z-[80] bg-[#0c1414]'>
+    <div className='w-full sticky top-0 z-[80] bg-[#0c1414] py-3'>
       <div className='w-full sticky z-[80] pb-0 lg:p-3'>
         {/* ─────────────────────────────────────────
             Top bar — Large Screen/////////
@@ -253,7 +126,7 @@ const Navbar = () => {
           <div
             className={`w-full flex items-center ${
               visible ? 'justify-between' : 'justify-end'
-            } px-5 py-3`}
+            } px-2 py-3`}
           >
             {/* SEARCH — Desktop (UPDATED: wrapped with SearchModeDropdown) */}
             <div
@@ -261,12 +134,7 @@ const Navbar = () => {
                 visible ? '' : 'hidden'
               } flex items-center gap-2 w-1/2 lg:w-1/4`}
             >
-              <SearchModeDropdown
-                searchMode={searchMode}
-                searchModeOpen={searchModeOpen}
-                setSearchMode={setSearchMode}
-                setSearchModeOpen={setSearchModeOpen}
-              />
+              <SearchModeDropdown />
               <input
                 placeholder={activePlaceholder}
                 onKeyDown={handleSearch}
@@ -417,13 +285,15 @@ const Navbar = () => {
           </div>
         </div>
       </div>
-
       {/* ─────────────────────────────────────────
           Mobile
       ───────────────────────────────────────── */}
+      
       <div className='lg:hidden block'>
-        <div className='flex justify-between gap-4 px-1'>
-          <div className='flex items-center gap-4'>
+        {/* ── Row 1: Hamburger | Logo | Balance | Connect/Mode | Bell ── */}
+        <div className='flex justify-between items-center gap-2 px-1'>
+          {/* Left: Hamburger + Logo */}
+          <div className='flex items-center gap-4 shrink-0'>
             <div
               onClick={() => setOpenMenu(true)}
               className='w-[40px] h-[40px] flex justify-center items-center border-[2px] border-[#23483B] bg-[#102221] rounded-md'
@@ -431,30 +301,26 @@ const Navbar = () => {
               <span
                 className='bg-cover bg-center h-[32px] w-[32px]'
                 style={{ backgroundImage: `url("/images/hamburger.svg")` }}
-              ></span>
+              />
             </div>
             <div>
               <span
                 className='inline-block bg-center bg-cover w-[40px] h-[40px]'
                 style={{ backgroundImage: `url("/images/zeflogo.png")` }}
-              ></span>
+              />
               <div className='text-[12px] font-[700] text-teal-400 -mt-4'>
                 Zephyr
               </div>
             </div>
           </div>
 
-          <div
-            className={`flex ${
-              !connected ? 'justify-end' : 'justify-between'
-            } items-center gap-2 w-[90%]`}
-          >
-            <div className='w-[50%] hidden md:flex lg:hidden justify-between items-center px-5 py-2'></div>
-
+          {/* Right: Balance + Connect/Icons */}
+          <div className='flex items-center gap-2'>
+            {/* Balance toggle */}
             {connected && balance !== null && (
               <button
                 onClick={() => setShowUsdc(!showUsdc)}
-                className='inline-flex text-[8px] bg-[#0f1a18] px-2 py-2 rounded-lg border-[1px] border-[#0A3F46] items-center gap-1 text-white cursor-pointer hover:opacity-80 transition-opacity'
+                className='inline-flex text-[8px] bg-[#0f1a18] px-2 py-2 rounded-lg border border-[#0A3F46] items-center gap-1 text-white hover:opacity-80 transition-opacity'
               >
                 <span
                   style={{
@@ -462,79 +328,81 @@ const Navbar = () => {
                       showUsdc ? 'usdc.svg' : 'solana.svg'
                     }")`
                   }}
-                  className='inline-block bg-enter bg-cover h-[14px] w-[14px] md:h-[16px] md:w-[16px]'
-                ></span>
+                  className='inline-block bg-center bg-cover h-[14px] w-[14px]'
+                />
                 {showUsdc
                   ? `${(balance * solPrice).toFixed(2)} USDC`
                   : `${balance.toFixed(2)} SOL`}
               </button>
             )}
 
-            {!connected ? (
+            {/* Connect Wallet button (not connected) */}
+            {!connected && (
               <button
                 onClick={() => setWalletModal(true)}
-                className='bg-teal-500 shadow-[0_0_25px_0px_rgba(20,184,166,0.3)] px-3 py-1 rounded-lg text-[10px] font-[700] text-white hover:bg-teal-600 transition flex justify-between gap-4'
+                className='bg-teal-500 shadow-[0_0_25px_0px_rgba(20,184,166,0.3)] px-3 py-1 rounded-lg text-[10px] font-[700] text-white hover:bg-teal-600 transition flex items-center gap-2'
               >
                 <span>Connect Wallet</span>
                 <span
                   className='h-[12px] w-[12px]'
                   style={{ backgroundImage: `url("/images/connect.svg")` }}
-                ></span>
+                />
               </button>
-            ) : (
-              <div className='relative'>
-                <div className='relative'>
-                  <button className='flex items-center cursor-pointer bg-[#0f1a18] border border-[#23483B] px-1 md:px-4 py-1 rounded-lg text-[10px] font-[700] text-[#00A991] gap-2'>
-                    <div className='flex items-center gap-1'>
-                      <span>
-                        {publicKey?.toBase58().slice(0, 2)}…
-                        {publicKey?.toBase58().slice(-2)}
-                      </span>
-                      {copied ? (
-                        <span className='text-[9px] md:text-[12px] text-[#00A991] flex items-center gap-1'>
-                          <span className='absolute top-[1px]'>Copied</span>
-                          <span>✓</span>
-                        </span>
-                      ) : (
-                        <span
-                          onClick={handleCopy}
-                          style={{
-                            backgroundImage: 'url("/images/copy.svg")'
-                          }}
-                          className='inline-block h-[12px] w-[12px] md:h-[16px] md:w-[16px] bg-center bg-cover cursor-pointer opacity-80 hover:opacity-100'
-                          title={copied ? 'Copied!' : 'Copy address'}
-                        ></span>
-                      )}
-                    </div>
-
-                    <span
-                      onClick={e => {
-                        e.stopPropagation()
-                        setWalletMenuOpen(prev => !prev)
-                      }}
-                      className='cursor-pointer text-xl'
-                    >
-                      ▾
-                    </span>
-                  </button>
-
-                  <WalletMenu
-                    open={walletMenuOpen}
-                    onClose={() => setWalletMenuOpen(false)}
-                  />
-                </div>
-              </div>
             )}
 
+            {/* Mode toggle (only when connected) — mirrors desktop logic */}
             {connected && (
-              <div className='h-[26px] w-[26px] rounded-full p-[1px] border-[1.5px] border-[#f5e2d9] flex justify-center items-center'>
-                <span
-                  style={{ backgroundImage: `url("/images/mode.png")` }}
-                  className='inline-block bg-center bg-cover h-[19px] w-[19px] rounded-full'
-                ></span>
-              </div>
+              <>
+                {masterMode ? (
+                  <div
+                    onClick={toggleMasterMode}
+                    className='rounded-md border-[1.5px] bg-master border-masterb shadow-[0_0_25px_0px_rgba(245,158,11,0.2)] p-[6px] flex items-center gap-1 cursor-pointer'
+                  >
+                    <p className='h-[5px] w-[5px] rounded-full bg-[#00A991] animate-pulse' />
+                    <p className='text-[8px] font-[900] tracking-[0.8px] text-[#FE9A00]'>
+                      MASTER
+                    </p>
+                  </div>
+                ) : (
+                  <div
+                    onClick={() => {
+                      if (!hasMaterVault) {
+                        setMasterTraderOpen(true)
+                      } else {
+                        toggleMasterMode()
+                      }
+                    }}
+                    className='rounded-md border-[1.5px] border-modeboreder shadow-[0_0_25px_0px_rgba(0,169,145,0.3)] p-[6px] flex items-center gap-1 cursor-pointer'
+                  >
+                    <p className='h-[5px] w-[5px] rounded-full bg-[#00A991] animate-pulse' />
+                    <p className='text-[8px] font-[900] tracking-[0.8px] text-[#00a991]'>
+                      COPIER
+                    </p>
+                  </div>
+                )}
+              </>
             )}
 
+            {/* Profile avatar — Link to /profile (only when connected) */}
+            {connected && (
+              <Link
+                to='/profile'
+                className='h-[26px] w-[26px] rounded-full p-[1px] border-[1.5px] border-[#f5e2d9] flex justify-center items-center'
+              >
+                {user?.avatar ? (
+                  <span
+                    style={{ backgroundImage: `url(${user.avatar})` }}
+                    className='inline-block bg-center bg-cover h-[19px] w-[19px] rounded-full'
+                  />
+                ) : (
+                  <span className='flex items-center justify-center h-[19px] w-[19px] rounded-full bg-[#102221] text-white text-[9px] font-bold'>
+                    {user?.displayName?.charAt(0).toUpperCase() || '?'}
+                  </span>
+                )}
+              </Link>
+            )}
+
+            {/* Bell (only when connected) */}
             {connected && (
               <span
                 onClick={() => {
@@ -545,33 +413,51 @@ const Navbar = () => {
                 className='inline-block cursor-pointer relative bg-center bg-cover w-[20px] h-[20px]'
               >
                 {hasUnread && (
-                  <span className='absolute right-[1.3px] top-1 bg-[#FB2C36] h-[6px] w-[6px] rounded-full'></span>
+                  <span className='absolute right-[1.3px] top-1 bg-[#FB2C36] h-[6px] w-[6px] rounded-full' />
                 )}
               </span>
             )}
           </div>
         </div>
-      </div>
 
-      {/* SEARCH — Mobile (UPDATED: wrapped with SearchModeDropdown) */}
-      <div className='w-full flex lg:hidden justify-between items-center px-5 py-2 mt-2 md:mt-4 bg-[#000000]'>
-        <div
-          className={`${
-            visible ? '' : 'hidden'
-          } flex items-center gap-2 w-[85%] md:w-1/3`}
-        >
-          <SearchModeDropdown
-            searchMode={searchMode}
-            searchModeOpen={searchModeOpen}
-            setSearchMode={setSearchMode}
-            setSearchModeOpen={setSearchModeOpen}
-          />
-          <input
-            placeholder={activePlaceholder}
-            onKeyDown={handleSearch}
-            className='flex-1 bg-[#102221] px-4 py-2 rounded-lg outline-none placeholder:text-xs transition-all duration-500'
-          />
-        </div>
+        {/* ── Row 2: Wallet address (only when connected) ── */}
+        {connected && (
+          <div className='mt-2 px-1 flex justify-end'>
+            <div className='relative'>
+              <button className='flex items-center justify-between cursor-pointer bg-[#0f1a18] border border-[#23483B] px-2 rounded-lg text-[11px] font-[700] text-[#00A991] gap-2'>
+                <div className='flex items-center gap-2'>
+                  <span>
+                    {publicKey?.toBase58().slice(0, 6)}…
+                    {publicKey?.toBase58().slice(-4)}
+                  </span>
+                  {copied ? (
+                    <span className='text-[10px] text-[#00A991]'>Copied ✓</span>
+                  ) : (
+                    <span
+                      onClick={handleCopy}
+                      style={{ backgroundImage: 'url("/images/copy.svg")' }}
+                      className='inline-block h-[14px] w-[14px] bg-center bg-cover cursor-pointer opacity-80 hover:opacity-100'
+                      title='Copy address'
+                    />
+                  )}
+                </div>
+                <span
+                  onClick={e => {
+                    e.stopPropagation()
+                    setWalletMenuOpen(prev => !prev)
+                  }}
+                  className='cursor-pointer text-xl'
+                >
+                  ▾
+                </span>
+              </button>
+              <WalletMenu
+                open={walletMenuOpen}
+                onClose={() => setWalletMenuOpen(false)}
+              />
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )

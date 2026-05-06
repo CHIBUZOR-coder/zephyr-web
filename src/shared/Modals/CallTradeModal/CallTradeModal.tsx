@@ -604,10 +604,10 @@ const CallTradeModal: FC<Props> = ({ open, onClose }) => {
               </AnimatePresence>
             </div>
 
-            <div className='flex justify-between items-center my-4'>
+            <div className='flex justify-between items-center my-4  flex-col lg:flex-row gap-2'>
               <div className='flex items-center gap-2 text-[#6e8885]'>
                 <p className='text-[#009883] text-[11px] font-[500] '>
-                  Success Fee: Performance-based (profit only)
+                  Success Fee:  Performance-based (profit only)
                 </p>
                 <span>
                   <IoInformationCircleOutline />
@@ -666,7 +666,7 @@ const CallTradeModal: FC<Props> = ({ open, onClose }) => {
             </button>
 
             <div className='text-[10px] text-[#6B8F88] mt-3 text-center font-[900] flex justify-center items-center'>
-              <div className='w-[60%] flex justify-between gap-4'>
+              <div className='w-[60%] flex flex-col gap-3 lg:flex-row justify-between  items-center'>
                 <div className='flex items-center gap-2'>
                   <span className='text-[#2f4441] '>Estimated Gas: </span>
                   <span className='text-[#808080]'>0.0004 SOL</span>

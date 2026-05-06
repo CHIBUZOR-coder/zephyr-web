@@ -63,10 +63,10 @@ export const CustomWalletModal = ({ open, onClose }: Props) => {
     wallets.find(w => w.adapter.name === 'Phantom')?.adapter.icon ?? ''
 
   // Temporary debug info — remove once wallet detection is confirmed
-  const debugInfo = wallets.map(w => ({
-    name: w.adapter.name,
-    readyState: w.readyState
-  }))
+  // const debugInfo = wallets.map(w => ({
+  //   name: w.adapter.name,
+  //   readyState: w.readyState
+  // }))
 
   useEffect(() => {
     if (!open) return
@@ -222,7 +222,7 @@ export const CustomWalletModal = ({ open, onClose }: Props) => {
               </div>
 
               {/* Temporary debug panel — remove once wallet detection is confirmed */}
-              {debugInfo.length > 0 && (
+              {/* {debugInfo.length > 0 && (
                 <div className='mb-3 p-2 rounded bg-black/60 border border-yellow-500'>
                   <p className='text-[9px] text-yellow-400 font-bold mb-1'>
                     DEBUG — all wallets:
@@ -234,7 +234,7 @@ export const CustomWalletModal = ({ open, onClose }: Props) => {
                     </p>
                   ))}
                 </div>
-              )}
+              )} */}
 
               {loginMutation.isError && (
                 <div className='mb-4 p-2 rounded bg-red-900/50 border border-red-700'>

@@ -133,8 +133,8 @@ export default function Account () {
 
   return (
     <div className='w-full max-w-3xl'>
-      <div className='flex items-center justify-between'>
-        <div>
+      <div className='flex items-center justify-between flex-col lg:flex-row w-full gap-3 '>
+        <div className='w-full lg:w-[60%]'>
           <h1 className='text-lg sm:text-xl font-semibold text-textMain'>
             PROFILE & IDENTITY
           </h1>
@@ -145,7 +145,7 @@ export default function Account () {
         <button
           onClick={handleSave}
           disabled={isSaving}
-          className='px-4 py-2 bg-accent text-black font-medium rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50'
+          className=' bg-accent text-black font-medium rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50 p-2 w-full lg:w-auto'
         >
           {isSaving ? 'Saving...' : 'Save Changes'}
         </button>
