@@ -128,7 +128,7 @@ const Navbar = () => {
           <div
             className={`w-full flex items-center ${
               visible ? 'justify-between' : 'justify-end'
-            } px-2 py-3`}
+            } px-2`}
           >
             {/* SEARCH — Desktop (UPDATED: wrapped with SearchModeDropdown) */}
             <div
