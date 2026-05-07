@@ -141,7 +141,7 @@ const Navbar = () => {
               <input
                 placeholder={animatedPlaceholder} // ← was activePlaceholder
                 onKeyDown={handleSearch}
-                className='flex-1 bg-[#102221] px-4 py-2 rounded-lg outline-none placeholder:text-xs text-white caret-white transition-all duration-500'
+                className='flex-1 bg-[#102221] px-4 py-2 rounded-lg outline-none placeholder:text-xs text-white caret-white transition-all duration-500 placeholder:text-white'
                 style={{ caretShape: 'block' } as React.CSSProperties}
               />
             </div>
