@@ -380,7 +380,7 @@ const Navbar = () => {
             {connected && (
               <Link
                 to='/profile'
-                className='h-[26px] w-[26px] rounded-full p-[1px] border-[1.5px] border-[#f5e2d9] flex justify-center items-center'
+                className='h-[36px] w-[36px] rounded-full p-[1px] border-[1.5px] border-[#f5e2d9] flex justify-center items-center'
               >
                 {user?.avatar ? (
                   <span
