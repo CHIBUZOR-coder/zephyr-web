@@ -356,14 +356,14 @@ const Navbar = () => {
             {connected && (
               <div className=' px-1 flex justify-end'>
                 <div className='relative'>
-                  <button className='flex items-center justify-between cursor-pointer bg-[#0f1a18] border border-[#23483B] px-1 rounded-lg text-[11px] font-[700] text-[#00A991] gap-2'>
+                  <button className='flex items-center justify-center cursor-pointer bg-[#0f1a18] border border-[#23483B] px-2 rounded-lg text-[10px] font-[700] text-[#00A991] '>
                   
                     <span
                       onClick={e => {
                         e.stopPropagation()
                         setWalletMenuOpen(prev => !prev)
                       }}
-                      className='cursor-pointer text-xl'
+                      className='cursor-pointer text-lg'
                     >
                       ▾
                     </span>

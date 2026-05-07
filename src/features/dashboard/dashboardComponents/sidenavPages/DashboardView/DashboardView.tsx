@@ -214,11 +214,11 @@ const DashboardView = () => {
         {/* Market overview */}
         <section className='w-full'>
           {/* SEARCH — Mobile (UPDATED: wrapped with SearchModeDropdown) */}
-          <div className='w-full flex lg:hidden justify-between items-center  mb-3 md:mt-4 bg-black'>
+          <div className='w-full flex lg:hidden justify-between items-center  mb-3 md:mt-4 bg-black gap-5'>
             <div
               className={`${
                 visible ? '' : 'hidden'
-              } flex items-center gap-2 w-[85%] md:w-1/3`}
+              } flex items-center gap-2 w-[25%] md:w-1/3`}
             >
               <SearchModeDropdown />
             </div>
@@ -226,7 +226,7 @@ const DashboardView = () => {
             <input
               placeholder={animatedPlaceholder} // ← was activePlaceholder
               onKeyDown={handleSearch}
-              className='flex-1 bg-[#102221] px-4 py-2 rounded-lg ...'
+              className=' bg-[#102221] px-4 py-2 rounded-lg ... w-[75%]'
             />
           </div>
 
