@@ -226,7 +226,8 @@ const DashboardView = () => {
             <input
               placeholder={animatedPlaceholder} // ← was activePlaceholder
               onKeyDown={handleSearch}
-              className=' bg-[#102221] px-4 py-2 rounded-lg ... w-[75%]'
+              className=' bg-[#102221] px-4 py-2 rounded-lg ... w-[75%] placeholder:text-white
+'
             />
           </div>
 
