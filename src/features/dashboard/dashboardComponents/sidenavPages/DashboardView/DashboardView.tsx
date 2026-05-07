@@ -16,6 +16,7 @@ import { useMarketStats } from '../../../../../core/hooks/useMarketStats'
 import { useFirstCallers } from './hooks/useFirstCallers'
 import { useRecentTrades } from '../../../../trades/useTrades'
 import SearchModeDropdown from '../../../../../shared/SearchModeDropdown'
+import { useTypewriter } from './hooks/useTypewriter'
 
 type TimeRange = 'ALL' | '24H' | '7D' | '30D'
 
@@ -24,6 +25,8 @@ const DashboardView = () => {
 
   const { openVaultFlow, activePlaceholder, handleSearch, visible } =
     useGeneralContext()
+  const animatedPlaceholder = useTypewriter(activePlaceholder)
+
   const {
     leaders,
     loading: leadersLoading,
@@ -210,24 +213,23 @@ const DashboardView = () => {
       <div className=' w-full  lg:w-[60%] '>
         {/* Market overview */}
         <section className='w-full'>
-         
-            {/* SEARCH — Mobile (UPDATED: wrapped with SearchModeDropdown) */};
-            <div className='w-full flex lg:hidden justify-between items-center mt-2 mb-3 md:mt-4 bg-black'>
-              <div
-                className={`${
-                  visible ? '' : 'hidden'
-                } flex items-center gap-2 w-[85%] md:w-1/3`}
-              >
-                <SearchModeDropdown />
-              </div>
-
-              <input
-                placeholder={activePlaceholder}
-                onKeyDown={handleSearch}
-                className='flex-1 bg-[#102221] px-4 py-2 rounded-lg outline-none placeholder:text-xs transition-all duration-500 text-white placeholder:text-gray-400'
-              />
+          {/* SEARCH — Mobile (UPDATED: wrapped with SearchModeDropdown) */}
+          <div className='w-full flex lg:hidden justify-between items-center  mb-3 md:mt-4 bg-black'>
+            <div
+              className={`${
+                visible ? '' : 'hidden'
+              } flex items-center gap-2 w-[85%] md:w-1/3`}
+            >
+              <SearchModeDropdown />
             </div>
-  
+            
+            <input
+              placeholder={animatedPlaceholder} // ← was activePlaceholder
+              onKeyDown={handleSearch}
+              className='flex-1 bg-[#102221] px-4 py-2 rounded-lg ...'
+            />
+          </div>
+
           <div className='flex justify-between items-center'>
             <p className='font-[700] text-white'>Market overview</p>
           </div>

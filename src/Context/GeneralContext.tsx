@@ -4,7 +4,9 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
+  useRef,
   useState
 } from 'react'
 import type { ReactNode } from 'react'
@@ -284,11 +286,18 @@ export const GeneralProvider = ({ children }: { children: ReactNode }) => {
     setCallTradeToast(false)
   }, [])
 
+  // In GeneralContext.tsx
   // ── Search
   const [searchMode, setSearchMode] = useState<SearchMode>('trader')
   const [searchModeOpen, setSearchModeOpen] = useState(false)
 
-  // Derived from the private searchModes array — no need to expose the derivation
+  // ✅ useRef initialized once, synced after render via useEffect
+  const searchModeRef = useRef<SearchMode>('trader')
+
+  useEffect(() => {
+    searchModeRef.current = searchMode
+  }, [searchMode])
+
   const activePlaceholder = useMemo(
     () => searchModes.find(m => m.id === searchMode)!.placeholder,
     [searchMode]
@@ -301,7 +310,9 @@ export const GeneralProvider = ({ children }: { children: ReactNode }) => {
       e.currentTarget.value = ''
       if (!query) return
 
-      if (searchMode === 'trader') {
+      const mode = searchModeRef.current
+
+      if (mode === 'trader') {
         try {
           const res = await fetch(
             `${API_BASE}/api/search/trader?query=${query.toLowerCase()}`
@@ -313,14 +324,14 @@ export const GeneralProvider = ({ children }: { children: ReactNode }) => {
         } catch (err) {
           console.error('Trader search failed', err)
         }
-      } else if (searchMode === 'token') {
+      } else if (mode === 'token') {
         setPrefilledTokenAddress(query)
         requestAnimationFrame(() => setOpenCallTrade(true))
-      } else if (searchMode === 'address') {
+      } else if (mode === 'address') {
         navigate(`/profile/${query}`)
       }
     },
-    [searchMode, navigate]
+    [navigate]
   )
 
   return (

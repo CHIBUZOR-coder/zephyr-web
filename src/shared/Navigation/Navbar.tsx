@@ -18,6 +18,7 @@ import useRiskStore from '../../core/store/RiskStoreState'
 import { useUserVaults } from '../../features/master/useUserVaults'
 import { useAllVaultActivities } from '../../features/dashboard/dashboardComponents/sidenavPages/Portfolio/useVaultActivities'
 import SearchModeDropdown from '../SearchModeDropdown'
+import { useTypewriter } from '../../features/dashboard/dashboardComponents/sidenavPages/DashboardView/hooks/useTypewriter'
 
 // import { useNotificationStore } from '../Modals/Notification/useNotificationStore'
 
@@ -35,6 +36,7 @@ const Navbar = () => {
     activePlaceholder,
     handleSearch
   } = useGeneralContext()
+  const animatedPlaceholder = useTypewriter(activePlaceholder)
 
   const { setMarkedAsRead } = useRiskStore()
 
@@ -117,7 +119,7 @@ const Navbar = () => {
   const { setWalletModal } = useGeneralContext()
 
   return (
-    <div className='w-full sticky top-0 z-[80] bg-[#0c1414] py-3'>
+    <div className='w-full sticky top-0 z-[80] bg-[#0c1414]  py-3'>
       <div className='w-full sticky z-[80] pb-0 lg:p-3'>
         {/* ─────────────────────────────────────────
             Top bar — Large Screen/////////
@@ -135,8 +137,9 @@ const Navbar = () => {
               } flex items-center gap-2 w-1/2 lg:w-1/4`}
             >
               <SearchModeDropdown />
+              
               <input
-                placeholder={activePlaceholder}
+                placeholder={animatedPlaceholder} // ← was activePlaceholder
                 onKeyDown={handleSearch}
                 className='flex-1 bg-[#102221] px-4 py-2 rounded-lg outline-none placeholder:text-xs text-white caret-white transition-all duration-500'
                 style={{ caretShape: 'block' } as React.CSSProperties}
@@ -288,7 +291,7 @@ const Navbar = () => {
       {/* ─────────────────────────────────────────
           Mobile
       ───────────────────────────────────────── */}
-      
+
       <div className='lg:hidden block'>
         {/* ── Row 1: Hamburger | Logo | Balance | Connect/Mode | Bell ── */}
         <div className='flex justify-between items-center gap-2 px-1'>
@@ -320,7 +323,7 @@ const Navbar = () => {
             {connected && balance !== null && (
               <button
                 onClick={() => setShowUsdc(!showUsdc)}
-                className='inline-flex text-[8px] bg-[#0f1a18] px-2 py-2 rounded-lg border border-[#0A3F46] items-center gap-1 text-white hover:opacity-80 transition-opacity'
+                className=' text-[8px] bg-[#0f1a18] px-2 py-2 rounded-lg border border-[#0A3F46] items-center gap-1 flex text-white hover:opacity-80 transition-opacity'
               >
                 <span
                   style={{
@@ -328,7 +331,7 @@ const Navbar = () => {
                       showUsdc ? 'usdc.svg' : 'solana.svg'
                     }")`
                   }}
-                  className='inline-block bg-center bg-cover h-[14px] w-[14px]'
+                  className='inline-block bg-center bg-cover h-[7px] w-[7px]'
                 />
                 {showUsdc
                   ? `${(balance * solPrice).toFixed(2)} USDC`
@@ -349,38 +352,28 @@ const Navbar = () => {
                 />
               </button>
             )}
-
-            {/* Mode toggle (only when connected) — mirrors desktop logic */}
+            {/* Wallet */}
             {connected && (
-              <>
-                {masterMode ? (
-                  <div
-                    onClick={toggleMasterMode}
-                    className='rounded-md border-[1.5px] bg-master border-masterb shadow-[0_0_25px_0px_rgba(245,158,11,0.2)] p-[6px] flex items-center gap-1 cursor-pointer'
-                  >
-                    <p className='h-[5px] w-[5px] rounded-full bg-[#00A991] animate-pulse' />
-                    <p className='text-[8px] font-[900] tracking-[0.8px] text-[#FE9A00]'>
-                      MASTER
-                    </p>
-                  </div>
-                ) : (
-                  <div
-                    onClick={() => {
-                      if (!hasMaterVault) {
-                        setMasterTraderOpen(true)
-                      } else {
-                        toggleMasterMode()
-                      }
-                    }}
-                    className='rounded-md border-[1.5px] border-modeboreder shadow-[0_0_25px_0px_rgba(0,169,145,0.3)] p-[6px] flex items-center gap-1 cursor-pointer'
-                  >
-                    <p className='h-[5px] w-[5px] rounded-full bg-[#00A991] animate-pulse' />
-                    <p className='text-[8px] font-[900] tracking-[0.8px] text-[#00a991]'>
-                      COPIER
-                    </p>
-                  </div>
-                )}
-              </>
+              <div className=' px-1 flex justify-end'>
+                <div className='relative'>
+                  <button className='flex items-center justify-between cursor-pointer bg-[#0f1a18] border border-[#23483B] px-1 rounded-lg text-[11px] font-[700] text-[#00A991] gap-2'>
+                  
+                    <span
+                      onClick={e => {
+                        e.stopPropagation()
+                        setWalletMenuOpen(prev => !prev)
+                      }}
+                      className='cursor-pointer text-xl'
+                    >
+                      ▾
+                    </span>
+                  </button>
+                  <WalletMenu
+                    open={walletMenuOpen}
+                    onClose={() => setWalletMenuOpen(false)}
+                  />
+                </div>
+              </div>
             )}
 
             {/* Profile avatar — Link to /profile (only when connected) */}
@@ -419,45 +412,6 @@ const Navbar = () => {
             )}
           </div>
         </div>
-
-        {/* ── Row 2: Wallet address (only when connected) ── */}
-        {connected && (
-          <div className='mt-2 px-1 flex justify-end'>
-            <div className='relative'>
-              <button className='flex items-center justify-between cursor-pointer bg-[#0f1a18] border border-[#23483B] px-2 rounded-lg text-[11px] font-[700] text-[#00A991] gap-2'>
-                <div className='flex items-center gap-2'>
-                  <span>
-                    {publicKey?.toBase58().slice(0, 6)}…
-                    {publicKey?.toBase58().slice(-4)}
-                  </span>
-                  {copied ? (
-                    <span className='text-[10px] text-[#00A991]'>Copied ✓</span>
-                  ) : (
-                    <span
-                      onClick={handleCopy}
-                      style={{ backgroundImage: 'url("/images/copy.svg")' }}
-                      className='inline-block h-[14px] w-[14px] bg-center bg-cover cursor-pointer opacity-80 hover:opacity-100'
-                      title='Copy address'
-                    />
-                  )}
-                </div>
-                <span
-                  onClick={e => {
-                    e.stopPropagation()
-                    setWalletMenuOpen(prev => !prev)
-                  }}
-                  className='cursor-pointer text-xl'
-                >
-                  ▾
-                </span>
-              </button>
-              <WalletMenu
-                open={walletMenuOpen}
-                onClose={() => setWalletMenuOpen(false)}
-              />
-            </div>
-          </div>
-        )}
       </div>
     </div>
   )
