@@ -52,7 +52,7 @@ export const WalletMenu = ({ open, onClose }: Props) => {
                 ></span>
               </div>
 
-              <span className='text-[14px] font-[700] text-white'>
+              <span className='text-[8px] md:text-[14px] font-[700] text-white'>
                 Disconnect
               </span>
             </button>
@@ -73,7 +73,7 @@ export const WalletMenu = ({ open, onClose }: Props) => {
                   className='bg-center bg-cover h-[20px] w-[20px]'
                 ></span>
               </div>
-              <span className='text-[14px] font-[700] text-white'>Profile</span>
+              <span className='text-[8px] md:text-[14px] font-[700] text-white'>Profile</span>
             </button>
             {connected && (
               <>
