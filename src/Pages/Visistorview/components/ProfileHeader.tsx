@@ -154,6 +154,21 @@ export default function ProfileHeader ({ trader }: ProfileHeaderProps) {
                 {trader.followsDisplay}
               </p>
             </div>
+            
+            <div className='flex items-center gap-2'>
+              <Link
+                to={''}
+                className='rounded-full h-8 w-8 flex justify-center items-center p-2 bg-blue-300 text-white'
+              >
+                <FaTelegram className='h-6 w-6' />
+              </Link>
+              <Link
+                to={''}
+                className='rounded-full h-9 w-9 flex justify-center items-center p-2 bg-black text-white'
+              >
+                <FaXTwitter className='h-5 w-5' />
+              </Link>
+            </div>
           </div>
           <div className='flex items-center gap-2'>
             {trader.telegram && (

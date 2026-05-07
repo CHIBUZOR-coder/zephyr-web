@@ -121,11 +121,7 @@ export function useLeaderboard(
 
       const response = await authFetch<LeaderboardResponse>(url);
       if (!response?.success) throw new Error("Failed to fetch leaderboard");
-      console.log(
-        "trd",
-        (response.data.traders ?? []).map(mapLeaderboardEntryToTrader),
-      );
-
+      
       return {
         traders: (response.data.traders ?? []).map(mapLeaderboardEntryToTrader),
         total: response.data.total,

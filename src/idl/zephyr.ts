@@ -5,7 +5,7 @@
  * IDL can be found at `target/idl/zephyr.json`.
  */
 export type Zephyr = {
-  "address": "54FFNwwXRGRHK2mVCuYEUNVzdW2kkTPGWUafG9NbjWGu",
+  "address": "ZEPHPJHpQJZaSYAnn2iqpiVmtjg6m6asn6CDLRCJn7K",
   "metadata": {
     "name": "zephyr",
     "version": "0.1.0",
