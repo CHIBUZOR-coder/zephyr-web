@@ -6,6 +6,7 @@ import { useWallet } from '@solana/wallet-adapter-react'
 export interface UserProfile {
   id: string
   walletAddress: string
+  username: string | null
   displayName: string | null
   bio: string | null
   avatar: string | null
@@ -28,6 +29,7 @@ interface UpdateUserResponse {
 }
 
 interface UpdateUserInput {
+  username?: string
   displayName?: string
   bio?: string
   avatar?: string

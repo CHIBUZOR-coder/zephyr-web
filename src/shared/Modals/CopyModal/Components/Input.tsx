@@ -29,7 +29,7 @@ const Input = ({ label, placeholder, info, value, onChange }: InputProps) => {
         type='text'
         inputMode='decimal'
         pattern='[0-9]*\.?[0-9]*'
-        className='bg-[#0a1717] border border-[#1c3535] rounded-md px-3 py-2 text-white outline-none placeholder-white w-full'
+        className='bg-[#0a1717] border border-[#1c3535] rounded-md px-3 py-2 text-white outline-none  w-full placeholder:text-gray-500'
         placeholder={placeholder}
         value={value}
         onChange={handleChange}

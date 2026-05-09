@@ -17,6 +17,7 @@ import type {
 } from './leaderboar.types'
 import { Link } from 'react-router-dom'
 import { TierBadge } from '../../../../../Pages/Components/TierBadge'
+import { profileUrl } from '../../../../../utils/formatters'
 
 // ─── Movement indicator ───────────────────────────────────────────────────────
 type Movement = 'up' | 'down' | 'same'
@@ -341,7 +342,7 @@ const Leaderboard: React.FC = () => {
 
                       <td className='pdd trader'>
                         <Link
-                          to={`/profile/${trader.vaultAddress}`}
+                          to={profileUrl(trader.username, trader.vaultAddress || '')}
                           className='bg-center bg-cover h-[32px] w-[32px] rounded-full relative'
                           style={{
                             backgroundImage: `url(${trader.image})`
@@ -353,7 +354,7 @@ const Leaderboard: React.FC = () => {
                         </Link>
                         <div className='flex flex-col gap-1'>
                           <Link
-                            to={`/profile/${trader.vaultAddress}`}
+                            to={profileUrl(trader.username, trader.vaultAddress || '')}
                             className='font-[900] text-[14px]'
                           >
                             {trader.name}

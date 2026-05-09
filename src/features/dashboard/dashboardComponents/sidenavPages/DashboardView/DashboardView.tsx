@@ -17,6 +17,7 @@ import { useFirstCallers } from './hooks/useFirstCallers'
 import { useRecentTrades } from '../../../../trades/useTrades'
 import SearchModeDropdown from '../../../../../shared/SearchModeDropdown'
 import { useTypewriter } from './hooks/useTypewriter'
+import { profileUrl } from '../../../../../utils/formatters'
 
 type TimeRange = 'ALL' | '24H' | '7D' | '30D'
 
@@ -333,7 +334,7 @@ const DashboardView = () => {
                       className='rounded-xl flex flex-col items-center gap-3 overflow-hidden border-[#23483B] border-[1px] w-[100%]'
                     >
                       <Link
-                        to={`/profile/${item.vaultAddress}`}
+                        to={profileUrl(item.username, item.vaultAddress || '')}
                         className='h-80 lg:h-44 w-full flex flex-col justify-end p-4 bg-center bg-cover relative cursor-pointer hover:opacity-90 transition-opacity'
                         style={{
                           backgroundImage: `url(${item.image})`
@@ -403,13 +404,13 @@ const DashboardView = () => {
                       >
                         <div className='flex justify-between gap-4'>
                           <Link
-                            to={`/profile/${item?.vaultAddress}`}
+                            to={profileUrl(item.username, item.vaultAddress || '')}
                             className='bg-center bg-cover h-10 w-10 rounded-md'
                             style={{ backgroundImage: `url(${item.image})` }}
                           ></Link>
                           <div>
                             <Link
-                              to={`/profile/${item?.vaultAddress}`}
+                              to={profileUrl(item.username, item.vaultAddress || '')}
                               className='text-[10.5px] font-[700] text-white'
                             >
                               @{item.name}
@@ -447,9 +448,9 @@ const DashboardView = () => {
       {/* Right panel */}
       <div className=' w-full lg:w-[40%] mt-10  lg:mt-0 rightt'>
         <div className='flex justify-between items-center'>
-          <p className='font-[700] text-[15px] text-white'>First Caller</p>
+          <p className='font-[700] text-[15px] text-white'>First Caller – Top X Trades</p>
           <p className='text-[6px] font-[900] uppercase text-white leading-[12px] tracking-[1.6px]'>
-            First to Trade Each Token (24h)
+          The Hall of On-Chain Alpha
           </p>
         </div>
 

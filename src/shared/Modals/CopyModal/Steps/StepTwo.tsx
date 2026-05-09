@@ -341,27 +341,31 @@ export const StepTwo = ({ onBack, onNext, form, setForm }: StepTwoProps) => {
             <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
               <Input
                 label='Max Vault Drawdown (SOL)'
-                value={form.maxVaultDrawdown || '2.0'}
+                value={form.maxVaultDrawdown || ''}
+                placeholder='2.0'
                 onChange={v => handleParamChange('maxVaultDrawdown', v)}
                 suffix=''
               />
               <Input
                 label='Max Trade Size (SOL)'
-                value={form.maxTradeSize || '0.5'}
+                value={form.maxTradeSize || ''}
                 onChange={v => handleParamChange('maxTradeSize', v)}
+                placeholder='0.5'
                 suffix=''
               />
               <Input
                 label='Stop Loss Trigger (SOL)'
-                value={form.stopLossTriggerBps || '1.0'}
+                value={form.stopLossTriggerBps || ''}
                 onChange={v => handleParamChange('stopLossTriggerBps', v)}
                 suffix=''
+                placeholder='0.1'
               />
               <Input
                 label='Entry Slippage'
-                value={form.maxEntrySlippage || '0.5'}
+                value={form.maxEntrySlippage || ''}
                 onChange={v => handleParamChange('maxEntrySlippage', v)}
                 suffix='%'
+                placeholder='0.5'
               />
             </div>
 

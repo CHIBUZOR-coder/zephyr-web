@@ -197,21 +197,20 @@ export const StepOne = ({ onNext, form, setForm }: StepOneProps) => {
             label='Max Vault Drawdown (SOL)'
             placeholder={maxDrawdownSol}
             info='Hard stop if your vault equity drops by this amount of SOL.'
-            value={form.maxVaultDrawdown}
+          
             onChange={(e) => handleInputChange('maxVaultDrawdown', e.target.value)}
           />
           <Input
             label='Max Trade Size (SOL)'
             placeholder={maxTradeSizeSol}
             info='Maximum SOL per single copied trade.'
-            value={form.maxTradeSize}
+       
             onChange={(e) => handleInputChange('maxTradeSize', e.target.value)}
           />
           <Input 
             label='Max Entry Slippage' 
             placeholder={slippagePct}
             info='Recommended: 0.5% for conservative risk profile.'
-            value={form.maxEntrySlippage}
             onChange={(e) => handleInputChange('maxEntrySlippage', e.target.value)}
           />
 

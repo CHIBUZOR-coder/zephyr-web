@@ -1,4 +1,4 @@
-// ================= VisitorProfile.tsx =================
+import { useState, useEffect } from 'react'
 import { useParams } from 'react-router-dom'
 
 import { ProfileSkeleton } from './components/Skeletons'
@@ -7,17 +7,51 @@ import StatsGrid from './components/StatsGrid'
 import PerformanceSection from './components/PerformanceSection'
 import RiskSection from './components/RiskSection'
 import { useTraderProfile } from '../../features/dashboard/dashboardComponents/sidenavPages/Leaderboard/useLeaderboard'
+import { authFetch } from '../../core/query/authClient'
 
 type Params = {
   address?: string
 }
 
+function isPublicKey(input: string): boolean {
+  return /^[A-HJ-NP-Za-km-z1-9]{32,44}$/.test(input)
+}
+
 export default function VisitorProfile () {
   const { address } = useParams<Params>()
+  const [vaultAddress, setVaultAddress] = useState<string | undefined>(undefined)
+  const [resolving, setResolving] = useState(false)
 
-  const { trader, loading, error } = useTraderProfile(address)
+  useEffect(() => {
+    if (!address) {
+      setVaultAddress(undefined)
+      return
+    }
 
-  if (loading) return <ProfileSkeleton />
+    if (isPublicKey(address)) {
+      setVaultAddress(address)
+      return
+    }
+
+    setResolving(true)
+    authFetch<{ success: boolean; user: { walletAddress: string } }>(`/api/users/by-username/${address}`)
+      .then(res => {
+        if (res.success && res.user) {
+          setVaultAddress(res.user.walletAddress)
+        } else {
+          setVaultAddress(address)
+        }
+      })
+      .catch(() => {
+        setVaultAddress(address)
+      })
+      .finally(() => setResolving(false))
+  }, [address])
+
+  const { trader, loading, error } = useTraderProfile(vaultAddress)
+  const isLoading = resolving || loading
+
+  if (isLoading) return <ProfileSkeleton />
   if (error) return <div className='text-white'>{error}</div>
   if (!trader) return <div className='text-white'>Trader not found</div>
 

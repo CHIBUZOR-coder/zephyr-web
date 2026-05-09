@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useGeneralContext } from '../../../../../Context/GeneralContext'
 import { fmtSol } from '../../../../../utils/currencyHelpers'
+import { profileUrl } from '../../../../../utils/formatters'
 import type { Strategy } from './portfolio.types'
 import EditRiskModal from '../../../../../shared/Modals/EditRiskModal/EditRiskModal'
 
@@ -139,7 +140,7 @@ export const MirroringVaults = ({
                               onClick={e => {
                                 e.stopPropagation()
                                 navigate(
-                                  `/profile/${strategy.masterVaultAddress}`
+                                  profileUrl(null, strategy.masterVaultAddress || '')
                                 )
                               }}
                               className='text-[10px] text-[#7a9ab0] hover:text-[#00c0a8] cursor-pointer transition-colors'

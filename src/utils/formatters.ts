@@ -93,3 +93,10 @@ export function formatSocialLink(value: string, platform: 'x' | 'telegram'): str
 
   return input;
 }
+
+export function profileUrl(username: string | null | undefined, vaultAddress: string): string {
+  if (username && username.length >= 3) {
+    return `/profile/${username}`;
+  }
+  return `/profile/${vaultAddress}`;
+}

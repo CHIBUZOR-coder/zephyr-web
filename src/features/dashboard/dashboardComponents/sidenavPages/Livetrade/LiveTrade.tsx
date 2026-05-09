@@ -7,6 +7,7 @@ import { useGeneralContext } from '../../../../../Context/GeneralContext'
 import { TierBadge } from '../../../../../Pages/Components/TierBadge'
 import { useRecentTrades, useCopierTrades, type Trade, getTierLabel } from '../../../../trades/useTrades'
 import { useSolPrice } from '../../../../../core/hooks/usePrice'
+import { profileUrl } from '../../../../../utils/formatters'
 
 const SOLSCAN_BASE_URL = `https://solscan.io/tx`
 
@@ -370,8 +371,8 @@ const LiveTrade = () => {
 
                     {/* Verification */}
                     <div className='flex justify-end'>
-                      <a
-                        href={`${SOLSCAN_BASE_URL}/${trader.signature}?cluster=devnet`}
+                      <Link
+                        to={`${SOLSCAN_BASE_URL}/${trader.signature}?cluster=devnet`}
                         target='_blank'
                         rel='noopener noreferrer'
                         className='flex items-center gap-3 px-3 py-1 
@@ -385,7 +386,7 @@ const LiveTrade = () => {
                             backgroundImage: `url("/images/redirectlive.svg")`
                           }}
                         ></span>
-                      </a>
+                      </Link>
                     </div>
                   </div>
                 ))}
@@ -511,7 +512,7 @@ const LiveTrade = () => {
 
                             {pos.masterVaultPda ? (
                               <Link 
-                                to={`/profile/${pos.masterVaultPda}`}
+                                to={profileUrl(null, pos.masterVaultPda)}
                                 className="text-[#B0E4DD] hover:text-teal-400 transition-colors"
                               >
                                 {pos.mirror}

@@ -5,12 +5,16 @@ import { AiOutlineWarning } from 'react-icons/ai'
 import { RiLineChartLine } from 'react-icons/ri'
 import { HiOutlineWallet } from 'react-icons/hi2'
 import { TbRefresh } from 'react-icons/tb'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useSettingsStore } from '../../../features/dashboard/dashboardComponents/sidenavPages/Settings/stores/settingsStore'
 import { useAuthStore } from '../../../features/auth/auth.store'
 
 import { useUserVaults } from '../../../features/master/useUserVaults'
-import { useAllVaultActivities, formatVaultActivity, type VaultActivity } from '../../../features/dashboard/dashboardComponents/sidenavPages/Portfolio/useVaultActivities'
+import {
+  useAllVaultActivities,
+  formatVaultActivity,
+  type VaultActivity
+} from '../../../features/dashboard/dashboardComponents/sidenavPages/Portfolio/useVaultActivities'
 
 interface Props {
   isOpen: boolean
@@ -47,43 +51,45 @@ const getIcon = (type: string) => {
 }
 
 const getNotificationContent = (activity: VaultActivity) => {
-  const formatted = formatVaultActivity(activity);
-  const title = formatted.type; 
-  let message = "";
+  const formatted = formatVaultActivity(activity)
+  const title = formatted.type
+  let message = ''
 
-  const shortVault = activity.vaultAddress 
-    ? `${activity.vaultAddress.slice(0, 4)}...${activity.vaultAddress.slice(-4)}` 
-    : 'Unknown Vault';
+  const shortVault = activity.vaultAddress
+    ? `${activity.vaultAddress.slice(0, 4)}...${activity.vaultAddress.slice(
+        -4
+      )}`
+    : 'Unknown Vault'
 
   switch (activity.type) {
     case 'VAULT_CREATED':
-      message = `Your vault (${shortVault}) has been successfully created.`;
-      break;
+      message = `Your vault (${shortVault}) has been successfully created.`
+      break
     case 'DEPOSIT':
     case 'DEPOSIT_MASTER':
-      message = `Deposited ${formatted.amount} ${formatted.token} into ${shortVault}.`;
-      break;
+      message = `Deposited ${formatted.amount} ${formatted.token} into ${shortVault}.`
+      break
     case 'WITHDRAWAL':
-      message = `Withdrew ${formatted.amount} ${formatted.token} from ${shortVault}.`;
-      break;
+      message = `Withdrew ${formatted.amount} ${formatted.token} from ${shortVault}.`
+      break
     case 'TRADE_EXECUTED':
-      message = `Trade executed in ${shortVault}: ${formatted.amount} ${formatted.token}.`;
-      break;
+      message = `Trade executed in ${shortVault}: ${formatted.amount} ${formatted.token}.`
+      break
     case 'TRADE_MIRRORED':
-      message = `Mirrored Trade from ${shortVault}. Copied: ${formatted.amount} ${formatted.token}. View transaction at solscan signature.`;
-      break;
+      message = `Mirrored Trade from ${shortVault}. Copied: ${formatted.amount} ${formatted.token}. View transaction at solscan signature.`
+      break
     case 'FEE_COLLECTED':
-      message = `Collected ${formatted.amount} ${formatted.token} in fees from ${shortVault}.`;
-      break;
+      message = `Collected ${formatted.amount} ${formatted.token} in fees from ${shortVault}.`
+      break
     case 'STATUS_CHANGED':
-      message = `Vault (${shortVault}) status has been updated.`;
-      break;
+      message = `Vault (${shortVault}) status has been updated.`
+      break
     default:
-      message = `New vault activity recorded in ${shortVault}.`;
+      message = `New vault activity recorded in ${shortVault}.`
   }
 
-  return { title, message, time: formatted.time };
-};
+  return { title, message, time: formatted.time }
+}
 
 const NotificationPanel: FC<Props> = ({ isOpen, onClose }) => {
   const setActiveTab = useSettingsStore(s => s.setActiveTab)
@@ -104,7 +110,10 @@ const NotificationPanel: FC<Props> = ({ isOpen, onClose }) => {
   })
 
   useEffect(() => {
-    localStorage.setItem('zephyr_read_activities', JSON.stringify(Array.from(readIds)))
+    localStorage.setItem(
+      'zephyr_read_activities',
+      JSON.stringify(Array.from(readIds))
+    )
     window.dispatchEvent(new Event('zephyr_read_activities_updated'))
   }, [readIds])
 
@@ -160,7 +169,7 @@ const NotificationPanel: FC<Props> = ({ isOpen, onClose }) => {
     <>
       {/* BACKDROP */}
       <div
-        className={`fixed inset-0 bg-black/40 backdrop-blur-sm transition-opacity z-40 ${
+        className={`fixed inset-0 bg-black/40 backdrop-blur-sm transition-opacity z-[100] ${
           isOpen ? 'opacity-100 visible' : 'opacity-0 invisible'
         }`}
         onClick={onClose}
@@ -181,9 +190,7 @@ const NotificationPanel: FC<Props> = ({ isOpen, onClose }) => {
               <h2 className='text-white text-[15px] font-semibold tracking-wide'>
                 NOTIFICATIONS
               </h2>
-              <p className='text-[12px] text-[#6B8F88]'>
-                {unreadCount} unread
-              </p>
+              <p className='text-[12px] text-[#6B8F88]'>{unreadCount} unread</p>
             </div>
           </div>
           <button
@@ -249,7 +256,7 @@ const NotificationPanel: FC<Props> = ({ isOpen, onClose }) => {
             visibleActivities.map(activity => {
               const { title, message, time } = getNotificationContent(activity)
               const isRead = readIds.has(activity.id)
-              
+
               return (
                 <div
                   key={activity.id}
@@ -266,20 +273,21 @@ const NotificationPanel: FC<Props> = ({ isOpen, onClose }) => {
                     <p className='text-[#7FAAA2] text-[12px] mt-1 leading-relaxed'>
                       {message}
                     </p>
-                    <div className='flex items-center justify-between mt-2'>
-                      <span className='text-[11px] text-[#557A74]'>
-                          {time}
-                      </span>
+                    <div className='flex items-center justify-between mt-2 '>
+                      <span className='text-[11px] text-[#557A74]'>{time}</span>
                       {activity.signature && (
-                        <a
-                          href={`https://solscan.io/tx/${activity.signature}?cluster=devnet`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          onClick={(e) => e.stopPropagation()}
-                          className="text-[10px] text-[#1ED2AF] hover:underline"
+                        <Link
+                          to={`https://solscan.io/tx/${activity.signature}?cluster=devnet`}
+                          target='_blank'
+                          rel='noopener noreferrer'
+                          onClick={e => e.stopPropagation()}
+                          className='text-[10px] text-[#1ED2AF] hover:underline h-[12px] w-[12px]'
+                            style={{
+                              backgroundImage: `url("/images/redirectlive.svg")`
+                            }}
                         >
-                          View Tx
-                        </a>
+                       
+                        </Link>
                       )}
                     </div>
                   </div>

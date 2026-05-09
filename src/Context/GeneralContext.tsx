@@ -14,6 +14,7 @@ import { useNavigate } from 'react-router-dom'
 import type { Trader } from '../features/dashboard/dashboardComponents/sidenavPages/Leaderboard/leaderboar.types'
 import type { Trader as TraderData } from '../features/home/traders.types'
 import { API_BASE } from '../core/query/authClient'
+import { profileUrl } from '../utils/formatters'
 
 // ─────────────────────────────────────────
 // Search — private to this module
@@ -319,7 +320,7 @@ export const GeneralProvider = ({ children }: { children: ReactNode }) => {
           )
           const data = await res.json()
           if (data.success) {
-            navigate(`/profile/${data.data.walletAddress}`)
+            navigate(profileUrl(null, data.data.walletAddress))
           }
         } catch (err) {
           console.error('Trader search failed', err)
@@ -328,7 +329,7 @@ export const GeneralProvider = ({ children }: { children: ReactNode }) => {
         setPrefilledTokenAddress(query)
         requestAnimationFrame(() => setOpenCallTrade(true))
       } else if (mode === 'address') {
-        navigate(`/profile/${query}`)
+        navigate(profileUrl(null, query))
       }
     },
     [navigate]

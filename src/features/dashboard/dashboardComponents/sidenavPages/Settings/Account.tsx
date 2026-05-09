@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { FaXTwitter, FaTelegram } from 'react-icons/fa6'
 import { useWallet } from '@solana/wallet-adapter-react'
 import AvatarUpload from './Components/AvatarUpload'
@@ -19,19 +19,51 @@ export default function Account () {
   const [telegram, setTelegram] = useState('')
   const [saveStatus, setSaveStatus] = useState<'idle' | 'success' | 'error'>('idle')
   const [showConfirmModal, setShowConfirmModal] = useState(false)
+  const [usernameAvailable, setUsernameAvailable] = useState<boolean | null>(null)
+  const [checkingUsername, setCheckingUsername] = useState(false)
+
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const checkUsername = useCallback(async (value: string) => {
+    const trimmed = value.trim()
+    if (trimmed.length < 3) {
+      setUsernameAvailable(null)
+      return
+    }
+    if (profile?.username && trimmed.toLowerCase() === profile.username.toLowerCase()) {
+      setUsernameAvailable(true)
+      return
+    }
+    setCheckingUsername(true)
+    try {
+      const res = await fetch(`/api/users/check-username/${encodeURIComponent(trimmed)}`)
+      const data = await res.json()
+      setUsernameAvailable(data.available)
+    } catch {
+      setUsernameAvailable(null)
+    } finally {
+      setCheckingUsername(false)
+    }
+  }, [profile?.username])
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      if (profile) {
-        setDisplayName(profile.displayName || '')
-        setBio(profile.bio || '')
-        setTwitter(profile.twitter || '')
-        setDiscord(profile.discord || '')
-        setTelegram(profile.telegram || '')
-      }
-    }, 0)
-    return () => clearTimeout(timer)
+    if (profile) {
+      setDisplayName(profile.displayName || '')
+      setUserName(profile.username || '')
+      setBio(profile.bio || '')
+      setTwitter(profile.twitter || '')
+      setDiscord(profile.discord || '')
+      setTelegram(profile.telegram || '')
+    }
   }, [profile])
+
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current)
+    debounceRef.current = setTimeout(() => {
+      checkUsername(userName)
+    }, 400)
+    return () => { if (debounceRef.current) clearTimeout(debounceRef.current) }
+  }, [userName, checkUsername])
 
   const isSocialCooldownActive = false
   const daysUntilSocialUnlock = 0
@@ -56,6 +88,7 @@ export default function Account () {
 
     try {
       await updateProfile({ 
+        username: userName || undefined,
         displayName, 
         bio, 
         twitter: formattedTwitter, 
@@ -76,6 +109,11 @@ export default function Account () {
 
   const handleSave = async () => {
     if (!connected) return
+
+    if (userName && userName.length >= 3 && usernameAvailable === false) {
+      setSaveStatus('error')
+      return
+    }
 
     const formattedTwitter = formatSocialLink(twitter, 'x')
     const formattedTelegram = formatSocialLink(telegram, 'telegram')
@@ -181,30 +219,56 @@ export default function Account () {
 
         {/* Form */}
         <div className='space-y-5 mt-6'>
-          {/* Display Name */}
+          {/* Username */}
           <div>
             <label className='text-[11px] tracking-wide text-textMuted'>
-              USER NAME
+              @USERNAME
             </label>
 
-            <input
-              type='text'
-              value={userName}
-              onChange={e => setUserName(e.target.value)}
-              maxLength={50}
-              placeholder='Your display name'
-              className='
-              w-full mt-1
-              px-3 py-2
-              rounded-lg
-              border border-borderSubtle
-              bg-inputBg
-              text-sm
-              outline-none
-              focus:border-accent
-              '
-            />
+            <div className='mt-1 relative'>
+              <input
+                type='text'
+                value={userName}
+                onChange={e => {
+                  const v = e.target.value.replace(/[^a-zA-Z0-9_]/g, '')
+                  setUserName(v)
+                }}
+                maxLength={30}
+                placeholder='Choose a unique username'
+                className={`
+                  w-full
+                  px-3 py-2
+                  rounded-lg
+                  border
+                  bg-inputBg
+                  text-sm
+                  outline-none
+                  ${usernameAvailable === false ? 'border-red-500 focus:border-red-500' :
+                    usernameAvailable === true && userName.length >= 3 ? 'border-green-500 focus:border-green-500' :
+                    'border-borderSubtle focus:border-accent'}
+                `}
+              />
+              {checkingUsername && (
+                <span className='absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-textMuted'>
+                  Checking...
+                </span>
+              )}
+              {!checkingUsername && userName.length >= 3 && usernameAvailable === true && (
+                <span className='absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-green-400'>
+                  Available
+                </span>
+              )}
+              {!checkingUsername && userName.length >= 3 && usernameAvailable === false && (
+                <span className='absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-red-400'>
+                  Taken
+                </span>
+              )}
+            </div>
+            <p className='text-[10px] text-textMuted mt-1'>
+              3-30 characters, letters, numbers, and underscores only
+            </p>
           </div>
+
           {/* Display Name */}
           <div>
             <label className='text-[11px] tracking-wide text-textMuted'>
@@ -284,7 +348,7 @@ export default function Account () {
                 type='text'
                 value={twitter}
                 onChange={e => setTwitter(e.target.value)}
-                placeholder='Paste your Twitter profile link'
+                placeholder='Input your Twitter or X profile link'
                 className='
                 flex-1
                 px-3 py-2

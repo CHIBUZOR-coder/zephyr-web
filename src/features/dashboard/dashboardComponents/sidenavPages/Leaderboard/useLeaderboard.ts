@@ -44,6 +44,7 @@ export interface LeaderboardEntry {
   vaultPda: string;
   user: {
     walletAddress: string;
+    username: string | null;
     displayName: string | null;
     avatar: string | null;
     isVerified: boolean;
@@ -92,6 +93,7 @@ function mapLeaderboardEntryToTrader(entry: LeaderboardEntry): Trader {
     followsDisplay: formatCompactNumber(entry.metrics.activeCopiers),
     sol: (entry.metrics.aumUsd / 150).toFixed(0),
     volume: `$${formatCompactNumber(entry.metrics.volumeUsd)}`,
+    username: entry.user.username,
     address: entry.masterWallet,
     vaultAddress: entry.vaultPda,
     twitter: entry.user.twitter,

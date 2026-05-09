@@ -7,6 +7,7 @@ describe('useUserProfile', () => {
       const profile: UserProfile = {
         id: 'user-123',
         walletAddress: 'ABC123def456Ghi789jkl012Mno345Pqr678',
+        username: null,
         displayName: 'Test Trader',
         bio: 'A test bio',
         avatar: 'https://example.com/avatar.png',
@@ -30,6 +31,7 @@ describe('useUserProfile', () => {
       const profile: UserProfile = {
         id: 'user-456',
         walletAddress: 'XYZ789abc012Def345ghi678Jkl901',
+        username: null,
         displayName: null,
         bio: null,
         avatar: null,
