@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useSocialFeed } from './useSocialFeed';
 import { useUserVaults } from '../../../master/useUserVaults';
-import { useAuthStore } from '../../../../features/auth/auth.store';
+
 import { useRecentTrades } from '../../../trades/useTrades';
 import type { Trade } from '../../../trades/useTrades';
 import { explorerClusterParam } from '../../../../core/config/solanaWallet';
@@ -42,7 +42,7 @@ export default function SocialFeed () {
   }, [refetchTrades]);
 
   const { masterVault, copierVaults } = useUserVaults();
-  const { user: authUser } = useAuthStore();
+  // const { user: authUser } = useAuthStore();
   const [content, setContent] = useState('');
 
   // Business Rule: Users can only post if they own at least one vault
@@ -91,7 +91,8 @@ export default function SocialFeed () {
               </p>
             </div>
           ) : unifiedFeed.length > 0 ? (
-            unifiedFeed.map((item, idx) => {
+    
+            unifiedFeed.map((item) => {
               if (item.type === 'post') {
                 const postItem = item.data;
                 return (

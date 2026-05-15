@@ -9,7 +9,9 @@ interface ToastItem {
   message: string
   subMessage?: string
   type: ToastType
+  centered?: boolean // 👈 Add this line
 }
+
 
 export const Toastify: React.FC<{
   toasts: ToastItem[]

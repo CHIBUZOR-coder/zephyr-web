@@ -15,7 +15,7 @@ import { Link } from 'react-router-dom'
 import { useDashboardLeaderboard } from '../Leaderboard/useLeaderboard'
 import { useMarketStats } from '../../../../../core/hooks/useMarketStats'
 import { useFirstCallers } from './hooks/useFirstCallers'
-import { useRecentTrades } from '../../../../trades/useTrades'
+// import { useRecentTrades } from '../../../../trades/useTrades'
 import SearchModeDropdown from '../../../../../shared/SearchModeDropdown'
 import { useTypewriter } from './hooks/useTypewriter'
 import { profileUrl } from '../../../../../utils/formatters'
@@ -37,8 +37,8 @@ const DashboardView = () => {
   } = useDashboardLeaderboard()
   const { data: firstCallers, isLoading: topTradesLoading } =
     useFirstCallers(10)
-  const { trades: recentTrades, loading: recentTradesLoading } =
-    useRecentTrades(50)
+  // const { trades: recentTrades} =
+  //   useRecentTrades(50)
   const {
     solPrice,
     solChange,
@@ -140,57 +140,57 @@ const DashboardView = () => {
     )
   }, [firstCallers, now])
 
-  const formatTimeAgo = (ms: number): string => {
-    const minutes = Math.floor(ms / (60 * 1000))
-    const hours = Math.floor(ms / (60 * 60 * 1000))
-    const days = Math.floor(ms / (24 * 60 * 60 * 1000))
-    const weeks = Math.floor(ms / (7 * 24 * 60 * 60 * 1000))
-    const months = Math.floor(ms / (30 * 24 * 60 * 60 * 1000))
+  // const formatTimeAgo = (ms: number): string => {
+  //   const minutes = Math.floor(ms / (60 * 1000))
+  //   const hours = Math.floor(ms / (60 * 60 * 1000))
+  //   const days = Math.floor(ms / (24 * 60 * 60 * 1000))
+  //   const weeks = Math.floor(ms / (7 * 24 * 60 * 60 * 1000))
+  //   const months = Math.floor(ms / (30 * 24 * 60 * 60 * 1000))
 
-    if (minutes < 1) return 'just now'
-    if (minutes < 60) return `${minutes}m ago`
-    if (hours < 24) return `${hours}h ago`
-    if (days < 7) return `${days}d ago`
-    if (weeks < 4) return `${weeks}w ago`
-    return `${months}mo ago`
-  }
+  //   if (minutes < 1) return 'just now'
+  //   if (minutes < 60) return `${minutes}m ago`
+  //   if (hours < 24) return `${hours}h ago`
+  //   if (days < 7) return `${days}d ago`
+  //   if (weeks < 4) return `${weeks}w ago`
+  //   return `${months}mo ago`
+  // }
 
-  const socials = useMemo(() => {
-    return (recentTrades ?? []).map(trade => {
-      const timeAgo = Math.floor(now - new Date(trade.executedAt).getTime())
-      const timeText = formatTimeAgo(timeAgo)
+  // const socials = useMemo(() => {
+  //   return (recentTrades ?? []).map(trade => {
+  //     const timeAgo = Math.floor(now - new Date(trade.executedAt).getTime())
+  //     const timeText = formatTimeAgo(timeAgo)
 
-      const isMaster = trade.vaultType === 'MASTER'
-      const name = isMaster
-        ? trade.masterExecutionVault?.user?.displayName ||
-          `Trader ${trade.masterExecutionVault?.masterWallet?.slice(0, 4)}`
-        : trade.copierVault?.copier?.displayName ||
-          `Copier ${trade.copierVault?.copier?.walletAddress?.slice(0, 4)}`
+  //     const isMaster = trade.vaultType === 'MASTER'
+  //     const name = isMaster
+  //       ? trade.masterExecutionVault?.user?.displayName ||
+  //         `Trader ${trade.masterExecutionVault?.masterWallet?.slice(0, 4)}`
+  //       : trade.copierVault?.copier?.displayName ||
+  //         `Copier ${trade.copierVault?.copier?.walletAddress?.slice(0, 4)}`
 
-      const img = isMaster
-        ? trade.masterExecutionVault?.user?.avatar ||
-          `https://api.dicebear.com/7.x/avataaars/svg?seed=${trade.masterExecutionVault?.masterWallet}`
-        : trade.copierVault?.copier?.avatar ||
-          `https://api.dicebear.com/7.x/avataaars/svg?seed=${trade.copierVault?.copier?.walletAddress}`
+  //     const img = isMaster
+  //       ? trade.masterExecutionVault?.user?.avatar ||
+  //         `https://api.dicebear.com/7.x/avataaars/svg?seed=${trade.masterExecutionVault?.masterWallet}`
+  //       : trade.copierVault?.copier?.avatar ||
+  //         `https://api.dicebear.com/7.x/avataaars/svg?seed=${trade.copierVault?.copier?.walletAddress}`
 
-      return {
-        name,
-        action: isMaster ? 'executed a trade' : 'mirrored a trade',
-        time: timeText,
-        sell: Number(trade.amountInDecimal).toFixed(2),
-        buy: `${Number(trade.amountOutDecimal).toFixed(2)} $${trade.tokenOut
-          .slice(0, 4)
-          .toUpperCase()}`,
-        comment: 0,
-        likes: 0,
-        message: '',
-        img,
-        price: 0,
-        signature: trade.signature,
-        tokenOut: trade.tokenOut
-      }
-    })
-  }, [recentTrades, now])
+  //     return {
+  //       name,
+  //       action: isMaster ? 'executed a trade' : 'mirrored a trade',
+  //       time: timeText,
+  //       sell: Number(trade.amountInDecimal).toFixed(2),
+  //       buy: `${Number(trade.amountOutDecimal).toFixed(2)} $${trade.tokenOut
+  //         .slice(0, 4)
+  //         .toUpperCase()}`,
+  //       comment: 0,
+  //       likes: 0,
+  //       message: '',
+  //       img,
+  //       price: 0,
+  //       signature: trade.signature,
+  //       tokenOut: trade.tokenOut
+  //     }
+  //   })
+  // }, [recentTrades, now])
 
   const filteredCalls = firstCall
     .filter(item => {
