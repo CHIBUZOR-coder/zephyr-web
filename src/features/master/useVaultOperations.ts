@@ -1,6 +1,7 @@
 // zephyr-web/src/features/master/useVaultOperations.ts
 import { useState, useCallback } from 'react';
 import { useProgram } from '../../core/solana/useProgram';
+import { endpoint, isMockNetwork } from '../../core/config/solanaWallet';
 import { PublicKey, SystemProgram, LAMPORTS_PER_SOL, SendTransactionError } from '@solana/web3.js';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { BN } from '@coral-xyz/anchor';
@@ -29,14 +30,19 @@ function parseSolanaError(err: unknown): string {
       if (logs) {
         const logsStr = logs.join(' ');
         
-        if (logsStr.includes('insufficient lamports') || logsStr.includes('insufficient funds')) {
+        // Check for rent-related failures (usually a copier account issue)
+        if (logsStr.includes('insufficient funds for rent')) {
+          return 'One or more copier accounts lack sufficient SOL for rent. This is a copier-side issue, not a master vault issue. Individual copier trades may fail silently—this is expected behavior.';
+        }
+        
+        if (logsStr.includes('insufficient lamports') || logsStr.includes('insufficient funds') || logsStr.includes('0x1787')) {
           const match = logsStr.match(/insufficient lamports (\d+), need (\d+)/);
           if (match) {
             const have = parseInt(match[1]) / LAMPORTS_PER_SOL;
             const need = parseInt(match[2]) / LAMPORTS_PER_SOL;
-            return `Insufficient balance. You have ${have.toFixed(4)} SOL but need ${need.toFixed(4)} SOL.`;
+            return `Insufficient SOL balance. You have ${have.toFixed(4)} SOL but need ${need.toFixed(4)} SOL to complete this trade. Please add more SOL to your vault.`;
           }
-          return 'Insufficient SOL balance for this transaction. Please check your wallet balance.';
+          return 'Insufficient SOL balance for this transaction. Please add more SOL to your vault.';
         }
         
         if (logsStr.includes('custom program error: 0x1')) {
@@ -69,6 +75,11 @@ function parseSolanaError(err: unknown): string {
   }
   
   const message = error?.message || String(err);
+  
+  // Check message for rent issues
+  if (message.includes('insufficient funds for rent')) {
+    return 'One or more copier accounts lack sufficient SOL for rent. This is a copier-side issue, not a master vault issue. Individual copier trades may fail silently—this is expected behavior.';
+  }
   
   if (message.includes('already processed') || message.includes('already been processed')) {
     return 'Transaction confirmed successfully. Your transaction has landed on-chain.';
@@ -391,6 +402,8 @@ export const useVaultOperations = () => {
         const onChainActiveCopierCount =
           Number(masterVaultAccount.activeCopierCount) || 0;
 
+        const connection = program.provider.connection;
+
         // Decide execution path based on on-chain state
         let remainingAccounts: {
           pubkey: PublicKey;
@@ -445,22 +458,8 @@ export const useVaultOperations = () => {
         //   devnet / testnet → mock mode (no real swap, empty jupiterInstructionData)
         //   mainnet-beta / localnet fork → real Jupiter swap
 
-        // const rpcUrl = program.provider.connection.rpcEndpoint;
-        const rpcUrl =
-          import.meta.env.VITE_SOLANA_RPC_URL ||
-          "https://api.devnet.solana.com";
-
-        const isMockNetwork =
-          rpcUrl.includes("devnet") ||
-          rpcUrl.includes("testnet") ||
-          rpcUrl.includes("localhost") ||
-          rpcUrl.includes("127.0.0.1") ||
-          rpcUrl.includes("api.devnet.solana.com");
-
-        // Note: Real Jupiter swaps require mainnet-only (not fork) due to program cloning limitations
-
         console.log(
-          `🌐 Network Check: RPC=${rpcUrl}, MockMode=${isMockNetwork}`,
+          `🌐 Network Check: RPC=${endpoint}, MockMode=${isMockNetwork}`,
         );
 
         // Correct mint addresses for Jupiter:
@@ -482,12 +481,9 @@ export const useVaultOperations = () => {
           isWritable: boolean;
           isSigner: boolean;
         }[] = [];
-        let jupiterInstructionData: Buffer = Buffer.alloc(0); // empty = mock mode
+        let jupiterInstructionData: Buffer = Buffer.alloc(0);
         const setupInstructions: import("@solana/web3.js").TransactionInstruction[] =
           [];
-        let cleanupInstruction:
-          | import("@solana/web3.js").TransactionInstruction
-          | null = null;
         let lookupTableAccounts: import("@solana/web3.js").AddressLookupTableAccount[] =
           [];
 
@@ -565,13 +561,6 @@ export const useVaultOperations = () => {
             for (const ix of swapIxResponse.setupInstructions) {
               setupInstructions.push(deserializeJupiterIx(ix));
             }
-          }
-
-          // Cleanup instruction (close wSOL ATA) runs AFTER call_trade
-          if (swapIxResponse.cleanupInstruction) {
-            cleanupInstruction = deserializeJupiterIx(
-              swapIxResponse.cleanupInstruction,
-            );
           }
 
           // Swap instruction accounts go into remaining_accounts on the Zephyr program
@@ -662,39 +651,33 @@ export const useVaultOperations = () => {
 
         console.log("callTradeIx built:", !!callTradeIx);
 
-        // ── Build and send Transaction ────────────────────────────
-        const { Transaction } = await import("@solana/web3.js");
+        // ── Build and send VersionedTransaction ────────────────────
+        const {
+          TransactionMessage,
+          VersionedTransaction,
+        } = await import("@solana/web3.js");
 
-        const connection = program.provider.connection;
         const { blockhash, lastValidBlockHeight } =
           await connection.getLatestBlockhash("confirmed");
 
-        // Use legacy transaction (works with all wallets)
-        const transaction = new Transaction({
-          feePayer: publicKey,
-          recentBlockhash: blockhash,
-        });
+        const allInstructions = [
+          ...setupInstructions,
+          ...(callTradeIx ? [callTradeIx] : []),
+        ];
 
-        if (setupInstructions.length > 0) {
-          transaction.add(...setupInstructions);
-        }
-        if (callTradeIx) {
-          transaction.add(callTradeIx);
-        }
-        if (cleanupInstruction) {
-          transaction.add(cleanupInstruction);
-        }
-
-        console.log(
-          "Transaction instructions count:",
-          transaction.instructions.length,
-        );
-
-        if (transaction.instructions.length === 0) {
+        if (allInstructions.length === 0) {
           throw new Error(
             "No instructions - setupInstructions empty, callTradeIx may be undefined",
           );
         }
+
+        const message = new TransactionMessage({
+          payerKey: publicKey,
+          recentBlockhash: blockhash,
+          instructions: allInstructions,
+        }).compileToV0Message(lookupTableAccounts);
+
+        const transaction = new VersionedTransaction(message);
 
         const signedTx = await signTransaction!(transaction);
 
@@ -970,5 +953,7 @@ export const useVaultOperations = () => {
     }
   }, [program, publicKey]);
 
-  return { depositToCopierVault, transferToVault, depositToMasterVault, withdrawFromCopierVault, withdrawFromMasterVault, claimPerformanceFees, callTrade, initializeTierConfig, initializeRiskConfig, updateRiskConfig, updateCopierRiskParams, loading, error };
+  const clearError = useCallback(() => setError(null), []);
+
+  return { depositToCopierVault, transferToVault, depositToMasterVault, withdrawFromCopierVault, withdrawFromMasterVault, claimPerformanceFees, callTrade, initializeTierConfig, initializeRiskConfig, updateRiskConfig, updateCopierRiskParams, loading, error, clearError };
 };

@@ -1,6 +1,7 @@
 import { useVaultActivities, useAllVaultActivities, formatVaultActivity } from './useVaultActivities'
 import type { VaultActivity } from './useVaultActivities'
 import { FiClock } from 'react-icons/fi'
+import { explorerClusterParam } from '../../../../../core/config/solanaWallet'
 
 export const VaultActivityList = ({ vaultPda, vaultPdas }: { vaultPda?: string, vaultPdas?: string[] }) => {
   const singleVault = useVaultActivities(vaultPda || null)
@@ -80,7 +81,7 @@ export const VaultActivityList = ({ vaultPda, vaultPdas }: { vaultPda?: string, 
               <div className="flex items-center">
                 {formatted.signature !== 'N/A' ? (
                   <a
-                    href={`https://solscan.io/tx/${formatted.signature}?cluster=devnet`}
+                    href={`https://solscan.io/tx/${formatted.signature}${explorerClusterParam}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-xs text-[#1ED2AF] hover:underline flex items-center gap-1"

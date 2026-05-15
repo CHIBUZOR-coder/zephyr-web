@@ -9,6 +9,8 @@ import { useRecentTrades, useCopierTrades, type Trade, getTierLabel } from '../.
 import { useSolPrice } from '../../../../../core/hooks/usePrice'
 import { profileUrl } from '../../../../../utils/formatters'
 
+import { explorerClusterParam } from '../../../../../core/config/solanaWallet'
+
 const SOLSCAN_BASE_URL = `https://solscan.io/tx`
 
 type Stat = {
@@ -92,20 +94,42 @@ const LiveTrade = () => {
     return `${Math.floor(seconds / 86400)}d ago`
   }
 
-  const getTokenSymbol = (tokenAddress: string) => {
-    const symbols: Record<string, string> = {
-      'So11111111111111111111111111111111111111112': 'SOL',
-      '11111111111111111111111111111111': 'SOL',
-      'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v': 'USDC',
-      'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1': 'USDC',
-      'Gh9ZwEmdLJ8DscKNTkTqPbNwLNNBjuSzaG9Vp2KGtKJr': 'USDC',
-      '7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU': 'JUP',
-      'DezXAZ8z7Pnrn9vzct4XVkMHeJ3wi8SscLXvS9UfC5u' : 'BONK',
-      'hB9S95635Fve9feyVdvyYqG9Fv6xK6Jd3Zf7UuHuzmY' : 'BONK',
-      'HZ1JovZp2Vp87KqW2K7xS76KU2tV1PqH3MvM3Y7h6G7' : 'PYTH',
-    }
-    return symbols[tokenAddress] || tokenAddress.slice(0, 4) + '..' + tokenAddress.slice(-4)
-  }
+  const JUPITER_TOKEN_API = 'https://api.jup.ag/tokens/v2'
+
+  const [tokenSymbols, setTokenSymbols] = useState<Record<string, string>>({})
+
+  const getTokenSymbol = useCallback((address: string, preResolved?: string) => {
+    return preResolved || tokenSymbols[address] || `${address.slice(0, 4)}..${address.slice(-4)}`
+  }, [tokenSymbols])
+
+  useEffect(() => {
+    const unknown = [...new Set(
+      copierTrades.concat(recentTrades).flatMap(t => {
+        const addrs: string[] = []
+        if (!t.tokenInSymbol) addrs.push(t.tokenIn)
+        if (!t.tokenOutSymbol) addrs.push(t.tokenOut)
+        return addrs
+      })
+    )].filter(addr => !tokenSymbols[addr])
+
+    if (unknown.length === 0) return
+
+    unknown.forEach(async (addr) => {
+      try {
+        const res = await fetch(`${JUPITER_TOKEN_API}/${addr}`)
+        const data = await res.json()
+        setTokenSymbols(prev => ({
+          ...prev,
+          [addr]: data?.symbol?.toUpperCase() || `${addr.slice(0, 4)}..${addr.slice(-4)}`,
+        }))
+      } catch {
+        setTokenSymbols(prev => ({
+          ...prev,
+          [addr]: `${addr.slice(0, 4)}..${addr.slice(-4)}`,
+        }))
+      }
+    })
+  }, [copierTrades, recentTrades, tokenSymbols])
 
   const toNumber = (val: unknown): number => {
     if (typeof val === 'number') return val
@@ -122,13 +146,13 @@ const LiveTrade = () => {
       : trade.copierVault?.copier?.displayName || formatWallet(trade.copierVault?.copier?.walletAddress || '')
     
     const tierLabel = getTierLabel(trade.masterExecutionVault?.currentTier)
-    const pair = `${getTokenSymbol(trade.tokenIn)}/${getTokenSymbol(trade.tokenOut)}`
+    const pair = `${getTokenSymbol(trade.tokenIn, trade.tokenInSymbol)}/${getTokenSymbol(trade.tokenOut, trade.tokenOutSymbol)}`
     
     const action = trade.status === 'CONFIRMED' 
-      ? (getTokenSymbol(trade.tokenOut) === 'SOL' ? 'BUY' : 'SELL')
+      ? (getTokenSymbol(trade.tokenOut, trade.tokenOutSymbol) === 'SOL' ? 'BUY' : 'SELL')
       : 'PENDING'
     
-    const tokenInSymbol = getTokenSymbol(trade.tokenIn)
+    const tokenInSymbol = getTokenSymbol(trade.tokenIn, trade.tokenInSymbol)
     const amountStr = `${formatAmount(trade.amountInDecimal)} ${tokenInSymbol}`
     
     return {
@@ -142,11 +166,11 @@ const LiveTrade = () => {
       signature: trade.signature,
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }), [recentTrades])
+  }), [recentTrades, getTokenSymbol])
 
   const positions: Position[] = useMemo(() => copierTrades.map((trade: Trade) => {
-    const tokenInSymbol = getTokenSymbol(trade.tokenIn)
-    const tokenOutSymbol = getTokenSymbol(trade.tokenOut)
+    const tokenInSymbol = getTokenSymbol(trade.tokenIn, trade.tokenInSymbol)
+    const tokenOutSymbol = getTokenSymbol(trade.tokenOut, trade.tokenOutSymbol)
     
     const amountIn = toNumber(trade.amountInDecimal)
     const amountOut = toNumber(trade.amountOutDecimal)
@@ -190,13 +214,13 @@ const LiveTrade = () => {
       vaultPda: trade.vaultPda
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }), [copierTrades])
+  }), [copierTrades, getTokenSymbol])
 
   const activeAllocation = useMemo(() => copierTrades.reduce((acc, t) => {
     // Sum up SOL allocation specifically for the stat
-    if (getTokenSymbol(t.tokenIn) === 'SOL') return acc + Number(t.amountInDecimal)
+    if (getTokenSymbol(t.tokenIn, t.tokenInSymbol) === 'SOL') return acc + Number(t.amountInDecimal)
     return acc
-  }, 0), [copierTrades])
+  }, 0), [copierTrades, getTokenSymbol])
 
   const totalPnl = 0
   
@@ -372,7 +396,7 @@ const LiveTrade = () => {
                     {/* Verification */}
                     <div className='flex justify-end'>
                       <Link
-                        to={`${SOLSCAN_BASE_URL}/${trader.signature}?cluster=devnet`}
+                        to={`${SOLSCAN_BASE_URL}/${trader.signature}${explorerClusterParam}`}
                         target='_blank'
                         rel='noopener noreferrer'
                         className='flex items-center gap-3 px-3 py-1 
@@ -516,7 +540,7 @@ const LiveTrade = () => {
                                 className="text-[#B0E4DD] hover:text-teal-400 transition-colors"
                               >
                                 {pos.mirror}
-                              </Link>
+                      </Link>
                             ) : (
                               <span className='text-[#B0E4DD]'>{pos.mirror}</span>
                             )}

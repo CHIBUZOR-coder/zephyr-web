@@ -12,6 +12,7 @@ interface ToastProps {
   subMessage?: string
   type?: ToastType
   onDismiss: (id: number) => void
+  centered?: boolean
 }
 
 const iconConfig = {
@@ -34,7 +35,8 @@ export const Toast: React.FC<ToastProps> = ({
   message,
   subMessage,
   type = 'success',
-  onDismiss
+  onDismiss,
+  centered = false
 }) => {
   const [visible, setVisible] = useState(false)
   const [leaving, setLeaving] = useState(false)
@@ -49,11 +51,64 @@ export const Toast: React.FC<ToastProps> = ({
     setTimeout(() => onDismiss(id), 300)
   }
 
+  // Animation logic:
+  // Corner: Slides from right (120% -> 0)
+  // Centered: Slides from top (-40px -> 0)
+  const transform = centered
+    ? visible && !leaving
+      ? 'translateY(0)'
+      : 'translateY(-40px)'
+    : visible && !leaving
+    ? 'translateX(0)'
+    : 'translateX(120%)'
+
+  if (centered) {
+    return (
+      <div
+        className='relative'
+        style={{
+          transform,
+          opacity: visible && !leaving ? 1 : 0,
+          transition:
+            'transform 0.4s cubic-bezier(.22,1,.36,1), opacity 0.3s ease'
+        }}
+      >
+        <div
+          className='
+            flex items-center gap-3
+            bg-[#102221] border border-[#14b8a6]/50
+            rounded-full px-6 py-2.5
+            shadow-[0_8px_30px_rgb(20,184,166,0.15)]
+            min-w-[300px] backdrop-blur-md
+          '
+        >
+          <div className='w-2 h-2 rounded-full bg-[#14b8a6] animate-pulse' />
+          <div className='flex flex-col'>
+            <p className='text-[#14b8a6] text-[12px] font-[900] uppercase tracking-[1.5px] m-0'>
+              {message}
+            </p>
+            {subMessage && (
+              <p className='text-[#8fb3ae] text-[10px] font-medium m-0'>
+                {subMessage}
+              </p>
+            )}
+          </div>
+          <button
+            onClick={handleDismiss}
+            className='ml-4 text-[#14b8a6]/60 hover:text-[#14b8a6] transition cursor-pointer'
+          >
+            <FiX size={14} />
+          </button>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div
       className='relative'
       style={{
-        transform: visible && !leaving ? 'translateX(0)' : 'translateX(120%)',
+        transform,
         opacity: visible && !leaving ? 1 : 0,
         transition:
           'transform 0.35s cubic-bezier(.22,.68,0,1.2), opacity 0.3s ease'

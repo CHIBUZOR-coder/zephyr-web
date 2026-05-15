@@ -31,7 +31,7 @@ export const CustomWalletModal = ({ open, onClose }: Props) => {
   } = useWallet()
 
   const loginMutation = useAuthLogin()
-  const { authenticated } = useAuthStore()
+  const { authenticated, authResolved } = useAuthStore()
 
   const onCloseRef = useRef(onClose)
   useEffect(() => {
@@ -103,6 +103,7 @@ export const CustomWalletModal = ({ open, onClose }: Props) => {
       publicKey &&
       signMessage &&
       !authenticated &&
+      authResolved &&
       !isPending &&
       !connecting &&
       !hasTriggeredLoginRef.current
@@ -127,6 +128,7 @@ export const CustomWalletModal = ({ open, onClose }: Props) => {
     publicKey,
     signMessage,
     authenticated,
+    authResolved,
     isPending,
     connecting,
     mutate

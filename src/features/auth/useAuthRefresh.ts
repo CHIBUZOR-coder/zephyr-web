@@ -1,28 +1,39 @@
 import { useEffect, useRef } from "react";
 import { useAuthStore } from "./auth.store";
+import { authFetch } from "../../core/query/authClient";
 
 export function useAuthRefresh() {
   const hydrated = useAuthStore((s) => s.hydrated);
   const user = useAuthStore((s) => s.user);
   const accessToken = useAuthStore((s) => s.accessToken);
-  const setAuth = useAuthStore((s) => s.setAuth);
 
-  // 🛑 Prevents duplicate refresh attempts - delegate to authFetch's refreshPromise
+  // 🛑 Prevents duplicate refresh attempts
   const attemptedRef = useRef(false);
 
   useEffect(() => {
-    // Only attempt refresh if:
-    // 1. Store has rehydrated
-    // 2. We have user data (means they logged in before)
-    // 3. But NO token in memory (page was refreshed)
-    // 4. Haven't already attempted in this component
-    if (!hydrated || !user || accessToken || attemptedRef.current) return;
+    // Wait for hydration
+    if (!hydrated || attemptedRef.current) return;
 
-    attemptedRef.current = true;
-    console.log("🔄 useAuthRefresh: Delegating to authFetch for token refresh...");
+    const performRefresh = async () => {
+      attemptedRef.current = true;
 
-    // Don't refresh here - let authFetch handle it when it gets a 401
-    // This prevents double refresh race conditions
-    useAuthStore.setState({ authResolved: true });
-  }, [hydrated, user, accessToken, setAuth]);
+      // If we have a user but no token, we need to try refreshing
+      if (user && !accessToken) {
+        console.log("🔄 useAuthRefresh: Attempting silent session restoration...");
+        try {
+          // This will trigger the refreshAccessToken logic in authFetch
+          await authFetch("/api/auth/me");
+          console.log("✅ useAuthRefresh: Session restored successfully");
+        } catch (err) {
+          console.log("ℹ️ useAuthRefresh: No valid session cookie found");
+          // authFetch already handles logout() on failure
+        }
+      }
+
+      // Mark auth as resolved regardless of success/failure
+      useAuthStore.setState({ authResolved: true });
+    };
+
+    performRefresh();
+  }, [hydrated, user, accessToken]);
 }

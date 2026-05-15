@@ -1,7 +1,7 @@
 // zephyr-web/src/features/trades/useTrades.ts
 
 import { useState, useEffect, useCallback } from 'react';
-const API_BASE_URL =  "https://zephyr-np09.onrender.com";
+const API_BASE_URL =  import.meta.env.VITE_API_BASE_URL || 'https://zephyr-np09.onrender.com';
 
 export interface Trade {
   id: string;
@@ -10,6 +10,8 @@ export interface Trade {
   vaultType: 'MASTER' | 'COPIER';
   tokenIn: string;
   tokenOut: string;
+  tokenInSymbol?: string;
+  tokenOutSymbol?: string;
   amountInRaw: string;
   amountOutRaw: string;
   amountInDecimal: number;

@@ -9,6 +9,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 
 import { useState, useMemo } from 'react'
 import { useGeneralContext } from '../../../../../Context/GeneralContext'
+import SocialFeed from '../../SocialFeed/SocialFeed'
 
 import { Link } from 'react-router-dom'
 import { useDashboardLeaderboard } from '../Leaderboard/useLeaderboard'
@@ -18,6 +19,7 @@ import { useRecentTrades } from '../../../../trades/useTrades'
 import SearchModeDropdown from '../../../../../shared/SearchModeDropdown'
 import { useTypewriter } from './hooks/useTypewriter'
 import { profileUrl } from '../../../../../utils/formatters'
+import { explorerClusterParam } from '../../../../../core/config/solanaWallet'
 
 type TimeRange = 'ALL' | '24H' | '7D' | '30D'
 
@@ -557,7 +559,7 @@ const DashboardView = () => {
                             On-Chain Proof
                           </p>
                           <a
-                            href={`https://solscan.io/tx/${item.signature}?cluster=devnet`}
+                            href={`https://solscan.io/tx/${item.signature}${explorerClusterParam}`}
                             target='_blank'
                             rel='noopener noreferrer'
                             className='font-bold text-[#00A991] text-[10px] hover:underline'
@@ -596,112 +598,7 @@ const DashboardView = () => {
           </div>
 
           {/* Social Feeds */}
-          <div className='mt-10 mb-[5.5rem] lg:mb-0 '>
-            <div className='flex gap-2 items-center px-4'>
-              <h4 className='text-[15px] font-[700] text-white '>
-                Social Feed
-              </h4>
-              <p className='w-[6px] h-[6px] rounded-full bg-[#22C55E] animate-pulse'></p>
-            </div>
-            <div className=' bg-[#0f1a18] rounded-xl'>
-              <div className='p-4 flex flex-col mt-4 gap-4 max-h-[420px] overflow-y-auto side scrollbar-thin scrollbar-thumb-[#23483B] scrollbar-track-transparent'>
-                {recentTradesLoading ? (
-                  <div className='p-8 text-center text-gray-500 text-xs animate-pulse font-bold tracking-widest uppercase'>
-                    Loading live feed...
-                  </div>
-                ) : socials.length === 0 ? (
-                  <div className='p-8 text-center text-gray-500 text-xs'>
-                    No activity yet. Be the first to trade!
-                  </div>
-                ) : (
-                  socials.slice(0, 50).map((item, i) => (
-                    <div key={i} className='flex justify-between '>
-                      <div className='flex justify-center items-center h-[28px] w-[28px] border-[1px] border-[#112968] rounded-full overflow-hidden'>
-                        <span
-                          style={{
-                            backgroundImage: `url(${item.img})`
-                          }}
-                          className='bg-cover bg-center rounded-full h-full w-full'
-                        ></span>
-                      </div>
-
-                      <div className='flex flex-col w-[90%] gap-[5px]'>
-                        <div className='flex justify-between items-center '>
-                          <div className='flex gap-3 items-center'>
-                            <p className='text-[10px] font-[700] text-white'>
-                              @{item.name}
-                            </p>
-                            <p className='text-[10px] text-[#B0E4DD]'>
-                              {item.action}
-                            </p>
-                          </div>
-                          <p className='text-[7.5px] text-[#B0E4DD]'>
-                            {item.time}
-                          </p>
-                        </div>
-                        <div className='bg-[#22403F] rounded-md flex justify-between items-center p-2 '>
-                          <div className=' '>
-                            <p className='text-[9px] text-[#FA6938] font-[700]'>
-                              IN: {item.sell}
-                            </p>
-                          </div>
-
-                          <span
-                            style={{
-                              backgroundImage: `url('/images/arrowr.svg')`
-                            }}
-                            className='bg-center bg-cover h-4 w-4'
-                          ></span>
-
-                          <div className=''>
-                            <p className='text-[9px] text-[#13EC5F] font-[700]'>
-                              OUT:
-                              <span className='text-white'>{item.buy}</span>
-                            </p>
-                            <a
-                              href={`https://solscan.io/tx/${item.signature}?cluster=devnet`}
-                              target='_blank'
-                              rel='noopener noreferrer'
-                              className='text-[7.5px] font-[400] text-[#FA6938] flex gap-[3px] items-center hover:underline'
-                            >
-                              <span>Solscan</span>
-                              <span
-                                style={{
-                                  backgroundImage: `url('/images/redirect.svg')`
-                                }}
-                                className=' cursor-pointer  h-2 w-2 bg-center bg-cover'
-                              ></span>
-                            </a>
-                          </div>
-                        </div>
-                        {/* Likes/Comments removed for Phase 1 as they aren't in DB yet */}
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-              <div className='mt-12'>
-                <p className=' h-[0.5px] bg-[#232948]'></p>
-
-                <div className='p-4'>
-                  <div className='w-full relative flex justify-center items-center'>
-                    <div className='cursor-pointer flex justify-center items-center bg-[#009883] rounded-full absolute  right-3 h-[30px] w-[30px] top-[28%]'>
-                      <p
-                        style={{
-                          backgroundImage: "url('/images/send.svg')"
-                        }}
-                        className=' bg-center bg-cover h-[12px] w-[10px] flex justify-center items-center'
-                      ></p>
-                    </div>
-                    <input
-                      placeholder='Post an update...'
-                      className='mt-2 bg-[#22403F] text-white w-full p-3 rounded-lg text-xs outline-none'
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+          <SocialFeed />
         </div>
       </div>
 
@@ -953,7 +850,7 @@ const DashboardView = () => {
                                         On-Chain Proof
                                       </p>
                                       <a
-                                        href={`https://solscan.io/tx/${item.signature}?cluster=devnet`}
+                                        href={`https://solscan.io/tx/${item.signature}${explorerClusterParam}`}
                                         target='_blank'
                                         rel='noopener noreferrer'
                                         className=' text-[#22C55E] text-[10px] font-[700] hover:underline'

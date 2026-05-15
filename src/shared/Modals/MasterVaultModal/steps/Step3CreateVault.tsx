@@ -3,6 +3,14 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { FiShield, FiAlertTriangle } from 'react-icons/fi'
 import { useMasterVault } from '../../../../features/master/useMasterVault'
 import { useGeneralContext } from '../../../../Context/GeneralContext'
+import { network } from '../../../../core/config/solanaWallet'
+
+const networkLabel: Record<string, string> = {
+  'mainnet-beta': 'Mainnet Beta',
+  devnet: 'Devnet',
+  testnet: 'Testnet',
+}
+const displayNetwork = networkLabel[network] || network
 
 // ─── TYPES ───────────────────────────────────────────────────────────────────
 
@@ -135,7 +143,7 @@ const Step3CreateVault: React.FC<Props> = ({
     },
     {
       label: 'NETWORK',
-      value: 'Solana Devnet',
+      value: `Solana ${displayNetwork}`,
       valueClass: 'text-white',
       icon: (
         <div className='w-5 h-5 rounded-full bg-gradient-to-br from-[#9945FF] to-[#14F195] shrink-0' />

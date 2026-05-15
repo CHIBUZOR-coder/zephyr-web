@@ -5,14 +5,12 @@ import {
   FaTelegramPlane,
   FaTelegram
 } from 'react-icons/fa'
+import { FaXTwitter } from 'react-icons/fa6'
 import { FaCheck } from 'react-icons/fa'
 import type { ReactNode } from 'react'
 import type { Trader } from '../../../features/dashboard/dashboardComponents/sidenavPages/Leaderboard/leaderboar.types'
 import { useGeneralContext } from '../../../Context/GeneralContext'
 import { getTier, isCommunityTier } from '../../../utils/Gettiter'
-import { RiTwitterXFill } from 'react-icons/ri'
-import { Link } from 'react-router-dom'
-import { FaXTwitter } from 'react-icons/fa6'
 
 type ProfileHeaderProps = {
   trader: Trader
@@ -96,18 +94,34 @@ export default function ProfileHeader ({ trader }: ProfileHeaderProps) {
           <div className='flex items-center gap-4'>
             <p className='text-xs text-gray-400'>{trader.tag}</p>
             <div className='flex items-center gap-2'>
-              <Link
-                to={''}
-                className='rounded-full h-8 w-8 flex justify-center items-center bg-black text-white'
-              >
-                <FaTelegram className='h-4 w-4' />
-              </Link>
-              <Link
-                to={''}
-                className='rounded-full h-8 w-8 flex justify-center items-center bg-black text-white'
-              >
-                <FaXTwitter className='h-4 w-4' />
-              </Link>
+              {trader.telegram ? (
+                <a
+                  href={trader.telegram}
+                  target='_blank'
+                  rel='noopener noreferrer'
+                  className='rounded-full h-8 w-8 flex justify-center items-center bg-[#0c1414] hover:bg-sky-500/20 transition-colors'
+                >
+                  <FaTelegramPlane className='h-4 w-4 text-white' />
+                </a>
+              ) : (
+                <div className='rounded-full h-8 w-8 flex justify-center items-center bg-[#0c1414] opacity-30'>
+                  <FaTelegram className='h-4 w-4 text-gray-500' />
+                </div>
+              )}
+              {trader.twitter ? (
+                <a
+                  href={trader.twitter}
+                  target='_blank'
+                  rel='noopener noreferrer'
+                  className='rounded-full h-8 w-8 flex justify-center items-center bg-[#0c1414] hover:bg-white/10 transition-colors'
+                >
+                  <FaXTwitter className='h-4 w-4 text-white' />
+                </a>
+              ) : (
+                <div className='rounded-full h-8 w-8 flex justify-center items-center bg-[#0c1414] opacity-30'>
+                  <FaXTwitter className='h-4 w-4 text-gray-500' />
+                </div>
+              )}
             </div>
           </div>
 
@@ -156,42 +170,35 @@ export default function ProfileHeader ({ trader }: ProfileHeaderProps) {
             </div>
             
             <div className='flex items-center gap-2'>
-              <Link
-                to={''}
-                className='rounded-full h-8 w-8 flex justify-center items-center p-2 bg-blue-300 text-white'
-              >
-                <FaTelegram className='h-6 w-6' />
-              </Link>
-              <Link
-                to={''}
-                className='rounded-full h-9 w-9 flex justify-center items-center p-2 bg-black text-white'
-              >
-                <FaXTwitter className='h-5 w-5' />
-              </Link>
+              {trader.telegram ? (
+                <a
+                  href={trader.telegram}
+                  target='_blank'
+                  rel='noopener noreferrer'
+                  className='rounded-full h-8 w-8 flex justify-center items-center bg-[#0c1414] hover:bg-sky-500/20 transition-colors'
+                >
+                  <FaTelegramPlane className='h-4 w-4 text-white' />
+                </a>
+              ) : (
+                <div className='rounded-full h-8 w-8 flex justify-center items-center bg-[#0c1414] opacity-30'>
+                  <FaTelegram className='h-4 w-4 text-gray-500' />
+                </div>
+              )}
+              {trader.twitter ? (
+                <a
+                  href={trader.twitter}
+                  target='_blank'
+                  rel='noopener noreferrer'
+                  className='rounded-full h-8 w-8 flex justify-center items-center bg-[#0c1414] hover:bg-white/10 transition-colors'
+                >
+                  <FaXTwitter className='h-4 w-4 text-white' />
+                </a>
+              ) : (
+                <div className='rounded-full h-8 w-8 flex justify-center items-center bg-[#0c1414] opacity-30'>
+                  <FaXTwitter className='h-4 w-4 text-gray-500' />
+                </div>
+              )}
             </div>
-          </div>
-          <div className='flex items-center gap-2'>
-            {trader.telegram && (
-              <a
-                href={trader.telegram}
-                target='_blank'
-                rel='noopener noreferrer'
-                className='flex items-center justify-center bg-[#0c1414] h-[27px] w-[27px] rounded-full hover:bg-sky-500/20 transition-colors'
-              >
-                <FaTelegramPlane className='w-4 h-4 text-white' />
-              </a>
-            )}
-
-            {trader.twitter && (
-              <a
-                href={trader.twitter}
-                target='_blank'
-                rel='noopener noreferrer'
-                className='flex items-center justify-center bg-[#0c1414] h-[27px] w-[27px] rounded-full hover:bg-white/10 transition-colors'
-              >
-                <RiTwitterXFill className='w-3 h-3 text-white' />
-              </a>
-            )}
           </div>
         </div>
       </div>

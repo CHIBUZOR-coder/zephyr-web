@@ -1,7 +1,6 @@
 import { useAuthStore } from "../../features/auth/auth.store";
 
-// export const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:3002";
-export const API_BASE = "https://zephyr-np09.onrender.com";
+export const API_BASE = import.meta.env.VITE_API_BASE_URL || "https://zephyr-np09.onrender.com";
 
 // This promise acts as a "wait room" for concurrent 401s
 let refreshPromise: Promise<string | null> | null = null;
@@ -99,7 +98,7 @@ export async function authFetch<T>(
     let errorMessage = "Unable to complete request.";
     try {
       const errorData = await res.json();
-      errorMessage = errorData.message || errorMessage;
+      errorMessage = errorData.message || errorData.error || errorMessage;
     } catch {
       /* fallback to default */
     }

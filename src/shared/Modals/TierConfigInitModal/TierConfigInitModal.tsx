@@ -3,6 +3,7 @@ import { PublicKey } from '@solana/web3.js'
 import { useInitializeTierConfig } from '../../../features/admin/useInitializeTierConfig'
 import { AnimatePresence, motion } from 'framer-motion'
 import { FiSettings, FiCheckCircle, FiAlertTriangle, FiExternalLink } from 'react-icons/fi'
+import { explorerClusterParam } from '../../../core/config/solanaWallet'
 
 interface TierConfigInitModalProps {
   isOpen: boolean
@@ -165,7 +166,7 @@ export const TierConfigInitModal: React.FC<TierConfigInitModalProps> = ({
                   
                   {txSignature && (
                     <a
-                      href={`https://solscan.io/tx/${txSignature}?cluster=devnet`}
+                      href={`https://solscan.io/tx/${txSignature}${explorerClusterParam}`}
                       target='_blank'
                       rel='noopener noreferrer'
                       className='inline-flex items-center gap-2 text-[11px] text-[#FE9A00] hover:underline mt-2 font-[700]'

@@ -1,4 +1,5 @@
 import { useGeneralContext } from '../../../../Context/GeneralContext'
+import { explorerClusterParam } from '../../../../core/config/solanaWallet'
 
 type StepFourProps = {
   onClose: () => void
@@ -122,7 +123,7 @@ export const StepFour = ({ onClose, onGoPortfolio, form }: StepFourProps) => {
 
               {form.txSig ? (
                 <a 
-                  href={`https://solscan.io/tx/${form.txSig}?cluster=devnet`} 
+                  href={`https://solscan.io/tx/${form.txSig}${explorerClusterParam}`} 
                   target='_blank' 
                   rel='noopener noreferrer'
                   className='text-[#14B8A6] hover:text-teal-300 transition flex items-center gap-1'

@@ -7,7 +7,7 @@ import StatsGrid from './components/StatsGrid'
 import PerformanceSection from './components/PerformanceSection'
 import RiskSection from './components/RiskSection'
 import { useTraderProfile } from '../../features/dashboard/dashboardComponents/sidenavPages/Leaderboard/useLeaderboard'
-import { authFetch } from '../../core/query/authClient'
+import { API_BASE } from '../../core/query/authClient'
 
 type Params = {
   address?: string
@@ -34,16 +34,17 @@ export default function VisitorProfile () {
     }
 
     setResolving(true)
-    authFetch<{ success: boolean; user: { walletAddress: string } }>(`/api/users/by-username/${address}`)
-      .then(res => {
-        if (res.success && res.user) {
-          setVaultAddress(res.user.walletAddress)
+    fetch(`${API_BASE}/api/users/by-username/${encodeURIComponent(address)}`)
+      .then(res => res.json())
+      .then(data => {
+        if (data.success && data.user) {
+          setVaultAddress(data.user.walletAddress)
         } else {
-          setVaultAddress(address)
+          setVaultAddress(undefined)
         }
       })
       .catch(() => {
-        setVaultAddress(address)
+        setVaultAddress(undefined)
       })
       .finally(() => setResolving(false))
   }, [address])

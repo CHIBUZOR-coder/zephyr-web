@@ -11,6 +11,7 @@ import {
 } from 'react'
 import type { ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { PublicKey } from '@solana/web3.js'
 import type { Trader } from '../features/dashboard/dashboardComponents/sidenavPages/Leaderboard/leaderboar.types'
 import type { Trader as TraderData } from '../features/home/traders.types'
 import { API_BASE } from '../core/query/authClient'
@@ -64,6 +65,7 @@ export interface ToastItem {
   message: string
   subMessage?: string
   type: ToastType
+  centered?: boolean
 }
 
 type VaultStep = 1 | 2 | 3 | 4
@@ -189,7 +191,12 @@ type GeneralContextType = {
 
   // Toasts
   toasts: ToastItem[]
-  showToast: (message: string, subMessage?: string, type?: ToastType) => void
+  showToast: (
+    message: string,
+    subMessage?: string,
+    type?: ToastType,
+    centered?: boolean
+  ) => void
   dismissToast: (id: number) => void
 
   // ── Search (all navbar needs)
@@ -274,9 +281,14 @@ export const GeneralProvider = ({ children }: { children: ReactNode }) => {
   const [toasts, setToasts] = useState<ToastItem[]>([])
 
   const showToast = useCallback(
-    (message: string, subMessage?: string, type: ToastType = 'success') => {
+    (
+      message: string,
+      subMessage?: string,
+      type: ToastType = 'success',
+      centered: boolean = false
+    ) => {
       const id = Date.now()
-      setToasts(prev => [...prev, { id, message, subMessage, type }])
+      setToasts(prev => [...prev, { id, message, subMessage, type, centered }])
       setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 4500)
     },
     []
@@ -307,7 +319,11 @@ export const GeneralProvider = ({ children }: { children: ReactNode }) => {
   const handleSearch = useCallback(
     async (e: React.KeyboardEvent<HTMLInputElement>) => {
       if (e.key !== 'Enter') return
-      const query = e.currentTarget.value.trim()
+      
+      // Client-side sanitization: Strip HTML tags
+      const rawQuery = e.currentTarget.value.trim()
+      const query = rawQuery.replace(/<[^>]*>?/gm, '').trim()
+      
       e.currentTarget.value = ''
       if (!query) return
 
@@ -318,18 +334,131 @@ export const GeneralProvider = ({ children }: { children: ReactNode }) => {
           const res = await fetch(
             `${API_BASE}/api/search/trader?query=${query.toLowerCase()}`
           )
+
+          if (res.status === 429) {
+            showToast(
+              'Slow Down',
+              'You are searching too fast. Please wait a moment.',
+              'error',
+              true
+            )
+            return
+          }
+
           const data = await res.json()
           if (data.success) {
-            navigate(profileUrl(null, data.data.walletAddress))
+            navigate(profileUrl(data.data.displayName, data.data.walletAddress))
+          } else {
+            showToast(
+              'Search Failed',
+              'No trader or user found matching your query.',
+              'error',
+              true
+            )
           }
         } catch (err) {
           console.error('Trader search failed', err)
+          showToast(
+            'Search Error',
+            'Something went wrong while searching. Please try again.',
+            'error',
+            true
+          )
         }
       } else if (mode === 'token') {
-        setPrefilledTokenAddress(query)
-        requestAnimationFrame(() => setOpenCallTrade(true))
+        try {
+          // 1. Basic format check
+          new PublicKey(query)
+
+          // 2. Quick validation against Jupiter (mints) or DexScreener (pairs)
+          // We'll just check if it's a known mint first for simplicity
+          const res = await fetch(`https://api.jup.ag/price/v2?ids=${query}`)
+
+          if (res.status === 429) {
+            showToast(
+              'Slow Down',
+              'You are searching too fast. Please wait a moment.',
+              'error',
+              true
+            )
+            return
+          }
+
+          const data = await res.json()
+
+          if (!data.data || Object.keys(data.data).length === 0) {
+            // Try DexScreener if Jupiter price API doesn't know it
+            const dexRes = await fetch(
+              `https://api.dexscreener.com/latest/dex/pairs/solana/${query}`
+            )
+            const dexData = await dexRes.json()
+            if (!dexData.pairs || dexData.pairs.length === 0) {
+              throw new Error('Token not found')
+            }
+          }
+
+          setPrefilledTokenAddress(query)
+          requestAnimationFrame(() => setOpenCallTrade(true))
+        } catch (err) {
+          showToast(
+            'Invalid Token',
+            'Could not find a valid token or pool at this address.',
+            'error',
+            true
+          )
+        }
       } else if (mode === 'address') {
-        navigate(profileUrl(null, query))
+        try {
+          // 1. Basic format check
+          new PublicKey(query)
+
+          // 2. Check if it's a known User or Vault
+          // We try to fetch the profile by address
+          const res = await fetch(`${API_BASE}/api/users/${query}`, {
+            headers: { 'ngrok-skip-browser-warning': 'true' }
+          })
+
+          if (res.status === 429) {
+            showToast(
+              'Slow Down',
+              'You are searching too fast. Please wait a moment.',
+              'error',
+              true
+            )
+            return
+          }
+
+          if (!res.ok) {
+            // Check if it's a master vault address (even if user record is missing)
+            const vaultRes = await fetch(
+              `${API_BASE}/api/vaults/master/${query}`,
+              {
+                headers: { 'ngrok-skip-browser-warning': 'true' }
+              }
+            )
+
+            if (vaultRes.status === 429) {
+              showToast(
+                'Slow Down',
+                'You are searching too fast. Please wait a moment.',
+                'error',
+                true
+              )
+              return
+            }
+
+            if (!vaultRes.ok) throw new Error('Address not found')
+          }
+
+          navigate(profileUrl(null, query))
+        } catch (err) {
+          showToast(
+            'Invalid Address',
+            'No active vault or trader found at this address.',
+            'error',
+            true
+          )
+        }
       }
     },
     [navigate]

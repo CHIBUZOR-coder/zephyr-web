@@ -59,7 +59,8 @@ const CallTradeModal: FC<Props> = ({ open, onClose }) => {
     callTrade,
     initializeTierConfig,
     initializeRiskConfig,
-    error: opError
+    error: opError,
+    clearError
   } = useVaultOperations()
   const { masterVault, metrics, refetchAll } = useUserVaults()
   const { data: solPrice } = useSolPrice()
@@ -77,7 +78,10 @@ const CallTradeModal: FC<Props> = ({ open, onClose }) => {
   const totalAumUsd = metrics?.totalAumUsd ?? 0
 
   const tradeSizeNum = parseFloat(amount) || 0
-  const isOverBalance = tradeSizeNum > vaultBalance
+  const volumeFeeBps = masterVault?.volumeFeeBps ?? 0
+  const estimatedFee = (tradeSizeNum * volumeFeeBps * 0.2) / 10000 // 20% of volume fee is platform fee
+  const totalSolRequired = tradeType === 'Sell' ? tradeSizeNum + estimatedFee : estimatedFee
+  const isOverBalance = totalSolRequired > vaultBalance
   const isInvalidAmount = tradeSizeNum <= 0
 
   const defaultChartPair = 'SOL/USDC'
@@ -180,6 +184,7 @@ const CallTradeModal: FC<Props> = ({ open, onClose }) => {
     if (open) {
       setStatus('idle')
       setLocalError(null)
+      clearError()
       setManualBootstrap(false)
       setAmount('')
       setTradeType('Buy')
@@ -477,7 +482,7 @@ const CallTradeModal: FC<Props> = ({ open, onClose }) => {
               <div className='w-full relative flex items-center'>
                 <input
                   type='number'
-                  // value={amount}
+                  value={amount}
                   onChange={e => setAmount(e.target.value)}
                   className='w-full placeholder:text-gray-500 bg-[#062421] font-[900] border border-[#123F3A] p-3 rounded-lg text-[20px] outline-none pr-16'
                   placeholder='0.5'

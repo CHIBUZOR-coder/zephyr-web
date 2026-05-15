@@ -5,20 +5,26 @@ import { useAuthLogin } from "./useAuthLogin";
 
 export function useAutoSignIn() {
   const { publicKey, connected, signMessage } = useWallet();
-  const { authenticated, hydrated } = useAuthStore();
+  const { authenticated, hydrated, authResolved } = useAuthStore();
   const loginMutation = useAuthLogin();
 
-  // 🛑 prevents duplicate prompts
   const attemptedRef = useRef(false);
 
   useEffect(() => {
-    if (!hydrated) return;
+    // 🛑 Critical: Wait for hydration AND session check to finish
+    if (!hydrated || !authResolved) return;
+    
+    // Check if wallet is connected and ready
     if (!connected || !publicKey || !signMessage) return;
+    
+    // Already logged in? Nothing to do.
     if (authenticated) return;
-    if (loginMutation.isPending) return;
-    if (attemptedRef.current) return;
+    
+    // Don't double-prompt
+    if (loginMutation.isPending || attemptedRef.current) return;
 
     attemptedRef.current = true;
+    console.log("🗝️ useAutoSignIn: Automatic session restoration failed, requesting signature...");
 
     loginMutation.mutate({
       publicKey: publicKey.toBase58(),
@@ -26,6 +32,7 @@ export function useAutoSignIn() {
     });
   }, [
     hydrated,
+    authResolved,
     connected,
     authenticated,
     publicKey,

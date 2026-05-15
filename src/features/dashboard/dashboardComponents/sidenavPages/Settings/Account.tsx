@@ -6,6 +6,8 @@ import { useUserProfile } from './hooks/useUserProfile'
 import { formatSocialLink } from '../../../../../utils/formatters'
 import { ConfirmationModal } from '../../../../../shared/Modals'
 
+const COOLDOWN_DAYS = 7
+
 export default function Account () {
   const { connected } = useWallet()
   const { profile, isLoading, isSaving, error, updateProfile } =
@@ -72,31 +74,34 @@ export default function Account () {
     setSaveStatus('idle')
     setShowConfirmModal(false)
 
-    const socialsChanged =
-      twitter !== (profile?.twitter || '') ||
-      discord !== (profile?.discord || '') ||
-      telegram !== (profile?.telegram || '')
+    // Client-side sanitization: Strip HTML tags
+    const sanitize = (val: string) => val.replace(/<[^>]*>?/gm, '').trim();
 
-    if (socialsChanged) {
-      const confirmed = window.confirm(
-        'Are you sure you want to update your social links? Once saved, you will not be able to edit them again for 14 days.'
-      )
-      if (!confirmed) return
-    }
-    const formattedTwitter = formatSocialLink(twitter, 'x')
-    const formattedTelegram = formatSocialLink(telegram, 'telegram')
+    const cleanDisplayName = sanitize(displayName);
+    const cleanUserName = sanitize(userName).replace(/[^a-zA-Z0-9_]/g, '');
+    const cleanBio = sanitize(bio);
+    const cleanTwitter = sanitize(twitter);
+    const cleanTelegram = sanitize(telegram);
+
+    const formattedTwitter = formatSocialLink(cleanTwitter, 'x')
+    const formattedTelegram = formatSocialLink(cleanTelegram, 'telegram')
+
+    // Only send fields that actually changed to avoid triggering social cooldown
+    const changedFields: Record<string, string | undefined> = {}
+    if ((cleanUserName || undefined) !== (profile?.username || undefined)) changedFields.username = cleanUserName || undefined
+    if ((cleanDisplayName || undefined) !== (profile?.displayName || undefined)) changedFields.displayName = cleanDisplayName
+    if ((cleanBio || undefined) !== (profile?.bio || undefined)) changedFields.bio = cleanBio
+    if (formattedTwitter !== (profile?.twitter || '')) changedFields.twitter = formattedTwitter
+    if ((discord || undefined) !== (profile?.discord || undefined)) changedFields.discord = discord
+    if (formattedTelegram !== (profile?.telegram || '')) changedFields.telegram = formattedTelegram
 
     try {
-      await updateProfile({ 
-        username: userName || undefined,
-        displayName, 
-        bio, 
-        twitter: formattedTwitter, 
-        discord, 
-        telegram: formattedTelegram 
-      })
+      await updateProfile(changedFields)
       
-      // Update local state with formatted values
+      // Update local state with sanitized/formatted values
+      setDisplayName(cleanDisplayName)
+      setUserName(cleanUserName)
+      setBio(cleanBio)
       setTwitter(formattedTwitter)
       setTelegram(formattedTelegram)
       
@@ -118,12 +123,13 @@ export default function Account () {
     const formattedTwitter = formatSocialLink(twitter, 'x')
     const formattedTelegram = formatSocialLink(telegram, 'telegram')
 
-    const socialsChanged = 
+    const profileFieldsChanged = 
+      (userName.toLowerCase() !== (profile?.username?.toLowerCase() || '')) ||
       (formattedTwitter !== (profile?.twitter || '')) ||
       (discord !== (profile?.discord || '')) ||
       (formattedTelegram !== (profile?.telegram || ''));
 
-    if (socialsChanged) {
+    if (profileFieldsChanged) {
       setShowConfirmModal(true)
     } else {
       executeSave()
@@ -423,15 +429,15 @@ export default function Account () {
         isOpen={showConfirmModal}
         onClose={() => setShowConfirmModal(false)}
         onConfirm={executeSave}
-        title="Update Social Links?"
+        title="Confirm Profile Update?"
         description={
           <>
-            Are you sure you want to update your social links? 
+            Are you sure you want to update your profile?
             <br /><br />
-            <span className="text-white font-bold">Important:</span> Once saved, you will not be able to edit them again for <span className="text-[#FE9A00] font-bold">14 days</span>.
+            Once saved, you will not be able to edit your username or social links again for <span className="text-[#FE9A00] font-bold">{COOLDOWN_DAYS} days</span>.
           </>
         }
-        confirmLabel="Update Links"
+        confirmLabel="Update Profile"
         cancelLabel="Cancel"
         variant="warning"
         isLoading={isSaving}

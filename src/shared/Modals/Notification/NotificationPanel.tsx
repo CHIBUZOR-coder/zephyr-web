@@ -10,11 +10,8 @@ import { useSettingsStore } from '../../../features/dashboard/dashboardComponent
 import { useAuthStore } from '../../../features/auth/auth.store'
 
 import { useUserVaults } from '../../../features/master/useUserVaults'
-import {
-  useAllVaultActivities,
-  formatVaultActivity,
-  type VaultActivity
-} from '../../../features/dashboard/dashboardComponents/sidenavPages/Portfolio/useVaultActivities'
+import { useAllVaultActivities, formatVaultActivity, type VaultActivity } from '../../../features/dashboard/dashboardComponents/sidenavPages/Portfolio/useVaultActivities'
+import { explorerClusterParam } from '../../../core/config/solanaWallet'
 
 interface Props {
   isOpen: boolean
@@ -277,16 +274,12 @@ const NotificationPanel: FC<Props> = ({ isOpen, onClose }) => {
                       <span className='text-[11px] text-[#557A74]'>{time}</span>
                       {activity.signature && (
                         <Link
-                          to={`https://solscan.io/tx/${activity.signature}?cluster=devnet`}
-                          target='_blank'
-                          rel='noopener noreferrer'
-                          onClick={e => e.stopPropagation()}
-                          className='text-[10px] text-[#1ED2AF] hover:underline h-[12px] w-[12px]'
-                            style={{
-                              backgroundImage: `url("/images/redirectlive.svg")`
-                            }}
+                          to={`https://solscan.io/tx/${activity.signature}${explorerClusterParam}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={(e) => e.stopPropagation()}
+                          className="text-[10px] text-[#1ED2AF] hover:underline"
                         >
-                       
                         </Link>
                       )}
                     </div>
