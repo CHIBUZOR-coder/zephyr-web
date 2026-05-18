@@ -12,6 +12,8 @@ import { VaultActivityList as AllVaultsActivity } from './VaultActivity'
 import { authFetch } from '../../../../../core/query/authClient'
 import { useQuery } from '@tanstack/react-query'
 
+import { VaultActivitySkeleton } from './VaultActivitySkeleton'
+
 // ─── Helpers
 
 function formatAddress (address: string) {
@@ -171,7 +173,13 @@ export default function Portfolio () {
   const { setWalletModal } = useGeneralContext()
   const { masterMode } = useTradingModeStore()
 
-  const { masterVault, copierVaults, managedCopierVaults, isLoading, refetchAll } = useUserVaults()
+  const {
+    masterVault,
+    copierVaults,
+    managedCopierVaults,
+    isLoading,
+    refetchAll
+  } = useUserVaults()
   const { data: solPrice } = useSolPrice()
   const [activeTab, setActiveTab] = useState<'vaults' | 'activity'>('vaults')
   const [showModal, setShowModal] = useState(false)
@@ -215,17 +223,19 @@ export default function Portfolio () {
   // Map MasterVault to PinnedVault format
   const pinnedVaults: PinnedVault[] = useMemo(() => {
     if (!masterVault) return []
-    
+
     // Calculate AUM: Master Balance + Copier Balances
-    const masterBalanceUsd = (masterVault.balance || 0) * currentPrice;
+    const masterBalanceUsd = (masterVault.balance || 0) * currentPrice
     const managedCopiersBalanceUsd = (managedCopierVaults || []).reduce(
-      (sum, v) => sum + (v.actualBalance || 0) * currentPrice, 
+      (sum, v) => sum + (v.actualBalance || 0) * currentPrice,
       0
-    );
-    const totalAumUsd = masterBalanceUsd + managedCopiersBalanceUsd;
-    
+    )
+    const totalAumUsd = masterBalanceUsd + managedCopiersBalanceUsd
+
     // totalVolume is BigInt string from backend, usually 6 decimals if USDC based
-    const totalVolumeUsd = masterVault.totalVolume ? parseFloat(masterVault.totalVolume) / 1e6 : 0;
+    const totalVolumeUsd = masterVault.totalVolume
+      ? parseFloat(masterVault.totalVolume) / 1e6
+      : 0
 
     return [
       {
@@ -243,7 +253,8 @@ export default function Portfolio () {
         stopLoss: null,
         takeProfit: null,
         availableFeesSol: parseFloat(masterVault.totalFeesEarned || '0') / 1e9,
-        historicalClaimedSol: parseFloat(masterVault.totalRealizedProfit || '0') / 1e9,
+        historicalClaimedSol:
+          parseFloat(masterVault.totalRealizedProfit || '0') / 1e9,
         currentPosition: masterVault.currentPosition,
         tier: `TIER ${masterVault.currentTier}`
       }
@@ -279,13 +290,23 @@ export default function Portfolio () {
     queryKey: ['master-vaults-by-pda', uniqueMasterVaultPdas],
     queryFn: async () => {
       if (uniqueMasterVaultPdas.length === 0) return {}
-      const results: Record<string, { masterWallet: string; displayName: string | null; avatar: string | null }> = {}
+      const results: Record<
+        string,
+        {
+          masterWallet: string
+          displayName: string | null
+          avatar: string | null
+        }
+      > = {}
       await Promise.all(
-        uniqueMasterVaultPdas.map(async (pda) => {
+        uniqueMasterVaultPdas.map(async pda => {
           try {
             const res = await authFetch<{
-              success: boolean;
-              data: { masterWallet: string; user: { displayName: string | null; avatar: string | null } }
+              success: boolean
+              data: {
+                masterWallet: string
+                user: { displayName: string | null; avatar: string | null }
+              }
             }>(`/api/leaderboard/trader/${pda}`)
             if (res.success && res.data) {
               results[pda] = {
@@ -310,9 +331,12 @@ export default function Portfolio () {
     if (!strategies.length) return []
     return strategies.map(s => {
       const masterData = masterVaultsData?.[s.masterVaultAddress || '']
-      const name = masterData?.displayName && masterData.displayName.trim() !== ''
-        ? masterData.displayName 
-        : (masterData?.masterWallet ? `Trader ${masterData.masterWallet.slice(0, 4)}` : s.name)
+      const name =
+        masterData?.displayName && masterData.displayName.trim() !== ''
+          ? masterData.displayName
+          : masterData?.masterWallet
+          ? `Trader ${masterData.masterWallet.slice(0, 4)}`
+          : s.name
       return {
         ...s,
         name,
@@ -326,7 +350,7 @@ export default function Portfolio () {
   const totalBalance =
     strategiesWithMasterData.reduce((s, v) => s + v.balanceUsd, 0) +
     (pinnedVaults[0]?.totalBalanceUsd || 0)
-  
+
   const solChange24h = solPrice?.change24h ?? 0
   const total24hChange = totalBalance * (solChange24h / 100)
   const changePositive = total24hChange >= 0
@@ -334,17 +358,23 @@ export default function Portfolio () {
   const totalAum = useMemo(() => {
     if (masterMode) {
       // For Master: AUM = Master Vault Balance + All active copiers' balances
-      const masterBalanceUsd = (masterVault?.balance || 0) * currentPrice;
+      const masterBalanceUsd = (masterVault?.balance || 0) * currentPrice
       const managedCopiersBalanceUsd = (managedCopierVaults || []).reduce(
-        (sum, v) => sum + (v.actualBalance || 0) * currentPrice, 
+        (sum, v) => sum + (v.actualBalance || 0) * currentPrice,
         0
-      );
-      return masterBalanceUsd + managedCopiersBalanceUsd;
+      )
+      return masterBalanceUsd + managedCopiersBalanceUsd
     } else {
       // For Copier: AUM is the total value they are managing across their copy vaults
-      return strategiesWithMasterData.reduce((sum, s) => sum + s.balanceUsd, 0);
+      return strategiesWithMasterData.reduce((sum, s) => sum + s.balanceUsd, 0)
     }
-  }, [masterMode, masterVault, managedCopierVaults, strategiesWithMasterData, currentPrice]);
+  }, [
+    masterMode,
+    masterVault,
+    managedCopierVaults,
+    strategiesWithMasterData,
+    currentPrice
+  ])
 
   const stats = [
     {
@@ -384,7 +414,8 @@ export default function Portfolio () {
   if (isLoading && connected) {
     return (
       <div className='flex items-center justify-center h-full min-h-[400px] text-[#00ffa3] font-mono uppercase tracking-[0.2em]'>
-        <div className='animate-pulse'>Fetching Real-time Vault Data...</div>
+        {/* <div className='animate-pulse'>Fetching Real-time Vault Data...</div> */}
+        <VaultActivitySkeleton />
       </div>
     )
   }
@@ -428,7 +459,9 @@ export default function Portfolio () {
                   <span
                     className={`text-[22px] font-bold ${
                       item.tittle === '24h Change'
-                        ? item.positive ? 'text-[#00C0A8]' : 'text-red-500'
+                        ? item.positive
+                          ? 'text-[#00C0A8]'
+                          : 'text-red-500'
                         : item.tittle === 'Claimable Fees'
                         ? 'text-[#FE9A00]'
                         : 'text-white'
@@ -440,7 +473,9 @@ export default function Portfolio () {
                   <span
                     className={`text-[22px] font-bold ${
                       item.tittle === '24h Change'
-                        ? item.positive ? 'text-[#00C0A8]' : 'text-red-500'
+                        ? item.positive
+                          ? 'text-[#00C0A8]'
+                          : 'text-red-500'
                         : item.tittle === 'Claimable Fees'
                         ? 'text-[#FE9A00]'
                         : 'text-white'
@@ -541,13 +576,12 @@ export default function Portfolio () {
           </>
         ) : (
           <AllVaultsActivity
-          vaultPdas={[
-            ...(masterVault ? [masterVault.vaultPda] : []),
-            ...(copierVaults?.map(v => v.vaultPda) ?? [])
-          ]}
+            vaultPdas={[
+              ...(masterVault ? [masterVault.vaultPda] : []),
+              ...(copierVaults?.map(v => v.vaultPda) ?? [])
+            ]}
           />
         )}
-        
 
         <div className='flex justify-center gap-3 items-center flex-col md:flex-row mt-10'>
           <div

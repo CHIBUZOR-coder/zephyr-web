@@ -376,6 +376,16 @@ export const useVaultOperations = () => {
           program.programId,
         );
 
+        const WSOL_MINT = "So11111111111111111111111111111111111111112";
+        const [vaultWsolAta] = PublicKey.findProgramAddressSync(
+          [
+            masterVaultPda.toBuffer(),
+            new PublicKey("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA").toBuffer(),
+            new PublicKey(WSOL_MINT).toBuffer(),
+          ],
+          new PublicKey("ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"),
+        );
+
         const [configPda] = PublicKey.findProgramAddressSync(
           [Buffer.from("config")],
           program.programId,
@@ -464,7 +474,6 @@ export const useVaultOperations = () => {
 
         // Correct mint addresses for Jupiter:
         //   Native SOL uses the wSOL mint (Jupiter wraps/unwraps automatically)
-        const WSOL_MINT = "So11111111111111111111111111111111111111112";
         const resolvedTokenIn =
           params.tokenIn === "11111111111111111111111111111111"
             ? WSOL_MINT
@@ -494,7 +503,7 @@ export const useVaultOperations = () => {
             "MOCK MODE: devnet/testnet detected — skipping real Jupiter swap",
           );
         } else {
-          console.log("Fetching Jupiter quote...");
+          console.log("Fetching Jupiter quote (V1 fallback for stability)...");
 
           const quoteUrl =
             `https://api.jup.ag/swap/v1/quote` +
@@ -527,9 +536,8 @@ export const useVaultOperations = () => {
               },
               body: JSON.stringify({
                 quoteResponse: quote,
-                userPublicKey: publicKey.toBase58(),
+                userPublicKey: masterVaultPda.toBase58(),
                 wrapAndUnwrapSol: true,
-                // computeUnitPriceMicroLamports: 'auto', // optional priority fee
               }),
             },
           );
@@ -545,30 +553,47 @@ export const useVaultOperations = () => {
             await import("@solana/web3.js");
 
           // Helper: deserialise one Jupiter instruction object → TransactionInstruction
+          // IMPORTANT: We force the User Wallet to be the payer for ALL setup instructions.
           const deserializeJupiterIx = (ix: ApiInstruction) =>
             new JupTxIx({
               programId: new PublicKey(ix.programId),
-              keys: ix.accounts.map((a: ApiAccount) => ({
-                pubkey: new PublicKey(a.pubkey),
-                isSigner: a.isSigner,
-                isWritable: a.isWritable,
-              })),
+              keys: ix.accounts.map((a: ApiAccount) => {
+                const isVault = a.pubkey === masterVaultPda.toBase58();
+                return {
+                  // If it's the vault, we replace it with the user wallet for setup ixs
+                  // This ensures the user pays for ATA rent and setup fees.
+                  pubkey: isVault ? publicKey! : new PublicKey(a.pubkey),
+                  isSigner: a.isSigner,
+                  isWritable: a.isWritable,
+                };
+              }),
               data: Buffer.from(ix.data, "base64"),
             });
 
           // Setup instructions (create ATAs, etc.) run BEFORE call_trade
           if (swapIxResponse.setupInstructions?.length) {
             for (const ix of swapIxResponse.setupInstructions) {
+              // SKIP any SystemProgram.transfer instructions.
+              // These are for wrapping SOL, which we now handle on-chain in the Zephyr program.
+              // Letting the frontend do this exhausts the user's personal wallet instead of the vault.
+              if (ix.programId === SystemProgram.programId.toBase58()) {
+                console.log(
+                  "Skipping Jupiter setup transfer (now handled on-chain by Zephyr)",
+                );
+                continue;
+              }
               setupInstructions.push(deserializeJupiterIx(ix));
             }
           }
 
           // Swap instruction accounts go into remaining_accounts on the Zephyr program
+          // Here we keep the vault PDA address but mark isSigner: false so the outer tx 
+          // verification passes. The program will provide the PDA signature via invoke_signed.
           const swapIx = swapIxResponse.swapInstruction;
           jupiterSwapAccounts = swapIx.accounts.map((a: ApiAccount) => ({
             pubkey: new PublicKey(a.pubkey),
             isWritable: a.isWritable,
-            isSigner: a.isSigner,
+            isSigner: a.pubkey === masterVaultPda.toBase58() ? false : a.isSigner,
           }));
           jupiterInstructionData = Buffer.from(swapIx.data, "base64");
 
@@ -642,9 +667,13 @@ export const useVaultOperations = () => {
             platformFeeWallet: platformFeeWallet,
             tierConfig: tierConfigPda,
             systemProgram: SystemProgram.programId,
+            tokenProgram: new PublicKey(
+              "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+            ),
             jupiterProgram: new PublicKey(
               "JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4",
             ),
+            vaultWsolAta: vaultWsolAta,
           })
           .remainingAccounts(allRemainingAccounts)
           .instruction();

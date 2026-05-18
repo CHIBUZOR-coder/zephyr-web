@@ -169,7 +169,7 @@ export default function ProfileHeader ({ trader }: ProfileHeaderProps) {
               </p>
             </div>
             
-            <div className='flex items-center gap-2'>
+            {/* <div className='flex items-center gap-2'>
               {trader.telegram ? (
                 <a
                   href={trader.telegram}
@@ -198,7 +198,7 @@ export default function ProfileHeader ({ trader }: ProfileHeaderProps) {
                   <FaXTwitter className='h-4 w-4 text-gray-500' />
                 </div>
               )}
-            </div>
+            </div> */}
           </div>
         </div>
       </div>

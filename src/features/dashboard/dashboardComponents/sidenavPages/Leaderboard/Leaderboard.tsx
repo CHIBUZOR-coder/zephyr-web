@@ -62,7 +62,7 @@ const Leaderboard: React.FC = () => {
     period: activePeriod,
     sort: activeSort,
     tier: activeTier,
-    page,
+    page: page,
     limit: 10
   })
 

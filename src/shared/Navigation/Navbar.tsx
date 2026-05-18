@@ -98,8 +98,7 @@ const Navbar = () => {
       }
     }
     window.addEventListener('zephyr_read_activities_updated', handler)
-    return () =>
-      window.removeEventListener('zephyr_read_activities_updated', handler)
+    return () => window.removeEventListener('zephyr_read_activities_updated', handler)
   }, [])
 
   const hasUnread = useMemo(() => {

@@ -91,54 +91,29 @@ const DashboardView = () => {
   }
 
   const firstCall = useMemo(() => {
-    return (
-      firstCallers?.map(trade => {
-        const timeAgo = Math.floor(
-          (now - new Date(trade.executedAt).getTime()) / (60 * 60 * 1000)
-        )
-        const timeText =
-          timeAgo < 1
-            ? 'RECENT'
-            : timeAgo < 24
-            ? `${timeAgo} HOURS`
-            : `${Math.floor(timeAgo / 24)} DAYS`
-
-        return {
-          name: `Token ${trade.tokenOut.slice(0, 4)}`,
-          person:
-            trade.masterExecutionVault?.user?.displayName ||
-            `Trader ${
-              trade.masterExecutionVault?.masterWallet?.slice(0, 4) || '??'
-            }`,
-          img:
-            trade.masterExecutionVault?.user?.avatar ||
-            `https://api.dicebear.com/7.x/avataaars/svg?seed=${
-              trade.masterExecutionVault?.masterWallet || trade.id
-            }`,
-          text: trade.tokenOut.slice(0, 4).toUpperCase(),
-          time: timeText,
-          num: parseFloat(trade.amountOutDecimal) || 0,
-          col: 'yel',
-          wallet: trade.masterExecutionVault?.masterWallet
-            ? `${trade.masterExecutionVault.masterWallet.slice(
-                0,
-                4
-              )}...${trade.masterExecutionVault.masterWallet.slice(-4)}`
-            : 'N/A',
-          cap: 100,
-          peackCap: 150,
-          titer:
-            trade.masterExecutionVault?.currentTier === 5
-              ? 'Institutional'
-              : 'Verifieda',
-          date: new Date(trade.executedAt).toLocaleDateString(),
-          timestamp: new Date(trade.executedAt).toLocaleString(),
-          signature: trade.signature,
-          isFirstCaller: trade.isFirstCaller
-        }
-      }) || []
-    )
-  }, [firstCallers, now])
+    return firstCallers?.map((trade) => {
+      const timeAgo = Math.floor((now - new Date(trade.executedAt).getTime()) / (60 * 60 * 1000));
+      const timeText = timeAgo < 1 ? 'RECENT' : timeAgo < 24 ? `${timeAgo} HOURS` : `${Math.floor(timeAgo/24)} DAYS`;
+      
+      return {
+        name: `Token ${trade.tokenOut.slice(0, 4)}`,
+        person: trade.masterExecutionVault?.user?.displayName || `Trader ${trade.masterExecutionVault?.masterWallet?.slice(0, 4) || '??'}`,
+        img: trade.masterExecutionVault?.user?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${trade.masterExecutionVault?.masterWallet || trade.id}`,
+        text: trade.tokenOut.slice(0, 4).toUpperCase(),
+        time: timeText,
+        num: parseFloat(trade.amountOutDecimal) || 0,
+        col: 'yel',
+        wallet: trade.masterExecutionVault?.masterWallet ? `${trade.masterExecutionVault.masterWallet.slice(0, 4)}...${trade.masterExecutionVault.masterWallet.slice(-4)}` : 'N/A',
+        cap: 100, 
+        peackCap: 150, 
+        titer: trade.masterExecutionVault?.currentTier === 5 ? 'Institutional' : 'Verifieda',
+        date: new Date(trade.executedAt).toLocaleDateString(),
+        timestamp: new Date(trade.executedAt).toLocaleString(),
+        signature: trade.signature,
+        isFirstCaller: trade.isFirstCaller,
+      };
+    }) || []
+  }, [firstCallers, now]);
 
   // const formatTimeAgo = (ms: number): string => {
   //   const minutes = Math.floor(ms / (60 * 1000))

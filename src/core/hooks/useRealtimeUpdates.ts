@@ -55,7 +55,7 @@ export function useRealtimeUpdates() {
   }, [])
 
   useEffect(() => {
-    if (!publicKey || !authenticated || !userRef.current) return
+    if (!publicKey || !authenticated || !user) return
 
     fetchPreferences()
 
@@ -63,7 +63,7 @@ export function useRealtimeUpdates() {
     let reconnectTimeout: ReturnType<typeof setTimeout>
 
     const connect = () => {
-      const fullWsUrl = `${WS_URL}?userId=${userRef.current?.id}`
+      const fullWsUrl = `${WS_URL}?userId=${user.id}`
       console.log('🔌 Connecting to WebSocket...', fullWsUrl)
 
       ws = new WebSocket(fullWsUrl)

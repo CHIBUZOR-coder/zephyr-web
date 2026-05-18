@@ -12,7 +12,6 @@ import { LAMPORTS_PER_SOL } from '@solana/web3.js'
 import { Link } from 'react-router-dom'
 import { formatPrice } from '../../../utils/formatters'
 import { useGeneralContext } from '../../../Context/GeneralContext'
-import { IoInformationCircleOutline } from 'react-icons/io5'
 
 const JUPITER_TOKEN_API = 'https://api.jup.ag/tokens/v2'
 const DEXSCREENER_API = 'https://api.dexscreener.com/latest/dex'
@@ -41,13 +40,6 @@ const CallTradeModal: FC<Props> = ({ open, onClose }) => {
   const [tokenQuote, setTokenQuote] = useState<string>('USDC')
   const [tokenPrice, setTokenPrice] = useState<number | null>(null)
   const [tokenError, setTokenError] = useState<string | null>(null)
-
-  const [tradeMode, setTradeMode] = useState<'percent' | 'fixed'>('percent')
-
-  useEffect(() => {
-    setTradeMode('percent')
-  }, [])
-
   const [status, setStatus] = useState<
     'idle' | 'loading' | 'success' | 'error'
   >('idle')
@@ -73,9 +65,9 @@ const CallTradeModal: FC<Props> = ({ open, onClose }) => {
     setAmount(vaultBalance.toFixed(4))
   }
 
-  const copierCount =
-    metrics?.totalCopiers ?? masterVault?._count?.copierVaults ?? 0
+  const copierCount = metrics?.totalCopiers ?? masterVault?._count?.copierVaults ?? 0
   const totalAumUsd = metrics?.totalAumUsd ?? 0
+
 
   const tradeSizeNum = parseFloat(amount) || 0
   const volumeFeeBps = masterVault?.volumeFeeBps ?? 0
@@ -96,7 +88,7 @@ const CallTradeModal: FC<Props> = ({ open, onClose }) => {
     setTokenError(null)
     setTokenSymbol(null)
     const trimmed = tokenAddress.trim()
-
+    
     if (trimmed.length === 0) {
       setTokenSymbol(null)
       setTokenPrice(null)
@@ -148,7 +140,7 @@ const CallTradeModal: FC<Props> = ({ open, onClose }) => {
               setTokenSymbol(
                 bestJup.symbol?.toUpperCase() || bestJup.name?.toUpperCase()
               )
-              setTokenQuote('USDC')
+              setTokenQuote('SOL')
               setTokenPrice(bestJup.usdPrice || null)
               setResolvedMint(jupAddress)
               setTokenError(null)
@@ -247,26 +239,16 @@ const CallTradeModal: FC<Props> = ({ open, onClose }) => {
 
       if (amountIn <= 0) throw new Error('Invalid trade amount')
 
-      const isCustomToken =
-        resolvedMint && resolvedMint.length > 0 && tokenSymbol !== null
-      const isActuallyCustom =
-        isCustomToken && resolvedMint !== SOL_MINT && resolvedMint !== USDC_MINT
+      const isCustomToken = resolvedMint && resolvedMint.length > 0 && tokenSymbol !== null
+      const isActuallyCustom = isCustomToken && resolvedMint !== SOL_MINT && resolvedMint !== USDC_MINT
 
       const tokenIn = isActuallyCustom
-        ? tradeType === 'Buy'
-          ? SOL_MINT
-          : resolvedMint
-        : tradeType === 'Buy'
-        ? USDC_MINT
-        : SOL_MINT
-
+        ? (tradeType === 'Buy' ? SOL_MINT : resolvedMint)
+        : (tradeType === 'Buy' ? USDC_MINT : SOL_MINT)
+        
       const tokenOut = isActuallyCustom
-        ? tradeType === 'Buy'
-          ? resolvedMint
-          : SOL_MINT
-        : tradeType === 'Buy'
-        ? SOL_MINT
-        : USDC_MINT
+        ? (tradeType === 'Buy' ? resolvedMint : SOL_MINT)
+        : (tradeType === 'Buy' ? SOL_MINT : USDC_MINT)
 
       if (!tokenIn || !tokenOut) {
         throw new Error('Please select a token to trade')
@@ -308,21 +290,6 @@ const CallTradeModal: FC<Props> = ({ open, onClose }) => {
       setLocalError(errorMessage)
     }
   }
-
-  const { showToast, setCallTradeToast } = useGeneralContext()
-
-  useEffect(() => {
-    if (status === 'success') {
-      setCallTradeToast(true)
-
-      showToast(
-        'Call trade executed successfully',
-        'Your master vault trade has been mirrored to all eligible copiers.'
-      )
-    }
-
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [status])
 
   return (
     <AnimatePresence>
@@ -369,7 +336,7 @@ const CallTradeModal: FC<Props> = ({ open, onClose }) => {
               </div>
             </div>
 
-            {/* <div className='flex flex-col gap-2 mb-4 p-3 bg-yellow-500/5 border border-yellow-500/20 rounded-xl'>
+            <div className='flex flex-col gap-2 mb-4 p-3 bg-yellow-500/5 border border-yellow-500/20 rounded-xl'>
               <p className='text-[11px] font-bold text-yellow-500 uppercase tracking-wider flex items-center gap-2'>
                 <FiAlertTriangle /> Protocol Admin Controls
               </p>
@@ -385,15 +352,10 @@ const CallTradeModal: FC<Props> = ({ open, onClose }) => {
                   ? 'Hide Initialization'
                   : 'Show Initialization Buttons'}
               </button>
-            </div> */}
-
-            <p className='text-[13px] text-[#6e8885] font-[500] mb-8 mt-2'>
-              Execute a trade from your Master Vault. Connected copiers will
-              mirror this position automatically.
-            </p>
+            </div>
 
             {/* CHART + TOGGLER */}
-            <div className='bg-[#0A2B27] rounded-xl p-4 mb-4 '>
+            <div className='bg-[#0A2B27] rounded-xl p-4 mb-4'>
               <div className='flex justify-between items-center mb-3'>
                 <span className='text-[12px] text-white font-[900]'>
                   {chartPair}{' '}
@@ -464,19 +426,17 @@ const CallTradeModal: FC<Props> = ({ open, onClose }) => {
             </div>
 
             {/* TRADE SIZE */}
-            <div className='mb-4 flex flex-col gap-1 '>
+            <div className='mb-4 flex flex-col gap-1'>
               <div className='w-full flex justify-between items-center px-1'>
                 <span className='font-[900] text-[10px] text-[#50706c] uppercase tracking-wider'>
-                  Trade Size ({tradeMode === 'percent' ? '%' : 'SOL'})
+                  Trade Size (SOL)
                 </span>
-                <div>
-                  <span className='text-[9px] text-[#50706c] font-[700]'>
-                    Vault Balance:{' '}
-                    <span className='text-[#E8F6F3]'>
-                      {vaultBalance.toFixed(4)} SOL
-                    </span>
+                <span className='text-[9px] text-[#50706c] font-[700]'>
+                  Vault Balance:{' '}
+                  <span className='text-[#E8F6F3]'>
+                    {vaultBalance.toFixed(4)} SOL
                   </span>
-                </div>
+                </span>
               </div>
 
               <div className='w-full relative flex items-center'>
@@ -484,8 +444,8 @@ const CallTradeModal: FC<Props> = ({ open, onClose }) => {
                   type='number'
                   value={amount}
                   onChange={e => setAmount(e.target.value)}
-                  className='w-full placeholder:text-gray-500 bg-[#062421] font-[900] border border-[#123F3A] p-3 rounded-lg text-[20px] outline-none pr-16'
                   placeholder='0.5'
+                  className='w-full bg-[#062421] font-[900] border border-[#123F3A] p-3 rounded-lg text-[20px] outline-none pr-16'
                 />
                 <button
                   onClick={handleMax}
@@ -532,17 +492,13 @@ const CallTradeModal: FC<Props> = ({ open, onClose }) => {
                   size={14}
                 />
                 <p className='text-[11px] text-red-200 leading-tight'>
-                  {isOverBalance
-                    ? `Insufficient balance. Your vault only has ${vaultBalance.toFixed(
-                        4
-                      )} SOL.`
-                    : localError || opError}
+                  {isOverBalance ? `Insufficient balance. Your vault only has ${vaultBalance.toFixed(4)} SOL.` : (localError || opError)}
                 </p>
               </div>
             )}
 
             {/* COPIER IMPACT */}
-            <div className='mt-4 bg-[#0a1414] rounded-2xl'>
+            <div className='mt-4'>
               <button
                 onClick={() => setShowImpact(!showImpact)}
                 className='w-full flex justify-between items-center p-3 rounded-lg text-[13px]'
@@ -609,22 +565,6 @@ const CallTradeModal: FC<Props> = ({ open, onClose }) => {
               </AnimatePresence>
             </div>
 
-            <div className='flex justify-between items-center my-4  flex-col lg:flex-row gap-2'>
-              <div className='flex items-center gap-2 text-[#6e8885]'>
-                <p className='text-[#009883] text-[11px] font-[500] '>
-                  Success Fee:  Performance-based (profit only)
-                </p>
-                <span>
-                  <IoInformationCircleOutline />
-                </span>
-              </div>
-
-              <div className='flex items-center gap-3 text-[#009883] text-[11px] font-[700]'>
-                <p>You: 80%</p>
-                <p>Zephyr: 20%</p>
-              </div>
-            </div>
-
             {/* BOOTSTRAP BUTTON */}
             {(isTierConfigError || isRiskConfigError) && (
               <button
@@ -638,16 +578,11 @@ const CallTradeModal: FC<Props> = ({ open, onClose }) => {
 
             {/* BUTTON */}
             <button
-              disabled={
-                status === 'loading' ||
-                !masterVault ||
-                isOverBalance ||
-                isInvalidAmount
-              }
+              disabled={status === 'loading' || !masterVault || isOverBalance || isInvalidAmount}
               onClick={handleExecuteTrade}
               className={`mt-4 w-full py-3 rounded-xl shadow-[0_0_20px_rgba(249,115,22,0.35)] transition-all font-semibold
                 ${
-                  status === 'loading' || isOverBalance || isInvalidAmount
+                  (status === 'loading' || isOverBalance || isInvalidAmount)
                     ? 'bg-gray-800 cursor-not-allowed text-gray-500 shadow-none'
                     : status === 'success'
                     ? 'bg-green-500 text-black'

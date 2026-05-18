@@ -7,14 +7,19 @@ import {
   type UTCTimestamp
 } from 'lightweight-charts'
 
-interface DexPool {
+// interface DexPool {
+//   baseToken?: { symbol?: string }
+//   priceUsd?: string
+// }
+
+interface DexScreenerPair {
+  chainId: string
   baseToken?: { symbol?: string }
   priceUsd?: string
 }
 
 // ✅ Use environment variables for deployment (Render/Vercel)
-// const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3002'
-const API_BASE_URL = 'https://zephyr-np09.onrender.com'
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://zephyr-np09.onrender.com://localhost:3002'
 const INDEXER_API = `${API_BASE_URL}/api`
 const INDEXER_WS = API_BASE_URL.replace('http', 'ws') + '/ws'
 const JUPITER_API = 'https://api.jup.ag/tokens/v2'
@@ -278,177 +283,28 @@ const SolanaChart = ({ interval = '15M', pair = 'SOL/USDC' }: Props) => {
               price = data.data.price
             }
           } catch {
-            console.error('Failed to fetch oracle price')
+            console.error('Failed to fetch oracle price from indexer')
           }
 
           // 2. Try DexScreener for small tokens (memecoins with SOL pairs)
           if (price === 0) {
             const symbol = extractSymbol(pair)
             try {
-              const dexRes = await fetch(
-                `${DEXSCREENER_API}/pairs/solana?search=${symbol}`
-              )
+              // Note: Use /search?q= for broader search if /pairs/solana?search= is failing
+              const dexRes = await fetch(`${DEXSCREENER_API}/search?q=${symbol}`)
               const dexData = await dexRes.json()
-              // Find matching pool with SOL quote (most common for memecoins)
-              const matchingPool = dexData.pairs?.find((p: DexPool) => 
+              
+              // Find matching pool on Solana
+              const matchingPool = dexData.pairs?.find((p: DexScreenerPair) => 
+                p.chainId === 'solana' && 
                 p.baseToken?.symbol?.toUpperCase() === symbol.toUpperCase()
               )
-
+              
               if (matchingPool?.priceUsd) {
                 price = parseFloat(matchingPool.priceUsd)
               }
             } catch {
-              console.error('Failed to fetch price from DexScreener')
-            }
-          }
-
-          // 3. Fallback to Jupiter
-          if (price === 0) {
-            const symbol = extractSymbol(pair)
-            try {
-              const dexRes = await fetch(
-                `${DEXSCREENER_API}/pairs/solana?search=${symbol}`
-              )
-              const dexData = await dexRes.json()
-              // Find matching pool with SOL quote (most common for memecoins)
-              const matchingPool = dexData.pairs?.find((p: DexPool) => 
-                p.baseToken?.symbol?.toUpperCase() === symbol.toUpperCase()
-              )
-
-              if (matchingPool?.priceUsd) {
-                price = parseFloat(matchingPool.priceUsd)
-              }
-            } catch {
-              console.error('Failed to fetch price from DexScreener')
-            }
-          }
-
-          // 3. Fallback to Jupiter
-          if (price === 0) {
-            const symbol = extractSymbol(pair)
-            try {
-              const dexRes = await fetch(
-                `${DEXSCREENER_API}/pairs/solana?search=${symbol}`
-              )
-              const dexData = await dexRes.json()
-              // Find matching pool with SOL quote (most common for memecoins)
-              const matchingPool = dexData.pairs?.find((p: DexPool) => 
-                p.baseToken?.symbol?.toUpperCase() === symbol.toUpperCase()
-              )
-
-              if (matchingPool?.priceUsd) {
-                price = parseFloat(matchingPool.priceUsd)
-              }
-            } catch {
-              console.error('Failed to fetch price from DexScreener')
-            }
-          }
-
-          // 3. Fallback to Jupiter
-          if (price === 0) {
-            const symbol = extractSymbol(pair)
-            try {
-              const dexRes = await fetch(
-                `${DEXSCREENER_API}/pairs/solana?search=${symbol}`
-              )
-              const dexData = await dexRes.json()
-              // Find matching pool with SOL quote (most common for memecoins)
-              const matchingPool = dexData.pairs?.find((p: DexPool) => 
-                p.baseToken?.symbol?.toUpperCase() === symbol.toUpperCase()
-              )
-
-              if (matchingPool?.priceUsd) {
-                price = parseFloat(matchingPool.priceUsd)
-              }
-            } catch {
-              console.error('Failed to fetch price from DexScreener')
-            }
-          }
-
-          // 3. Fallback to Jupiter
-          if (price === 0) {
-            const symbol = extractSymbol(pair)
-            try {
-              const dexRes = await fetch(
-                `${DEXSCREENER_API}/pairs/solana?search=${symbol}`
-              )
-              const dexData = await dexRes.json()
-              // Find matching pool with SOL quote (most common for memecoins)
-              const matchingPool = dexData.pairs?.find((p: DexPool) => 
-                p.baseToken?.symbol?.toUpperCase() === symbol.toUpperCase()
-              )
-
-              if (matchingPool?.priceUsd) {
-                price = parseFloat(matchingPool.priceUsd)
-              }
-            } catch {
-              console.error('Failed to fetch price from DexScreener')
-            }
-          }
-
-          // 3. Fallback to Jupiter
-          if (price === 0) {
-            const symbol = extractSymbol(pair)
-            try {
-              const dexRes = await fetch(
-                `${DEXSCREENER_API}/pairs/solana?search=${symbol}`
-              )
-              const dexData = await dexRes.json()
-              // Find matching pool with SOL quote (most common for memecoins)
-              const matchingPool = dexData.pairs?.find((p: DexPool) => 
-                p.baseToken?.symbol?.toUpperCase() === symbol.toUpperCase()
-              )
-
-              if (matchingPool?.priceUsd) {
-                price = parseFloat(matchingPool.priceUsd)
-              }
-            } catch {
-              console.error('Failed to fetch price from DexScreener')
-            }
-          }
-
-          // 3. Fallback to Jupiter
-          if (price === 0) {
-            const symbol = extractSymbol(pair)
-            try {
-              const dexRes = await fetch(
-                `${DEXSCREENER_API}/pairs/solana?search=${symbol}`
-              )
-              const dexData = await dexRes.json()
-              // Find matching pool with SOL quote (most common for memecoins)
-              const matchingPool = dexData.pairs?.find((p: DexPool) => 
-                p.baseToken?.symbol?.toUpperCase() === symbol.toUpperCase()
-              )
-
-              if (matchingPool?.priceUsd) {
-                price = parseFloat(matchingPool.priceUsd)
-              }
-            } catch {
-              console.error('Failed to fetch price from DexScreener')
-            }
-          }
-
-          // 3. Fallback to Jupiter
-          if (price === 0) {
-            const symbol = extractSymbol(pair)
-            try {
-              const dexRes = await fetch(
-                `${DEXSCREENER_API}/pairs/solana?search=${symbol}`
-              )
-              const dexData = await dexRes.json()
-              // Find matching pool with SOL quote (most common for memecoins)
-              // const matchingPool = dexData.pairs?.find((p: any) =>
-              //   p.baseToken?.symbol?.toUpperCase() === symbol.toUpperCase()
-              // )
-              const matchingPool = (dexData.pairs as DexPool[])?.find(
-                p => p.baseToken?.symbol?.toUpperCase() === symbol.toUpperCase()
-              )
-
-              if (matchingPool?.priceUsd) {
-                price = parseFloat(matchingPool.priceUsd)
-              }
-            } catch {
-              console.error('Failed to fetch price from DexScreener')
+              console.error('Failed to fetch price from DexScreener');
             }
           }
 
@@ -475,9 +331,6 @@ const SolanaChart = ({ interval = '15M', pair = 'SOL/USDC' }: Props) => {
                 time: now as UTCTimestamp,
                 value: price
               })
-              // We don't necessarily want to update lastUpdateTime here as oracleLine is a separate series,
-              // but if they share a timescale (which they do), some chart configs might be sensitive.
-              // However, candlestick updates are the primary ones that fail if time goes backwards.
             }
           }
         }

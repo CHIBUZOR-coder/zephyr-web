@@ -303,10 +303,24 @@
           "address": "11111111111111111111111111111111"
         },
         {
+          "name": "token_program",
+          "docs": [
+            "Token program for wSOL wrapping (SyncNative)"
+          ],
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        },
+        {
           "name": "jupiter_program",
           "docs": [
             "Jupiter program for actual trading (CPI)"
           ]
+        },
+        {
+          "name": "vault_wsol_ata",
+          "docs": [
+            "The vault's wSOL account (only used for SOL trades)"
+          ],
+          "writable": true
         }
       ],
       "args": [

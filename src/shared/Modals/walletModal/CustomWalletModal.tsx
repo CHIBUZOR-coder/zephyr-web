@@ -72,12 +72,12 @@ export const CustomWalletModal = ({ open, onClose }: Props) => {
     if (!open) return
 
     const tryClose = () => {
-      if (useAuthStore.getState().authenticated) {
+      if (useAuthStore.getState().authenticated && connected) {
         onCloseRef.current()
       }
     }
 
-    if (!isMobile && authenticated) {
+    if (!isMobile && authenticated && connected) {
       onCloseRef.current()
       return
     }
@@ -93,7 +93,7 @@ export const CustomWalletModal = ({ open, onClose }: Props) => {
       document.removeEventListener('visibilitychange', handleVisibilityChange)
       clearInterval(interval)
     }
-  }, [open, authenticated])
+  }, [open, authenticated, connected])
 
   const { mutate, isPending, isSuccess } = loginMutation
 

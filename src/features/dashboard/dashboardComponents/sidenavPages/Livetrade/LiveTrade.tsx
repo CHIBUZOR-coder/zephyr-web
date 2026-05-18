@@ -5,7 +5,7 @@ import { ExitPositionModal } from './ExitPositionModal'
 import { useWallet } from '@solana/wallet-adapter-react'
 import { useGeneralContext } from '../../../../../Context/GeneralContext'
 import { TierBadge } from '../../../../../Pages/Components/TierBadge'
-import { useRecentTrades, useCopierTrades, type Trade, getTierLabel } from '../../../../trades/useTrades'
+import { useRecentTrades, useCopierTrades, useMasterTrades, type Trade, getTierLabel } from '../../../../trades/useTrades'
 import { useSolPrice } from '../../../../../core/hooks/usePrice'
 import { profileUrl } from '../../../../../utils/formatters'
 
@@ -49,6 +49,14 @@ type Position = {
   masterVaultPda?: string
   vaultPda: string
 }
+const toNumber = (val: unknown): number => {
+  if (typeof val === 'number') return val
+  if (typeof val === 'string') return parseFloat(val)
+  return 0
+}
+
+const formatAmount = (val: unknown) => toNumber(val).toFixed(2)
+
 
 const LiveTrade = () => {
   const { connected, publicKey } = useWallet()
@@ -66,13 +74,18 @@ const LiveTrade = () => {
     publicKey?.toBase58() || '',
     50
   )
+  const { trades: masterTrades, refetch: refetchMaster } = useMasterTrades(
+    publicKey?.toBase58() || '',
+    50
+  )
 
   const refreshTrades = useCallback(() => {
     refetchRecent()
     if (publicKey) {
       refetchCopier()
+      refetchMaster()
     }
-  }, [refetchRecent, refetchCopier, publicKey])
+  }, [refetchRecent, refetchCopier, refetchMaster, publicKey])
 
   useEffect(() => {
     const interval = setInterval(refreshTrades, 10000)
@@ -131,13 +144,7 @@ const LiveTrade = () => {
     })
   }, [copierTrades, recentTrades, tokenSymbols])
 
-  const toNumber = (val: unknown): number => {
-    if (typeof val === 'number') return val
-    if (typeof val === 'string') return parseFloat(val)
-    return 0
-  }
 
-  const formatAmount = (val: unknown) => toNumber(val).toFixed(2)
 
   const liveTraders = useMemo(() => recentTrades.map((trade: Trade) => {
     const isMaster = trade.vaultType === 'MASTER'
@@ -165,62 +172,61 @@ const LiveTrade = () => {
       time: formatTimeAgo(trade.executedAt),
       signature: trade.signature,
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+
   }), [recentTrades, getTokenSymbol])
 
-  const positions: Position[] = useMemo(() => copierTrades.map((trade: Trade) => {
-    const tokenInSymbol = getTokenSymbol(trade.tokenIn, trade.tokenInSymbol)
-    const tokenOutSymbol = getTokenSymbol(trade.tokenOut, trade.tokenOutSymbol)
-    
-    const amountIn = toNumber(trade.amountInDecimal)
-    const amountOut = toNumber(trade.amountOutDecimal)
-    
-    // Simple PnL calculation if both are present and we are comparing tokens
-    // For now, if amountOut > 0, we can show realized PnL of that trade
-    // let pnl = 0
-    // let pnlPct = 0
-    if (amountOut > 0 && amountIn > 0) {
-      // This is simplified; assumes tokenIn/tokenOut value parity for calculation if symbols match? 
-      // Usually, it's tokenIn value vs tokenOut value.
-      // If trade was SOL -> USDC, amountIn is SOL, amountOut is USDC.
-      // If we assume SOL was $150, then pnl = amountOut - (amountIn * 150).
-      // But we don't know the price at execution time easily here.
-    }
+  const positions: Position[] = useMemo(() => {
+    const allUserTrades = [
+      ...copierTrades.map(t => ({ ...t, role: 'copier' as const })),
+      ...masterTrades.map(t => ({ ...t, role: 'master' as const }))
+    ];
 
-    return {
-      pair: `${tokenInSymbol}/${tokenOutSymbol}`,
-      type: tokenOutSymbol === 'SOL' ? 'BUY' as const : 'SELL' as const,
-      mirror: trade.masterExecutionVault?.user?.displayName || 
-             formatWallet(trade.masterExecutionVault?.masterWallet || ''),
-      entry: trade.tokenIn.includes('EPjFWdd5') ? `$${amountIn.toFixed(2)}` : `${amountIn.toFixed(2)} ${tokenInSymbol}`,
-      current: trade.tokenOut.includes('EPjFWdd5') ? `$${amountOut.toFixed(2)}` : `${amountOut.toFixed(2)} ${tokenOutSymbol}`,
-      allocation: `${formatAmount(trade.amountInDecimal)} ${tokenInSymbol}`,
-      pnl: '+$0.00', // Still simplified until we have historic price context
-      pnlPercent: '0.0%',
-      drawdown: '0.0%',
-      tp: 'N/A',
-      sl: 'N/A',
-      opened: formatTimeAgo(trade.executedAt),
-      mode: 'copier' as const,
-      callTrade: {
-        active: false,
-        openedAt: formatTimeAgo(trade.executedAt),
-        masterTrader: trade.masterTradeId || '',
-        protectionActive: false
-      },
-      tokenInAddress: trade.tokenIn,
-      tokenOutAddress: trade.tokenOut,
-      masterVaultPda: trade.masterExecutionVault?.vaultPda,
-      vaultPda: trade.vaultPda
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }), [copierTrades, getTokenSymbol])
+    return allUserTrades.map((trade) => {
+      const tokenInSymbol = getTokenSymbol(trade.tokenIn, trade.tokenInSymbol)
+      const tokenOutSymbol = getTokenSymbol(trade.tokenOut, trade.tokenOutSymbol)
+      
+      const amountIn = toNumber(trade.amountInDecimal)
+      const amountOut = toNumber(trade.amountOutDecimal)
+      
+      return {
+        pair: `${tokenInSymbol}/${tokenOutSymbol}`,
+        type: tokenOutSymbol === 'SOL' ? 'BUY' as const : 'SELL' as const,
+        mirror: trade.role === 'master' 
+          ? 'Self (Master)' 
+          : (trade.masterExecutionVault?.user?.displayName || 
+             formatWallet(trade.masterExecutionVault?.masterWallet || '')),
+        entry: trade.tokenIn.includes('EPjFWdd5') ? `$${amountIn.toFixed(2)}` : `${amountIn.toFixed(2)} ${tokenInSymbol}`,
+        current: trade.tokenOut.includes('EPjFWdd5') ? `$${amountOut.toFixed(2)}` : `${amountOut.toFixed(2)} ${tokenOutSymbol}`,
+        allocation: `${formatAmount(trade.amountInDecimal)} ${tokenInSymbol}`,
+        pnl: '+$0.00', // Still simplified until we have historic price context
+        pnlPercent: '0.0%',
+        drawdown: '0.0%',
+        tp: 'N/A',
+        sl: 'N/A',
+        opened: formatTimeAgo(trade.executedAt),
+        mode: trade.role,
+        callTrade: {
+          active: trade.role === 'master',
+          openedAt: formatTimeAgo(trade.executedAt),
+          masterTrader: trade.role === 'master' ? 'Self' : (trade.masterTradeId || ''),
+          protectionActive: false
+        },
+        tokenInAddress: trade.tokenIn,
+        tokenOutAddress: trade.tokenOut,
+        masterVaultPda: trade.masterExecutionVault?.vaultPda,
+        vaultPda: trade.vaultPda
+      }
+    });
+  }, [copierTrades, masterTrades, getTokenSymbol])
 
-  const activeAllocation = useMemo(() => copierTrades.reduce((acc, t) => {
-    // Sum up SOL allocation specifically for the stat
-    if (getTokenSymbol(t.tokenIn, t.tokenInSymbol) === 'SOL') return acc + Number(t.amountInDecimal)
-    return acc
-  }, 0), [copierTrades, getTokenSymbol])
+  const activeAllocation = useMemo(() => {
+    const allTrades = [...copierTrades, ...masterTrades];
+    return allTrades.reduce((acc, t) => {
+      // Sum up SOL allocation specifically for the stat
+      if (getTokenSymbol(t.tokenIn, t.tokenInSymbol) === 'SOL') return acc + Number(t.amountInDecimal)
+      return acc
+    }, 0)
+  }, [copierTrades, masterTrades, getTokenSymbol])
 
   const totalPnl = 0
   

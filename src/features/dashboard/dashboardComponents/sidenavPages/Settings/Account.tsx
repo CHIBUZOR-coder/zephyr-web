@@ -406,7 +406,7 @@ export default function Account () {
                 type='text'
                 value={telegram}
                 onChange={e => setTelegram(e.target.value)}
-                placeholder='Paste your Telegram profile link'
+                placeholder='Input your Telegram profile link'
                 className='
                 flex-1
                 px-3 py-2

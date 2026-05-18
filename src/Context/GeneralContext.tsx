@@ -319,11 +319,11 @@ export const GeneralProvider = ({ children }: { children: ReactNode }) => {
   const handleSearch = useCallback(
     async (e: React.KeyboardEvent<HTMLInputElement>) => {
       if (e.key !== 'Enter') return
-      
+
       // Client-side sanitization: Strip HTML tags
       const rawQuery = e.currentTarget.value.trim()
       const query = rawQuery.replace(/<[^>]*>?/gm, '').trim()
-      
+
       e.currentTarget.value = ''
       if (!query) return
 
@@ -399,6 +399,7 @@ export const GeneralProvider = ({ children }: { children: ReactNode }) => {
 
           setPrefilledTokenAddress(query)
           requestAnimationFrame(() => setOpenCallTrade(true))
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
         } catch (err) {
           showToast(
             'Invalid Token',
@@ -451,6 +452,7 @@ export const GeneralProvider = ({ children }: { children: ReactNode }) => {
           }
 
           navigate(profileUrl(null, query))
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
         } catch (err) {
           showToast(
             'Invalid Address',
@@ -461,7 +463,7 @@ export const GeneralProvider = ({ children }: { children: ReactNode }) => {
         }
       }
     },
-    [navigate]
+    [navigate, showToast]
   )
 
   return (

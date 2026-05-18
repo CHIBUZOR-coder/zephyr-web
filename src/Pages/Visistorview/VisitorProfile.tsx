@@ -24,6 +24,7 @@ export default function VisitorProfile () {
 
   useEffect(() => {
     if (!address) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setVaultAddress(undefined)
       return
     }

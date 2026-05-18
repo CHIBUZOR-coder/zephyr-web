@@ -13,6 +13,7 @@ type Position = {
   tokenInAddress: string
   tokenOutAddress: string
   vaultPda: string
+  mode: 'copier' | 'master'
 }
 
 type Props = {
@@ -24,6 +25,8 @@ type Props = {
 export const ExitPositionModal = ({ isOpen, onClose, position }: Props) => {
   const [amount, setAmount] = useState('')
   const { withdrawFromCopierVault, loading, error: vaultError } = useVaultOperations()
+
+  const isMaster = position?.mode === 'master'
 
   // Extract numeric allocation
   const maxAmount = useMemo(() => {
@@ -146,10 +149,16 @@ export const ExitPositionModal = ({ isOpen, onClose, position }: Props) => {
             <div className='bg-red-500/10 border border-red-500/20 rounded-lg p-4 text-[11px] text-red-400/80 flex items-start gap-3 leading-relaxed'>
               <RiErrorWarningLine className='h-5 w-5 shrink-0 mt-0.5' />
               <div className="space-y-1">
-                <p>
-                  Confirming this action will execute a market order to sell your position. 
-                  Slippage protection is automatically applied based on your vault settings.
-                </p>
+                {isMaster ? (
+                  <p>
+                    <span className="font-bold">Master Trader Notice:</span> To exit this position and have your copiers mirror the sell, please use the <span className="text-white font-bold">"CALL TRADE"</span> button on the dashboard and select <span className="text-white font-bold">"SELL"</span>. This modal is for copier withdrawals only.
+                  </p>
+                ) : (
+                  <p>
+                    Confirming this action will execute a market order to sell your position. 
+                    Slippage protection is automatically applied based on your vault settings.
+                  </p>
+                )}
                 {vaultError && (
                   <p className="font-bold border-t border-red-500/20 pt-1 mt-1">
                     Error: {vaultError}
@@ -160,14 +169,14 @@ export const ExitPositionModal = ({ isOpen, onClose, position }: Props) => {
             {/* Footer */}
             <button 
               onClick={handleConfirmSell}
-              disabled={loading || !amount || parseFloat(amount) <= 0}
+              disabled={loading || !amount || parseFloat(amount) <= 0 || isMaster}
               className={`w-full py-4 rounded-xl font-bold uppercase tracking-widest transition-all ${
-                loading || !amount || parseFloat(amount) <= 0
+                loading || !amount || parseFloat(amount) <= 0 || isMaster
                 ? 'bg-gray-700 text-gray-500 cursor-not-allowed'
                 : 'bg-orange-500 hover:bg-orange-600 text-white shadow-[0_0_20px_rgba(249,115,22,0.3)]'
               }`}
             >
-              {loading ? 'Processing...' : 'Confirm Sell →'}
+              {loading ? 'Processing...' : isMaster ? 'Use Call Trade Modal' : 'Confirm Sell →'}
             </button>
           </motion.div>
         </motion.div>
