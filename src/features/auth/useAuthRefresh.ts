@@ -24,8 +24,7 @@ export function useAuthRefresh() {
           // This will trigger the refreshAccessToken logic in authFetch
           await authFetch("/api/auth/me");
           console.log("✅ useAuthRefresh: Session restored successfully");
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        } catch (err) {
+        } catch {
           console.log("ℹ️ useAuthRefresh: No valid session cookie found");
           // authFetch already handles logout() on failure
         }

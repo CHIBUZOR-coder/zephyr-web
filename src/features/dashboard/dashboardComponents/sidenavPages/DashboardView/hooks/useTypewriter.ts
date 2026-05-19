@@ -2,9 +2,14 @@ import { useState, useEffect } from "react";
 
 export const useTypewriter = (text: string, speed = 45) => {
   const [displayed, setDisplayed] = useState("");
+  const [prevText, setPrevText] = useState(text);
+
+  if (text !== prevText) {
+    setPrevText(text);
+    setDisplayed("");
+  }
 
   useEffect(() => {
-    setDisplayed(""); // reset immediately when text changes (mode switch)
     let i = 0;
     const interval = setInterval(() => {
       i++;

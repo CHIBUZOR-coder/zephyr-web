@@ -456,6 +456,23 @@ export const useVaultOperations = () => {
             `Slot-based execution: ${onChainActiveCopierCount} copiers > threshold (${atomicThreshold}) or no copiers`,
           );
         }
+        // In callTrade(), after deriving masterVaultPda and before fetching the quote:
+        const vaultLamports = await connection.getBalance(masterVaultPda);
+        const vaultAccountInfo = await connection.getAccountInfo(masterVaultPda);
+        const rentExemptMin = vaultAccountInfo
+          ? await connection.getMinimumBalanceForRentExemption(vaultAccountInfo.data.length)
+          : 0;
+        const spendableLamports = vaultLamports - rentExemptMin;
+
+        if (spendableLamports < params.amountIn) {
+          const spendableSol = (spendableLamports / LAMPORTS_PER_SOL).toFixed(6);
+          const neededSol   = (params.amountIn   / LAMPORTS_PER_SOL).toFixed(6);
+          throw new Error(
+            `Vault has insufficient funds. ` +
+            `Available: ${spendableSol} SOL — Required: ${neededSol} SOL. ` +
+            `Use the Deposit button to fund your vault PDA before trading.`
+          );
+        }
 
         // ── Jupiter integration ────────────────────────────────────────────
         //
@@ -553,16 +570,16 @@ export const useVaultOperations = () => {
             await import("@solana/web3.js");
 
           // Helper: deserialise one Jupiter instruction object → TransactionInstruction
-          // IMPORTANT: We force the User Wallet to be the payer for ALL setup instructions.
+          // IMPORTANT: We ONLY replace the vault with the user wallet if it's a SIGNER (Payer).
+          // This ensures the user pays for rent while the vault remains the owner for ATA derivation.
           const deserializeJupiterIx = (ix: ApiInstruction) =>
             new JupTxIx({
               programId: new PublicKey(ix.programId),
               keys: ix.accounts.map((a: ApiAccount) => {
                 const isVault = a.pubkey === masterVaultPda.toBase58();
                 return {
-                  // If it's the vault, we replace it with the user wallet for setup ixs
-                  // This ensures the user pays for ATA rent and setup fees.
-                  pubkey: isVault ? publicKey! : new PublicKey(a.pubkey),
+                  pubkey:
+                    isVault && a.isSigner ? publicKey! : new PublicKey(a.pubkey),
                   isSigner: a.isSigner,
                   isWritable: a.isWritable,
                 };

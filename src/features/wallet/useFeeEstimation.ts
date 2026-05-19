@@ -1,6 +1,6 @@
 import { useConnection } from "@solana/wallet-adapter-react";
 import { useQuery } from "@tanstack/react-query";
-import { LAMPORTS_PER_SOL, PublicKey,  SystemProgram } from "@solana/web3.js";
+import { LAMPORTS_PER_SOL, PublicKey, SystemProgram } from "@solana/web3.js";
 
 /**
  * Hook to estimate the network fee for a standard SOL transfer.
@@ -12,7 +12,6 @@ export function useFeeEstimation() {
     queryKey: ["network-fee"],
     queryFn: async () => {
       try {
-       
         const { TransactionMessage } = await import("@solana/web3.js");
         
         // Use modern API to get fee estimation

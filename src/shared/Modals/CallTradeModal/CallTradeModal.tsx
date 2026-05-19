@@ -45,7 +45,7 @@ const CallTradeModal: FC<Props> = ({ open, onClose }) => {
   >('idle')
   const [localError, setLocalError] = useState<string | null>(null)
 
-  //working
+  
 
   const {
     callTrade,
@@ -61,6 +61,38 @@ const CallTradeModal: FC<Props> = ({ open, onClose }) => {
 
   const vaultBalance = masterVault?.balance ?? 0
 
+  const [prevTokenAddress, setPrevTokenAddress] = useState(tokenAddress)
+  if (tokenAddress !== prevTokenAddress) {
+    setPrevTokenAddress(tokenAddress)
+    setTokenPrice(null)
+    setTokenError(null)
+    setTokenSymbol(null)
+  }
+
+  const [prevOpen, setPrevOpen] = useState(open)
+  if (open && !prevOpen) {
+    setPrevOpen(true)
+    setStatus('idle')
+    setLocalError(null)
+    clearError()
+    setManualBootstrap(false)
+    setAmount('')
+    setTradeType('Buy')
+    setTokenSymbol(null)
+    setTokenQuote('USDC')
+    setTokenPrice(null)
+    setTokenError(null)
+
+    if (prefilledTokenAddress) {
+      setTokenAddress(prefilledTokenAddress)
+      setPrefilledTokenAddress(null)
+    } else {
+      setTokenAddress('')
+    }
+  } else if (!open && prevOpen) {
+    setPrevOpen(false)
+  }
+
   const handleMax = () => {
     setAmount(vaultBalance.toFixed(4))
   }
@@ -72,9 +104,10 @@ const CallTradeModal: FC<Props> = ({ open, onClose }) => {
   const tradeSizeNum = parseFloat(amount) || 0
   const volumeFeeBps = masterVault?.volumeFeeBps ?? 0
   const estimatedFee = (tradeSizeNum * volumeFeeBps * 0.2) / 10000 // 20% of volume fee is platform fee
-  const totalSolRequired = tradeType === 'Sell' ? tradeSizeNum + estimatedFee : estimatedFee
+  const totalSolRequired = tradeSizeNum + estimatedFee
   const isOverBalance = totalSolRequired > vaultBalance
   const isInvalidAmount = tradeSizeNum <= 0
+  
 
   const defaultChartPair = 'SOL/USDC'
   const chartPair =
@@ -84,14 +117,9 @@ const CallTradeModal: FC<Props> = ({ open, onClose }) => {
   const shouldShowChart = tokenSymbol && !tokenError
 
   useEffect(() => {
-    setTokenPrice(null)
-    setTokenError(null)
-    setTokenSymbol(null)
     const trimmed = tokenAddress.trim()
     
     if (trimmed.length === 0) {
-      setTokenSymbol(null)
-      setTokenPrice(null)
       return
     }
 
@@ -173,28 +201,9 @@ const CallTradeModal: FC<Props> = ({ open, onClose }) => {
   }, [tokenAddress])
 
   useEffect(() => {
-    if (open) {
-      setStatus('idle')
-      setLocalError(null)
-      clearError()
-      setManualBootstrap(false)
-      setAmount('')
-      setTradeType('Buy')
-      setTokenSymbol(null)
-      setTokenQuote('USDC')
-      setTokenPrice(null)
-      setTokenError(null)
-
-      if (prefilledTokenAddress) {
-        setTokenAddress(prefilledTokenAddress)
-        setPrefilledTokenAddress(null)
-      } else {
-        setTokenAddress('')
-      }
-    }
     // Intentionally omitting prefilledTokenAddress to prevent clearing the input
     // when setPrefilledTokenAddress(null) is called.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [open])
 
   const isTierConfigError =

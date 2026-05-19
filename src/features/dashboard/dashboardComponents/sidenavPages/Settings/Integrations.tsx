@@ -100,7 +100,7 @@ export default function Integrations () {
     // Save wallet so your /callback route knows who to link the token to
     sessionStorage.setItem('pendingIntegration', name)
     sessionStorage.setItem('walletAddress', publicKey!.toBase58())
-    window.location.href = url // Redirect to Discord/Twitter OAuth
+    window.location.assign(url) // Redirect to Discord/Twitter OAuth
   }
 
   // 3️⃣ Disconnect: call your backend to revoke the stored token

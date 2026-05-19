@@ -118,7 +118,8 @@ export const CustomWalletModal = ({ open, onClose }: Props) => {
         {
           onError: error => {
             console.error('Authentication failed:', error)
-            hasTriggeredLoginRef.current = false
+            // Removed: hasTriggeredLoginRef.current = false
+            // This prevents the infinite loop. The user can manualy retry via the UI button.
           }
         }
       )

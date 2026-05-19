@@ -55,7 +55,7 @@ const toNumber = (val: unknown): number => {
   return 0
 }
 
-const formatAmount = (val: unknown) => toNumber(val).toFixed(2)
+// const formatAmount = (val: unknown) => toNumber(val).toFixed(2)
 
 
 const LiveTrade = () => {
@@ -145,6 +145,7 @@ const LiveTrade = () => {
   }, [copierTrades, recentTrades, tokenSymbols])
 
 
+  const formatAmount = useCallback((val: unknown) => toNumber(val).toFixed(2), [])
 
   const liveTraders = useMemo(() => recentTrades.map((trade: Trade) => {
     const isMaster = trade.vaultType === 'MASTER'
@@ -172,8 +173,8 @@ const LiveTrade = () => {
       time: formatTimeAgo(trade.executedAt),
       signature: trade.signature,
     }
-
-  }), [recentTrades, getTokenSymbol])
+   
+  }), [recentTrades, getTokenSymbol, formatAmount])
 
   const positions: Position[] = useMemo(() => {
     const allUserTrades = [
@@ -217,7 +218,7 @@ const LiveTrade = () => {
         vaultPda: trade.vaultPda
       }
     });
-  }, [copierTrades, masterTrades, getTokenSymbol])
+  }, [copierTrades, masterTrades, getTokenSymbol, formatAmount])
 
   const activeAllocation = useMemo(() => {
     const allTrades = [...copierTrades, ...masterTrades];

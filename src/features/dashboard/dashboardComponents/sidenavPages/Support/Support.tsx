@@ -1,10 +1,16 @@
 import { useState } from 'react'
+import emailjs from '@emailjs/browser'
 import { BiChevronDown } from 'react-icons/bi'
 // import { FaWarehouse } from 'react-icons/fa'
 // import { GiCheckedShield } from 'react-icons/gi'
 import { LuMessagesSquare } from 'react-icons/lu'
 import { MdMessage } from 'react-icons/md'
 import { Link } from 'react-router-dom'
+
+// Safely pulling environment variables using Vite's context system
+const EMAILJS_SERVICE_ID = import.meta.env.VITE_EMAILJS_SERVICE_ID
+const EMAILJS_TEMPLATE_ID = import.meta.env.VITE_EMAILJS_TEMPLATE_ID
+const EMAILJS_PUBLIC_KEY = import.meta.env.VITE_EMAILJS_PUBLIC_KEY
 
 type FAQ = {
   question: string
@@ -74,6 +80,39 @@ const faqData: FAQ[] = [
 
 export default function Support () {
   const [open, setOpen] = useState<number | null>(null)
+  const [emailModal, setEmailModal] = useState(false)
+  const [emailForm, setEmailForm] = useState({
+    from_name: '',
+    reply_to: '',
+    message: ''
+  })
+  const [sending, setSending] = useState(false)
+  const [sent, setSent] = useState(false)
+
+  const handleSendEmail = async () => {
+    if (!emailForm.from_name || !emailForm.reply_to || !emailForm.message)
+      return
+    setSending(true)
+    try {
+      await emailjs.send(
+        EMAILJS_SERVICE_ID,
+        EMAILJS_TEMPLATE_ID,
+        emailForm,
+        EMAILJS_PUBLIC_KEY
+      )
+      setSent(true)
+      setTimeout(() => {
+        setEmailModal(false)
+        setSent(false)
+        setEmailForm({ from_name: '', reply_to: '', message: '' })
+      }, 2000)
+    } catch (err) {
+      console.error('EmailJS error:', err)
+      alert('Failed to send. Please try again.')
+    } finally {
+      setSending(false)
+    }
+  }
 
   return (
     <div className='bg-supportBg min-h-screen text-supportText font-inter px-6 pt-12 mb-60 lg:mb-0'>
@@ -168,8 +207,7 @@ export default function Support () {
                 <Link
                   to={'https://t.me/ZephyrAssist'}
                   target='_blank'
-                  className='bg-[#009883n dev
-                ] text-white text-[14px] font-[600] text-xs px-4 py-2 rounded-md leading-[21px] bg-[#009883]  w-full md:w-auto text-center hover:bg-[#425b5b] transition ease-in-out duration-500'
+                  className='text-white text-[14px] font-[600] text-xs px-4 py-2 rounded-md leading-[21px] bg-[#009883] w-full md:w-auto text-center hover:bg-[#425b5b] transition ease-in-out duration-500'
                 >
                   START CHAT
                 </Link>
@@ -181,7 +219,10 @@ export default function Support () {
                   <p className='text-xs text-gray-400'>24 hour response</p>
                 </div>
 
-                <button className='border border-[#009883] text-[#009883] text-[14px] font-[600] px-4 py-2 rounded-md hover:bg-[#0f1e1e] w-full md:w-auto'>
+                <button
+                  onClick={() => setEmailModal(true)}
+                  className='border border-[#009883] text-[#009883] text-[14px] font-[600] px-4 py-2 rounded-md hover:bg-[#0f1e1e] w-full md:w-auto'
+                >
                   SEND EMAIL
                 </button>
               </div>
@@ -223,39 +264,8 @@ export default function Support () {
           </div>
         </div>
 
-        {/* Knowledge Base */}
-        <div>
-          {/* <div className='flex justify-between mb-4'>
-            <h3 className='text-sm text-white text-[24px] font-[900]'>
-              KNOWLEDGE BASE
-            </h3>
-
-            <button className='text-xs text-[#009883]'>
-              View all articles →
-            </button>
-          </div> */}
-
-          {/* <div className='grid md:grid-cols-3 gap-4'>
-            {knowledge.map((item, i) => (
-              <div
-                key={i}
-                className='bg-[#102221] border-[1.3px] border-[#23483b] rounded-lg p-5 hover:bg-[#0f1e1e] cursor-pointer transition'
-              >
-                <span>{item.icon}</span>
-                <div>
-                  <p className='text-white text-sm mb-1'>{item.title}</p>
-
-                  <p className='text-xs text-gray-400'>
-                    Learn more about {item.text.toLowerCase()}
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div> */}
-        </div>
-
         {/* Security Notice */}
-        <div className='mt-10 bg-yellow-900/20 border border-[#EAB308] rounded-lg p-4 text-[14px] text-yel flex justify-center item-center gap-2'>
+        <div className='mt-10 bg-yellow-900/20 border border-[#EAB308] rounded-lg p-4 text-[14px] flex justify-center item-center gap-2'>
           <p className='text-[24px] flex items-center justify-center'>⚠️</p>
           <div className='flex flex-col gap-2'>
             <p className='text-[#EAB308] font-[700] text-[16px] leading-[24px]'>
@@ -269,6 +279,77 @@ export default function Support () {
           </div>
         </div>
       </div>
+
+      {/* Email Modal */}
+      {emailModal && (
+        <div className='fixed inset-0 bg-black/60 flex items-center justify-center z-50 px-4'>
+          <div className='bg-[#0a1a1a] border border-[#23483b] rounded-xl w-full max-w-md p-6'>
+            <div className='flex justify-between items-center mb-5'>
+              <h2 className='text-white font-[700] text-[18px]'>
+                Email Support
+              </h2>
+              <button
+                onClick={() => {
+                  setEmailModal(false)
+                  setSent(false)
+                  setEmailForm({ from_name: '', reply_to: '', message: '' })
+                }}
+                className='text-gray-400 hover:text-white text-xl leading-none'
+              >
+                ✕
+              </button>
+            </div>
+
+            {sent ? (
+              <p className='text-[#009883] text-center py-8 font-[600]'>
+                ✓ Message sent! We'll get back to you within 24 hours.
+              </p>
+            ) : (
+              <div className='flex flex-col gap-4'>
+                <input
+                  type='text'
+                  placeholder='Your name'
+                  value={emailForm.from_name}
+                  onChange={e =>
+                    setEmailForm(p => ({ ...p, from_name: e.target.value }))
+                  }
+                  className='bg-[#102221] border border-[#23483b] rounded-lg px-4 py-3 text-sm text-white outline-none focus:border-[#009883] placeholder-gray-500'
+                />
+                <input
+                  type='email'
+                  placeholder='Your email'
+                  value={emailForm.reply_to}
+                  onChange={e =>
+                    setEmailForm(p => ({ ...p, reply_to: e.target.value }))
+                  }
+                  className='bg-[#102221] border border-[#23483b] rounded-lg px-4 py-3 text-sm text-white outline-none focus:border-[#009883] placeholder-gray-500'
+                />
+                <textarea
+                  rows={4}
+                  placeholder='Describe your issue...'
+                  value={emailForm.message}
+                  onChange={e =>
+                    setEmailForm(p => ({ ...p, message: e.target.value }))
+                  }
+                  className='bg-[#102221] border border-[#23483b] rounded-lg px-4 py-3 text-sm text-white outline-none focus:border-[#009883] placeholder-gray-500 resize-none'
+                />
+                <button
+                  onClick={handleSendEmail}
+                  disabled={
+                    sending ||
+                    !emailForm.from_name ||
+                    !emailForm.reply_to ||
+                    !emailForm.message
+                  }
+                  className='bg-[#009883] hover:bg-[#007a6a] disabled:opacity-40 disabled:cursor-not-allowed text-white font-[600] text-[14px] py-3 rounded-lg transition ease-in-out duration-300'
+                >
+                  {sending ? 'SENDING...' : 'SEND MESSAGE'}
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   )
 }

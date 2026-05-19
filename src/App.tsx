@@ -65,6 +65,12 @@ export function AppContent () {
   const mismatch = useWalletMismatch()
   const { accessToken, logout, user: authUser } = useAuthStore()
 
+  // Clear profile if accessToken is lost
+  if (!accessToken && (profile || error)) {
+    setProfile(null)
+    setError(null)
+  }
+
   if (authUser && profile && authUser.id !== profile.id) {
     console.warn(`⚠️ Wallet mismatch detected: Auth user ID does not match profile user ID. 
       This may indicate a session issue. {
@@ -171,17 +177,12 @@ export function AppContent () {
 
   useEffect(() => {
     if (authReady && accessToken && !profile) {
-      fetchMe()
+      const timer = setTimeout(() => {
+        fetchMe()
+      }, 0)
+      return () => clearTimeout(timer)
     }
   }, [authReady, accessToken, profile, fetchMe])
-
-  // Clear profile if accessToken is lost
-  useEffect(() => {
-    if (!accessToken) {
-      setProfile(null)
-      setError(null)
-    }
-  }, [accessToken])
 
   const navLinks = [
     { title: 'Dashboard', icon: '/images/dashh.svg', path: '/' },

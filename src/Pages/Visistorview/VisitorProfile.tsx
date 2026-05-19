@@ -22,19 +22,26 @@ export default function VisitorProfile () {
   const [vaultAddress, setVaultAddress] = useState<string | undefined>(undefined)
   const [resolving, setResolving] = useState(false)
 
-  useEffect(() => {
+  const [prevAddress, setPrevAddress] = useState<string | undefined>(address)
+  if (address !== prevAddress) {
+    setPrevAddress(address)
     if (!address) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setVaultAddress(undefined)
-      return
-    }
-
-    if (isPublicKey(address)) {
+    } else if (isPublicKey(address)) {
       setVaultAddress(address)
+    }
+  }
+
+  useEffect(() => {
+    if (!address || isPublicKey(address)) {
       return
     }
 
-    setResolving(true)
+    const timer = setTimeout(() => {
+      setResolving(true)
+    }, 0)
+
     fetch(`${API_BASE}/api/users/by-username/${encodeURIComponent(address)}`)
       .then(res => res.json())
       .then(data => {
@@ -48,6 +55,8 @@ export default function VisitorProfile () {
         setVaultAddress(undefined)
       })
       .finally(() => setResolving(false))
+
+    return () => clearTimeout(timer)
   }, [address])
 
   const { trader, loading, error } = useTraderProfile(vaultAddress)

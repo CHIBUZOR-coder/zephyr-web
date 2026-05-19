@@ -91,7 +91,10 @@ export const useRecentTrades = (limit = 20) => {
   }, [limit]);
 
   useEffect(() => {
-    fetchTrades();
+    const timer = setTimeout(() => {
+      fetchTrades();
+    }, 0);
+    return () => clearTimeout(timer);
   }, [fetchTrades]);
 
   return { trades, loading, error, refetch: fetchTrades };
@@ -122,7 +125,10 @@ export const useVaultTrades = (vaultPda: string, limit = 50) => {
   }, [vaultPda, limit]);
 
   useEffect(() => {
-    fetchTrades();
+    const timer = setTimeout(() => {
+      fetchTrades();
+    }, 0);
+    return () => clearTimeout(timer);
   }, [fetchTrades]);
 
   return { trades, loading, error, refetch: fetchTrades };
@@ -153,7 +159,10 @@ export const useMasterTrades = (masterWallet: string, limit = 50) => {
   }, [masterWallet, limit]);
 
   useEffect(() => {
-    fetchTrades();
+    const timer = setTimeout(() => {
+      fetchTrades();
+    }, 0);
+    return () => clearTimeout(timer);
   }, [fetchTrades]);
 
   return { trades, loading, error, refetch: fetchTrades };
@@ -184,7 +193,10 @@ export const useCopierTrades = (copierWallet: string, limit = 50) => {
   }, [copierWallet, limit]);
 
   useEffect(() => {
-    fetchTrades();
+    const timer = setTimeout(() => {
+      fetchTrades();
+    }, 0);
+    return () => clearTimeout(timer);
   }, [fetchTrades]);
 
   return { trades, loading, error, refetch: fetchTrades };
@@ -215,7 +227,10 @@ export const useVaultStats = (vaultPda: string) => {
   }, [vaultPda]);
 
   useEffect(() => {
-    fetchStats();
+    const timer = setTimeout(() => {
+      fetchStats();
+    }, 0);
+    return () => clearTimeout(timer);
   }, [fetchStats]);
 
   return { stats, loading, error, refetch: fetchStats };
@@ -246,7 +261,10 @@ export const useCopiedTrades = (masterSignature: string) => {
   }, [masterSignature]);
 
   useEffect(() => {
-    fetchCopiedTrades();
+    const timer = setTimeout(() => {
+      fetchCopiedTrades();
+    }, 0);
+    return () => clearTimeout(timer);
   }, [fetchCopiedTrades]);
 
   return { copiedTrades, loading, error, refetch: fetchCopiedTrades };

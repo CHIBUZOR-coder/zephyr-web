@@ -309,10 +309,24 @@ export type Zephyr = {
           "address": "11111111111111111111111111111111"
         },
         {
+          "name": "tokenProgram",
+          "docs": [
+            "Token program for wSOL wrapping (SyncNative)"
+          ],
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        },
+        {
           "name": "jupiterProgram",
           "docs": [
             "Jupiter program for actual trading (CPI)"
           ]
+        },
+        {
+          "name": "vaultWsolAta",
+          "docs": [
+            "The vault's wSOL account (only used for SOL trades)"
+          ],
+          "writable": true
         }
       ],
       "args": [

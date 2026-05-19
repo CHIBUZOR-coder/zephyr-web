@@ -64,6 +64,18 @@ export const WithdrawModal = ({ open, onClose }: Props) => {
   const [onChainBalance, setOnChainBalance] = useState<number | null>(null)
   const [balanceMismatch, setBalanceMismatch] = useState(false)
 
+  const [prevOpen, setPrevOpen] = useState(open)
+  if (open && !prevOpen) {
+    setPrevOpen(true)
+    setAmount('')
+    setStatus('idle')
+    setLocalError(null)
+    setSuccessMessage(null)
+    setSyncing(false)
+  } else if (!open && prevOpen) {
+    setPrevOpen(false)
+  }
+
   const isCopier = copierVaults?.some(v => v.vaultPda === selectedVaultPda)
   const isMaster = masterVault?.vaultPda === selectedVaultPda
   const isNotAuthenticated = hydrated && !accessToken
@@ -80,11 +92,6 @@ export const WithdrawModal = ({ open, onClose }: Props) => {
 
   useEffect(() => {
     if (open) {
-      setAmount('')
-      setStatus('idle')
-      setLocalError(null)
-      setSuccessMessage(null)
-      setSyncing(false)
       // Small timeout to ensure the modal animation has started and element is focusable
       setTimeout(() => {
         inputRef.current?.focus()

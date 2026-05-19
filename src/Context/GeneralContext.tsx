@@ -356,8 +356,8 @@ export const GeneralProvider = ({ children }: { children: ReactNode }) => {
               true
             )
           }
-        } catch (err) {
-          console.error('Trader search failed', err)
+        } catch {
+          console.error('Trader search failed')
           showToast(
             'Search Error',
             'Something went wrong while searching. Please try again.',
@@ -399,8 +399,7 @@ export const GeneralProvider = ({ children }: { children: ReactNode }) => {
 
           setPrefilledTokenAddress(query)
           requestAnimationFrame(() => setOpenCallTrade(true))
-          // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        } catch (err) {
+        } catch {
           showToast(
             'Invalid Token',
             'Could not find a valid token or pool at this address.',
@@ -452,8 +451,7 @@ export const GeneralProvider = ({ children }: { children: ReactNode }) => {
           }
 
           navigate(profileUrl(null, query))
-          // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        } catch (err) {
+        } catch {
           showToast(
             'Invalid Address',
             'No active vault or trader found at this address.',

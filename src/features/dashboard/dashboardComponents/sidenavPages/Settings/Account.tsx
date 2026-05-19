@@ -46,9 +46,11 @@ export default function Account () {
     } finally {
       setCheckingUsername(false)
     }
-  }, [profile?.username])
+  }, [profile])
 
-  useEffect(() => {
+  const [prevProfile, setPrevProfile] = useState(profile)
+  if (profile !== prevProfile) {
+    setPrevProfile(profile)
     if (profile) {
       setDisplayName(profile.displayName || '')
       setUserName(profile.username || '')
@@ -57,7 +59,7 @@ export default function Account () {
       setDiscord(profile.discord || '')
       setTelegram(profile.telegram || '')
     }
-  }, [profile])
+  }
 
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current)
