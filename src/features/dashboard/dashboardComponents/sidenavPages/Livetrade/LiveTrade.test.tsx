@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render } from '@testing-library/react'
 import { BrowserRouter } from 'react-router-dom'
 import LiveTrade from './LiveTrade'
 
@@ -36,21 +36,21 @@ vi.mock('../../../../../Context/GeneralContext', () => ({
 
 describe('LiveTrade', () => {
   it('renders Live Trade header', () => {
-    render(
+    const { getByText } = render(
       <BrowserRouter>
         <LiveTrade />
       </BrowserRouter>
     )
-    expect(screen.getByText('LIVE TRADES')).toBeDefined()
+    expect(getByText('LIVE TRADES')).toBeDefined()
   })
 
   it('renders both tabs', () => {
-    render(
+    const { getByText } = render(
       <BrowserRouter>
         <LiveTrade />
       </BrowserRouter>
     )
-    expect(screen.getByText('All Zephyr Trades')).toBeDefined()
-    expect(screen.getByText('My Positions')).toBeDefined()
+    expect(getByText('All Zephyr Trades')).toBeDefined()
+    expect(getByText('My Positions')).toBeDefined()
   })
 })

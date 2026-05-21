@@ -1,5 +1,7 @@
 // zephyr-web/src/features/master/useVaultOperations.ts
 import { useState, useCallback } from 'react';
+// Buffer polyfill for browser/webpack
+import { Buffer } from 'buffer';
 import { useProgram } from '../../core/solana/useProgram';
 import { endpoint, isMockNetwork } from '../../core/config/solanaWallet';
 import { PublicKey, SystemProgram, LAMPORTS_PER_SOL, SendTransactionError } from '@solana/web3.js';
@@ -8,16 +10,36 @@ import { BN } from '@coral-xyz/anchor';
 import { authFetch } from '../../core/query/authClient';
 import type { TierState } from './useMasterTier';
 
+type ApiInstruction = {
+  programId: string;
+  accounts: ApiAccount[];
+  data: string; // base64
+};
+
 type ApiAccount = {
   pubkey: string;
   isSigner: boolean;
   isWritable: boolean;
 };
 
-type ApiInstruction = {
-  programId: string;
-  accounts: ApiAccount[];
-  data: string; // base64
+type JupiterQuote = {
+  inAmount: string;
+  outAmount: string;
+  priceImpactPct: string;
+  marketInfos: Array<{ id: string; label: string; inputMint: string; outputMint: string }>;
+  routePlan: Array<{ swapInfo: { ammLabel: string; tokenFees: Array<{ mint: string; amount: string }> }; percent: number }>;
+  slippageBps: number;
+  _raw?: Record<string, unknown>;
+};
+
+type SwapInstructions = {
+  tokenLedgerInstruction: ApiInstruction | null;
+  computeBudgetInstructions: ApiInstruction[];
+  setupInstructions: ApiInstruction[];
+  swapInstruction: ApiInstruction;
+  cleanupInstruction: ApiInstruction | null;
+  addressLookupTableAddresses: string[];
+  error?: string;
 };
 
 
@@ -108,6 +130,7 @@ function parseSolanaError(err: unknown): string {
   
   return message ? `Transaction failed: ${message}` : 'Transaction failed. Please try again.';
 }
+
 
 export const useVaultOperations = () => {
   const { program } = useProgram();
@@ -345,6 +368,35 @@ export const useVaultOperations = () => {
     }
   }, [program, publicKey]);
 
+  // Utility to fetch both total and spendable SOL for the master vault
+  const getMasterVaultBalances = useCallback(async () => {
+    if (!program || !publicKey) throw new Error('Program or wallet not initialized');
+    
+    const [masterVaultPda] = PublicKey.findProgramAddressSync(
+      [Buffer.from('master_vault'), publicKey.toBuffer()],
+      program.programId
+    );
+    
+    const connection = program.provider.connection;
+    const vaultLamports = await connection.getBalance(masterVaultPda);
+    const vaultAccountInfo = await connection.getAccountInfo(masterVaultPda);
+    
+    const rentExemptMin = vaultAccountInfo
+      ? await connection.getMinimumBalanceForRentExemption(vaultAccountInfo.data.length)
+      : 0;
+      
+    const spendableLamports = Math.max(0, vaultLamports - rentExemptMin);
+    
+    console.log(`[BalanceCheck] PDA: ${masterVaultPda.toBase58()}`);
+    console.log(`[BalanceCheck] Total: ${vaultLamports / LAMPORTS_PER_SOL} SOL, Rent: ${rentExemptMin / LAMPORTS_PER_SOL} SOL, Spendable: ${spendableLamports / LAMPORTS_PER_SOL} SOL`);
+    
+    return {
+      totalLamports: vaultLamports,
+      rentExemptMin,
+      spendableLamports,
+    };
+  }, [program, publicKey]);
+
   const callTrade = useCallback(
     async (params: {
       tokenIn: string;
@@ -513,56 +565,53 @@ export const useVaultOperations = () => {
         let lookupTableAccounts: import("@solana/web3.js").AddressLookupTableAccount[] =
           [];
 
-        const JUPITER_API_KEY = import.meta.env.VITE_JUPITER_API_KEY || "";
-
         if (isMockNetwork) {
           console.log(
             "MOCK MODE: devnet/testnet detected — skipping real Jupiter swap",
           );
         } else {
-          console.log("Fetching Jupiter quote (V1 fallback for stability)...");
+          console.log("Fetching Jupiter quote via Backend Proxy...");
 
+          // Use our backend proxy to avoid CORS and DNS issues
           const quoteUrl =
-            `https://api.jup.ag/swap/v1/quote` +
+            `/api/market/jupiter/quote` +
             `?inputMint=${resolvedTokenIn}` +
             `&outputMint=${resolvedTokenOut}` +
             `&amount=${params.amountIn}` +
             `&slippageBps=100`;
 
-          const quoteRes = await fetch(quoteUrl, {
-            headers: JUPITER_API_KEY ? { "x-api-key": JUPITER_API_KEY } : {},
-          });
-          if (!quoteRes.ok)
-            throw new Error(`Jupiter quote failed: ${quoteRes.status}`);
-          const quote = await quoteRes.json();
-          if (!quote?.inAmount)
-            throw new Error("Jupiter quote returned no inAmount");
+          const quoteRes = await authFetch<{ success: boolean; data: JupiterQuote; error?: string }>(quoteUrl);
+          
+          if (!quoteRes.success || !quoteRes.data) {
+            throw new Error(`Jupiter quote failed: ${quoteRes.error || 'Unknown error'}`);
+          }
+          
+          const quote = quoteRes.data;
+          if (!quote?.outAmount)
+            throw new Error("Jupiter quote returned no outAmount");
 
           quoteInAmount = quote.inAmount;
           quoteOutAmount = quote.outAmount;
 
-          console.log("Fetching Jupiter swap instructions...");
+          console.log("Fetching Jupiter swap instructions via Backend Proxy...");
 
-          const swapRes = await fetch(
-            "https://api.jup.ag/swap/v1/swap-instructions",
+          const swapRes = await authFetch<{ success: boolean; data: SwapInstructions; error?: string }>(
+            "/api/market/jupiter/swap-instructions",
             {
               method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                ...(JUPITER_API_KEY ? { "x-api-key": JUPITER_API_KEY } : {}),
-              },
               body: JSON.stringify({
-                quoteResponse: quote,
+                quoteResponse: quote._raw || quote, // Try to find the raw quote object
                 userPublicKey: masterVaultPda.toBase58(),
                 wrapAndUnwrapSol: true,
               }),
             },
           );
-          if (!swapRes.ok)
-            throw new Error(
-              `Jupiter swap-instructions failed: ${swapRes.status}`,
-            );
-          const swapIxResponse = await swapRes.json();
+
+          if (!swapRes.success || !swapRes.data) {
+            throw new Error(`Jupiter swap-instructions failed: ${swapRes.error || 'Unknown error'}`);
+          }
+          
+          const swapIxResponse = swapRes.data;
           if (swapIxResponse.error)
             throw new Error(`Jupiter error: ${swapIxResponse.error}`);
 
@@ -999,7 +1048,50 @@ export const useVaultOperations = () => {
     }
   }, [program, publicKey]);
 
+  const closeMasterVault = useCallback(async () => {
+    if (!program || !publicKey) throw new Error('Program or wallet not initialized');
+    setLoading(true);
+    setError(null);
+    try {
+      console.log('Closing Master Execution Vault...');
+      const tx = await program.methods
+        .closeMasterVault()
+        .accounts({
+          master: publicKey,
+        })
+        .rpc();
+      
+      console.log('Master vault closed successfully:', tx);
+      return tx;
+    } catch (err: unknown) {
+      console.error('Close master vault failed:', err);
+      const friendlyError = parseSolanaError(err);
+      setError(friendlyError);
+      throw new Error(friendlyError);
+    } finally {
+      setLoading(false);
+    }
+  }, [program, publicKey]);
+
   const clearError = useCallback(() => setError(null), []);
 
-  return { depositToCopierVault, transferToVault, depositToMasterVault, withdrawFromCopierVault, withdrawFromMasterVault, claimPerformanceFees, callTrade, initializeTierConfig, initializeRiskConfig, updateRiskConfig, updateCopierRiskParams, loading, error, clearError };
-};
+
+  return {
+    depositToCopierVault,
+    transferToVault,
+    depositToMasterVault,
+    withdrawFromCopierVault,
+    withdrawFromMasterVault,
+    claimPerformanceFees,
+    callTrade,
+    initializeTierConfig,
+    initializeRiskConfig,
+    updateRiskConfig,
+    updateCopierRiskParams,
+    closeMasterVault,
+    getMasterVaultBalances,
+    loading,
+    error,
+    clearError,
+  };
+}

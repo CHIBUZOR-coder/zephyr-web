@@ -52,14 +52,36 @@ const CallTradeModal: FC<Props> = ({ open, onClose }) => {
     initializeTierConfig,
     initializeRiskConfig,
     error: opError,
-    clearError
+    clearError,
+    getMasterVaultBalances,
   } = useVaultOperations()
   const { masterVault, metrics, refetchAll } = useUserVaults()
   const { data: solPrice } = useSolPrice()
   const { prefilledTokenAddress, setPrefilledTokenAddress } =
     useGeneralContext()
 
-  const vaultBalance = masterVault?.balance ?? 0
+  // Track both total and spendable balances
+  const [vaultTotal, setVaultTotal] = useState(0)
+  const [vaultSpendable, setVaultSpendable] = useState(0)
+  const [vaultRentExempt, setVaultRentExempt] = useState(0)
+
+  useEffect(() => {
+    let cancelled = false
+    const fetchBalances = async () => {
+      try {
+        const res = await getMasterVaultBalances()
+        if (!cancelled) {
+          setVaultTotal(res.totalLamports / LAMPORTS_PER_SOL)
+          setVaultSpendable(res.spendableLamports / LAMPORTS_PER_SOL)
+          setVaultRentExempt(res.rentExemptMin / LAMPORTS_PER_SOL)
+        }
+      } catch (err) {
+        console.debug('Failed to fetch master vault balances:', err)
+      }
+    }
+    if (open) fetchBalances()
+    return () => { cancelled = true }
+  }, [open, getMasterVaultBalances])
 
   const [prevTokenAddress, setPrevTokenAddress] = useState(tokenAddress)
   if (tokenAddress !== prevTokenAddress) {
@@ -94,18 +116,34 @@ const CallTradeModal: FC<Props> = ({ open, onClose }) => {
   }
 
   const handleMax = () => {
-    setAmount(vaultBalance.toFixed(4))
+    const platformFeeRate = (volumeFeeBps * 0.2) / 10000
+    if (tradeType === 'Buy') {
+      // When buying a token with SOL, SOL is the token_in.
+      // amount_in + platform_fee <= vaultSpendable
+      // amount_in + (amount_in * platformFeeRate) <= vaultSpendable
+      // amount_in * (1 + platformFeeRate) <= vaultSpendable
+      // amount_in <= vaultSpendable / (1 + platformFeeRate)
+      const maxAmount = vaultSpendable / (1 + platformFeeRate)
+      setAmount(Math.max(0, maxAmount - 0.000001).toFixed(6))
+    } else {
+      // When selling a token for SOL, the token_in is the asset.
+      // We don't have the token balance here, so we'll just set a placeholder or let user decide.
+      // But we still need to pay the platform fee in SOL from the vault.
+      setAmount('0') 
+    }
   }
 
   const copierCount = metrics?.totalCopiers ?? masterVault?._count?.copierVaults ?? 0
   const totalAumUsd = metrics?.totalAumUsd ?? 0
 
-
   const tradeSizeNum = parseFloat(amount) || 0
   const volumeFeeBps = masterVault?.volumeFeeBps ?? 0
   const estimatedFee = (tradeSizeNum * volumeFeeBps * 0.2) / 10000 // 20% of volume fee is platform fee
-  const totalSolRequired = tradeSizeNum + estimatedFee
-  const isOverBalance = totalSolRequired > vaultBalance
+
+  // Total SOL that will be deducted from the vault PDA
+  const totalSolRequired = tradeType === 'Buy' ? (tradeSizeNum + estimatedFee) : estimatedFee
+  const isOverBalance = totalSolRequired > vaultSpendable
+
   const isInvalidAmount = tradeSizeNum <= 0
   
 
@@ -435,17 +473,25 @@ const CallTradeModal: FC<Props> = ({ open, onClose }) => {
             </div>
 
             {/* TRADE SIZE */}
-            <div className='mb-4 flex flex-col gap-1'>
-              <div className='w-full flex justify-between items-center px-1'>
-                <span className='font-[900] text-[10px] text-[#50706c] uppercase tracking-wider'>
+            <div className='mb-4 flex flex-col gap-2'>
+              <div className='w-full flex justify-between items-end px-1'>
+                <span className='font-[900] text-[11px] text-[#50706c] uppercase tracking-wider'>
                   Trade Size (SOL)
                 </span>
-                <span className='text-[9px] text-[#50706c] font-[700]'>
-                  Vault Balance:{' '}
-                  <span className='text-[#E8F6F3]'>
-                    {vaultBalance.toFixed(4)} SOL
+                <div className='flex flex-col items-end gap-0.5'>
+                  <span className='text-[10px] text-[#607572] font-[700]'>
+                    Total: <span className='text-[#98A7A5]'>{vaultTotal.toFixed(6)} SOL</span>
                   </span>
-                </span>
+                  <span className='text-[10px] text-[#607572] font-[700]'>
+                    Rent: <span className='text-[#98A7A5]'>{vaultRentExempt.toFixed(6)} SOL</span>
+                  </span>
+                  <span className='text-[11px] text-[#50706c] font-[900]'>
+                    Spendable:{' '}
+                    <span className={vaultSpendable > 0.005 ? 'text-[#E8F6F3]' : 'text-[#F1948A]'}>
+                      {vaultSpendable.toFixed(6)} SOL
+                    </span>
+                  </span>
+                </div>
               </div>
 
               <div className='w-full relative flex items-center'>
@@ -500,12 +546,21 @@ const CallTradeModal: FC<Props> = ({ open, onClose }) => {
                   className='text-red-500 shrink-0 mt-0.5'
                   size={14}
                 />
-                <p className='text-[11px] text-red-200 leading-tight'>
-                  {isOverBalance ? `Insufficient balance. Your vault only has ${vaultBalance.toFixed(4)} SOL.` : (localError || opError)}
-                </p>
+                <div className='text-[11px] text-red-200 leading-tight space-y-1'>
+                  {isOverBalance ? (
+                    <>
+                      <p className='font-bold'>Insufficient spendable balance.</p>
+                      <p>
+                        Your vault has {vaultTotal.toFixed(4)} SOL total, but {vaultRentExempt.toFixed(4)} SOL must remain in the vault to keep it active (rent exemption). 
+                        Only {vaultSpendable.toFixed(4)} SOL is available for trading.
+                      </p>
+                    </>
+                  ) : (
+                    <p>{localError || opError}</p>
+                  )}
+                </div>
               </div>
             )}
-
             {/* COPIER IMPACT */}
             <div className='mt-4'>
               <button

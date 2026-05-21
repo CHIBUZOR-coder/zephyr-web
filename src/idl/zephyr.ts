@@ -520,6 +520,69 @@ export type Zephyr = {
       "args": []
     },
     {
+      "name": "closeMasterVault",
+      "docs": [
+        "Close Master Execution Vault and reclaim SOL (must have zero active copiers)."
+      ],
+      "discriminator": [
+        90,
+        63,
+        154,
+        50,
+        139,
+        97,
+        31,
+        100
+      ],
+      "accounts": [
+        {
+          "name": "master",
+          "docs": [
+            "The master trader who owns the vault"
+          ],
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "masterVault",
+          "docs": [
+            "The Master Execution Vault PDA to close"
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  97,
+                  115,
+                  116,
+                  101,
+                  114,
+                  95,
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "master"
+              }
+            ]
+          }
+        },
+        {
+          "name": "systemProgram",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
       "name": "deposit",
       "docs": [
         "Deposit funds into copier vault."
@@ -3915,6 +3978,11 @@ export type Zephyr = {
       "code": 6045,
       "name": "invalidGovernanceParams",
       "msg": "Invalid governance parameter provided"
+    },
+    {
+      "code": 6046,
+      "name": "invalidVaultState",
+      "msg": "Invalid vault state for this operation"
     }
   ],
   "types": [
@@ -4441,10 +4509,6 @@ export type Zephyr = {
           {
             "name": "masterVault",
             "type": "pubkey"
-          },
-          {
-            "name": "tradeSignature",
-            "type": "string"
           },
           {
             "name": "totalFee",

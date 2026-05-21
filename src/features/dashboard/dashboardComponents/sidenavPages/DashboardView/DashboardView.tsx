@@ -91,29 +91,54 @@ const DashboardView = () => {
   }
 
   const firstCall = useMemo(() => {
-    return firstCallers?.map((trade) => {
-      const timeAgo = Math.floor((now - new Date(trade.executedAt).getTime()) / (60 * 60 * 1000));
-      const timeText = timeAgo < 1 ? 'RECENT' : timeAgo < 24 ? `${timeAgo} HOURS` : `${Math.floor(timeAgo/24)} DAYS`;
-      
-      return {
-        name: `Token ${trade.tokenOut.slice(0, 4)}`,
-        person: trade.masterExecutionVault?.user?.displayName || `Trader ${trade.masterExecutionVault?.masterWallet?.slice(0, 4) || '??'}`,
-        img: trade.masterExecutionVault?.user?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${trade.masterExecutionVault?.masterWallet || trade.id}`,
-        text: trade.tokenOut.slice(0, 4).toUpperCase(),
-        time: timeText,
-        num: parseFloat(trade.amountOutDecimal) || 0,
-        col: 'yel',
-        wallet: trade.masterExecutionVault?.masterWallet ? `${trade.masterExecutionVault.masterWallet.slice(0, 4)}...${trade.masterExecutionVault.masterWallet.slice(-4)}` : 'N/A',
-        cap: 100, 
-        peackCap: 150, 
-        titer: trade.masterExecutionVault?.currentTier === 5 ? 'Institutional' : 'Verifieda',
-        date: new Date(trade.executedAt).toLocaleDateString(),
-        timestamp: new Date(trade.executedAt).toLocaleString(),
-        signature: trade.signature,
-        isFirstCaller: trade.isFirstCaller,
-      };
-    }) || []
-  }, [firstCallers, now]);
+    return (
+      firstCallers?.map(trade => {
+        const timeAgo = Math.floor(
+          (now - new Date(trade.executedAt).getTime()) / (60 * 60 * 1000)
+        )
+        const timeText =
+          timeAgo < 1
+            ? 'RECENT'
+            : timeAgo < 24
+            ? `${timeAgo} HOURS`
+            : `${Math.floor(timeAgo / 24)} DAYS`
+
+        return {
+          name: `Token ${trade.tokenOut.slice(0, 4)}`,
+          person:
+            trade.masterExecutionVault?.user?.displayName ||
+            `Trader ${
+              trade.masterExecutionVault?.masterWallet?.slice(0, 4) || '??'
+            }`,
+          img:
+            trade.masterExecutionVault?.user?.avatar ||
+            `https://api.dicebear.com/7.x/avataaars/svg?seed=${
+              trade.masterExecutionVault?.masterWallet || trade.id
+            }`,
+          text: trade.tokenOut.slice(0, 4).toUpperCase(),
+          time: timeText,
+          num: parseFloat(trade.amountOutDecimal) || 0,
+          col: 'yel',
+          wallet: trade.masterExecutionVault?.masterWallet
+            ? `${trade.masterExecutionVault.masterWallet.slice(
+                0,
+                4
+              )}...${trade.masterExecutionVault.masterWallet.slice(-4)}`
+            : 'N/A',
+          cap: 100,
+          peackCap: 150,
+          titer:
+            trade.masterExecutionVault?.currentTier === 5
+              ? 'Institutional'
+              : 'Verifieda',
+          date: new Date(trade.executedAt).toLocaleDateString(),
+          timestamp: new Date(trade.executedAt).toLocaleString(),
+          signature: trade.signature,
+          isFirstCaller: trade.isFirstCaller
+        }
+      }) || []
+    )
+  }, [firstCallers, now])
 
   // const formatTimeAgo = (ms: number): string => {
   //   const minutes = Math.floor(ms / (60 * 1000))
@@ -202,9 +227,9 @@ const DashboardView = () => {
             </div>
             
             <input
-              placeholder={animatedPlaceholder} // ← was activePlaceholder
+              placeholder={animatedPlaceholder}
               onKeyDown={handleSearch}
-              className=' bg-[#102221] px-4 py-2 rounded-lg ... w-[75%] placeholder:text-white'
+              className='bg-[#102221] px-4 py-2 rounded-lg w-[75%] placeholder:text-white text-white'
             />
           </div>
 
@@ -381,13 +406,19 @@ const DashboardView = () => {
                       >
                         <div className='flex justify-between gap-4'>
                           <Link
-                            to={profileUrl(item.username, item.vaultAddress || '')}
+                            to={profileUrl(
+                              item.username,
+                              item.vaultAddress || ''
+                            )}
                             className='bg-center bg-cover h-10 w-10 rounded-md'
                             style={{ backgroundImage: `url(${item.image})` }}
                           ></Link>
                           <div>
                             <Link
-                              to={profileUrl(item.username, item.vaultAddress || '')}
+                              to={profileUrl(
+                                item.username,
+                                item.vaultAddress || ''
+                              )}
                               className='text-[10.5px] font-[700] text-white'
                             >
                               @{item.name}
@@ -425,9 +456,11 @@ const DashboardView = () => {
       {/* Right panel */}
       <div className=' w-full lg:w-[40%] mt-10  lg:mt-0 rightt'>
         <div className='flex justify-between items-center'>
-          <p className='font-[700] text-[15px] text-white'>First Caller – Top X Trades</p>
+          <p className='font-[700] text-[15px] text-white'>
+            First Caller – Top X Trades
+          </p>
           <p className='text-[6px] font-[900] uppercase text-white leading-[12px] tracking-[1.6px]'>
-          The Hall of On-Chain Alpha
+            The Hall of On-Chain Alpha
           </p>
         </div>
 
