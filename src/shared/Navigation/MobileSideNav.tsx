@@ -53,7 +53,11 @@ const MobileSideNav: FC<Props> = ({ isOpen, onClose }) => {
         <div className='flex items-start gap-2 self-center sm:self-start absolute bottom-[5rem]   left-4'>
           {[
             { Icon: FaInstagram, label: 'Instagram', path: '' },
-            { Icon: FaXTwitter, label: 'X / Twitter', path: '' },
+            {
+              Icon: FaXTwitter,
+              label: 'X / Twitter',
+              path: 'https://x.com/TryZephyr'
+            },
             {
               Icon: FaTelegram,
               label: 'Telegram',
@@ -150,7 +154,7 @@ const MobileSideNav: FC<Props> = ({ isOpen, onClose }) => {
           >
             Initialize Tiers (Admin)
           </button>
-{/* 
+          {/* 
           <div className='bg-[#0f2a27] border border-[#16423d] rounded-lg px-3 py-2 text-[11px] text-[#7FAAA2]'>
             <p className='flex items-center gap-2'>
               <span className='h-[6px] w-[6px] bg-[#00A991] rounded-full'></span>

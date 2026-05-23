@@ -12,6 +12,18 @@ const EMAILJS_SERVICE_ID = import.meta.env.VITE_EMAILJS_SERVICE_ID
 const EMAILJS_TEMPLATE_ID = import.meta.env.VITE_EMAILJS_TEMPLATE_ID
 const EMAILJS_PUBLIC_KEY = import.meta.env.VITE_EMAILJS_PUBLIC_KEY
 
+// Debugging: Log if any required env vars are missing
+if (!EMAILJS_SERVICE_ID || !EMAILJS_TEMPLATE_ID || !EMAILJS_PUBLIC_KEY) {
+  console.warn(
+    'EmailJS environment variables are missing. Email functionality will not work.',
+    {
+      SERVICE_ID: !!EMAILJS_SERVICE_ID,
+      TEMPLATE_ID: !!EMAILJS_TEMPLATE_ID,
+      PUBLIC_KEY: !!EMAILJS_PUBLIC_KEY
+    }
+  )
+}
+
 type FAQ = {
   question: string
   answer: string
@@ -88,10 +100,18 @@ export default function Support () {
   })
   const [sending, setSending] = useState(false)
   const [sent, setSent] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const handleSendEmail = async () => {
+    setError(null)
     if (!emailForm.from_name || !emailForm.reply_to || !emailForm.message)
       return
+
+    if (!EMAILJS_SERVICE_ID || !EMAILJS_TEMPLATE_ID || !EMAILJS_PUBLIC_KEY) {
+      setError('Email service is not configured. Please use Telegram for support.')
+      return
+    }
+
     setSending(true)
     try {
       await emailjs.send(
@@ -108,7 +128,7 @@ export default function Support () {
       }, 2000)
     } catch (err) {
       console.error('EmailJS error:', err)
-      alert('Failed to send. Please try again.')
+      setError('Failed to send. Please check your connection and try again.')
     } finally {
       setSending(false)
     }
@@ -292,6 +312,7 @@ export default function Support () {
                 onClick={() => {
                   setEmailModal(false)
                   setSent(false)
+                  setError(null)
                   setEmailForm({ from_name: '', reply_to: '', message: '' })
                 }}
                 className='text-gray-400 hover:text-white text-xl leading-none'
@@ -306,6 +327,12 @@ export default function Support () {
               </p>
             ) : (
               <div className='flex flex-col gap-4'>
+                {error && (
+                  <div className='bg-red-500/10 border border-red-500/20 text-red-400 text-xs py-2 px-3 rounded-lg flex items-center gap-2'>
+                    <span>⚠️</span>
+                    {error}
+                  </div>
+                )}
                 <input
                   type='text'
                   placeholder='Your name'
