@@ -133,6 +133,17 @@ export const useMasterVault = () => {
 
       const tx = await (
         program.methods.initializeConfig(
+          // 500, // platform_fee_bps (5%)
+          // 9500, // trader_fee_bps (95%) - Sum must be 10000
+          // 2000, // max_success_fee_bps (20%)
+          // 100, // max_volume_fee_bps (1%)
+          // publicKey, // fee_wallet (set to self for now)
+          // publicKey, // admin (set to self for now)
+          // 1000, // atomic_threshold
+          // 50, // slot_grace_window (20 seconds)
+          // 1, // protocol_version
+          // // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
           500, // platform_fee_bps (5%)
           9500, // trader_fee_bps (95%) - Sum must be 10000
           2000, // max_success_fee_bps (20%)
@@ -142,6 +153,7 @@ export const useMasterVault = () => {
           1000, // atomic_threshold
           50, // slot_grace_window (20 seconds)
           1, // protocol_version
+          publicKey, // pauser/authority (add this missing argument)
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
         ) as any
       )
