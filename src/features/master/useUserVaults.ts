@@ -179,7 +179,7 @@ export function useUserVaults() {
     const masterBalanceUsd = (masterVault.balance || 0) * currentPrice;
     const managedCopiersBalanceUsd = (managedCopierVaults || []).reduce(
       (sum, v) => sum + (v.actualBalance || 0) * currentPrice,
-      0
+      0,
     );
     const totalAumUsd = masterBalanceUsd + managedCopiersBalanceUsd;
     const totalVolumeUsd = masterVault.totalVolume

@@ -1,4 +1,3 @@
-
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
@@ -17,7 +16,7 @@ type WalletState = {
   setPrimary: (address: string) => void;
 };
 
-export type WalletType = "SOLANA" ;
+export type WalletType = "SOLANA";
 
 export interface DetectedWallet {
   address: string;

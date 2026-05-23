@@ -58,7 +58,7 @@ export type RoiInterval = {
   winRatePct: number;
   aumUsd: number;
   cumulativeVolumeUsd: number;
-}
+};
 
 export function useMasterTierState(masterWallet?: string) {
   return useQuery<TierState | null>({
@@ -66,7 +66,7 @@ export function useMasterTierState(masterWallet?: string) {
     queryFn: async () => {
       if (!masterWallet) return null;
       const res = await authFetch<{ success: boolean; data: TierState }>(
-        `/api/tier/masters/${masterWallet}/tier`
+        `/api/tier/masters/${masterWallet}/tier`,
       );
       return res.success ? res.data : null;
     },
@@ -77,14 +77,18 @@ export function useMasterTierState(masterWallet?: string) {
   });
 }
 
-export function useMasterPerformanceSnapshots(masterWallet?: string, days: number = 30) {
+export function useMasterPerformanceSnapshots(
+  masterWallet?: string,
+  days: number = 30,
+) {
   return useQuery<PerformanceSnapshot[]>({
     queryKey: ["master-performance-snapshots", masterWallet, days],
     queryFn: async () => {
       if (!masterWallet) return [];
-      const res = await authFetch<{ success: boolean; data: PerformanceSnapshot[] }>(
-        `/api/tier/masters/${masterWallet}/performance?days=${days}`
-      );
+      const res = await authFetch<{
+        success: boolean;
+        data: PerformanceSnapshot[];
+      }>(`/api/tier/masters/${masterWallet}/performance?days=${days}`);
       return res.success ? res.data : [];
     },
     enabled: !!masterWallet,
@@ -97,9 +101,10 @@ export function useMasterRoiChart(masterWallet?: string) {
     queryKey: ["master-roi-chart", masterWallet],
     queryFn: async () => {
       if (!masterWallet) return [];
-      const res = await authFetch<{ success: boolean; data: { intervals: RoiInterval[] } }>(
-        `/api/leaderboard/traders/${masterWallet}/roi`
-      );
+      const res = await authFetch<{
+        success: boolean;
+        data: { intervals: RoiInterval[] };
+      }>(`/api/leaderboard/traders/${masterWallet}/roi`);
       return res.success ? res.data.intervals : [];
     },
     enabled: !!masterWallet,
@@ -132,7 +137,7 @@ export function useProtocolTierConfig() {
     queryKey: ["protocol-tier-config"],
     queryFn: async () => {
       const res = await authFetch<{ success: boolean; data: TierConfig }>(
-        `/api/tier/config`
+        `/api/tier/config`,
       );
       return res.success ? res.data : null;
     },

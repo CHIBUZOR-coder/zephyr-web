@@ -1,6 +1,6 @@
 // import { useEffect } from "react";
 // import { useWallet } from "@solana/wallet-adapter-react";
-// import { useAuthStore } from "../../features/auth/auth.store"; 
+// import { useAuthStore } from "../../features/auth/auth.store";
 
 // export function useRestoreAuth() {
 //   const { connected, publicKey } = useWallet();

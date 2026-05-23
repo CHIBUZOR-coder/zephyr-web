@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { queryKeys } from "../../core/query/queryKeys"; 
+import { queryKeys } from "../../core/query/queryKeys";
 import { useConnection } from "@solana/wallet-adapter-react";
 import { LAMPORTS_PER_SOL, PublicKey } from "@solana/web3.js";
 import { useEffect } from "react";
@@ -26,7 +26,7 @@ export const useWalletBalance = (address?: string) => {
           balance: accountInfo.lamports / LAMPORTS_PER_SOL,
         });
       },
-      "confirmed"
+      "confirmed",
     );
 
     return () => {

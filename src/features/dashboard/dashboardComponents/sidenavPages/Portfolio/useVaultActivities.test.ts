@@ -1,141 +1,141 @@
-import { describe, it, expect } from 'vitest'
-import { formatVaultActivity, type VaultActivity } from './useVaultActivities'
+import { describe, it, expect } from "vitest";
+import { formatVaultActivity, type VaultActivity } from "./useVaultActivities";
 
-describe('formatVaultActivity', () => {
-  it('formats DEPOSIT event correctly', () => {
+describe("formatVaultActivity", () => {
+  it("formats DEPOSIT event correctly", () => {
     const activity: VaultActivity = {
-      id: '1',
-      type: 'DEPOSIT',
-      vaultAddress: 'TestVault',
-      signature: '5K2bHX8q9ZL1abcdef123456789',
+      id: "1",
+      type: "DEPOSIT",
+      vaultAddress: "TestVault",
+      signature: "5K2bHX8q9ZL1abcdef123456789",
       timestamp: new Date().toISOString(),
-      data: { amount: '2500000000' },
+      data: { amount: "2500000000" },
       processed: true,
-    }
+    };
 
-    const formatted = formatVaultActivity(activity)
+    const formatted = formatVaultActivity(activity);
 
-    expect(formatted.id).toBe('1')
-    expect(formatted.type).toBe('DEPOSIT')
-    expect(formatted.token).toBe('SOL')
-    expect(formatted.amount).toBe('+2.50')
-    expect(formatted.status).toBe('success')
-    expect(formatted.tx).toBe('5K2bHX...6789')
-  })
+    expect(formatted.id).toBe("1");
+    expect(formatted.type).toBe("DEPOSIT");
+    expect(formatted.token).toBe("SOL");
+    expect(formatted.amount).toBe("+2.50");
+    expect(formatted.status).toBe("success");
+    expect(formatted.tx).toBe("5K2bHX...6789");
+  });
 
-  it('formats WITHDRAWAL event correctly', () => {
+  it("formats WITHDRAWAL event correctly", () => {
     const activity: VaultActivity = {
-      id: '2',
-      type: 'WITHDRAWAL',
-      vaultAddress: 'TestVault',
-      signature: 'ABC123def456',
+      id: "2",
+      type: "WITHDRAWAL",
+      vaultAddress: "TestVault",
+      signature: "ABC123def456",
       timestamp: new Date().toISOString(),
-      data: { amount: '15000000000' },
+      data: { amount: "15000000000" },
       processed: true,
-    }
+    };
 
-    const formatted = formatVaultActivity(activity)
+    const formatted = formatVaultActivity(activity);
 
-    expect(formatted.type).toBe('WITHDRAWAL')
-    expect(formatted.token).toBe('SOL')
-    expect(formatted.amount).toBe('-15.00')
-  })
+    expect(formatted.type).toBe("WITHDRAWAL");
+    expect(formatted.token).toBe("SOL");
+    expect(formatted.amount).toBe("-15.00");
+  });
 
-  it('formats TRADE_EXECUTED event correctly', () => {
+  it("formats TRADE_EXECUTED event correctly", () => {
     const activity: VaultActivity = {
-      id: '3',
-      type: 'TRADE_EXECUTED',
-      vaultAddress: 'TestVault',
-      signature: 'TradeSig123',
+      id: "3",
+      type: "TRADE_EXECUTED",
+      vaultAddress: "TestVault",
+      signature: "TradeSig123",
       timestamp: new Date().toISOString(),
-      data: { tokenOut: 'JUP', amountOut: '1200000000' },
+      data: { tokenOut: "JUP", amountOut: "1200000000" },
       processed: true,
-    }
+    };
 
-    const formatted = formatVaultActivity(activity)
+    const formatted = formatVaultActivity(activity);
 
-    expect(formatted.type).toBe('TRADE')
-    expect(formatted.amount).toBe('+1.20')
-  })
+    expect(formatted.type).toBe("TRADE");
+    expect(formatted.amount).toBe("+1.20");
+  });
 
-  it('formats VAULT_CREATED event correctly', () => {
+  it("formats VAULT_CREATED event correctly", () => {
     const activity: VaultActivity = {
-      id: '4',
-      type: 'VAULT_CREATED',
-      vaultAddress: 'TestVault',
+      id: "4",
+      type: "VAULT_CREATED",
+      vaultAddress: "TestVault",
       signature: null,
       timestamp: new Date().toISOString(),
       data: null,
       processed: true,
-    }
+    };
 
-    const formatted = formatVaultActivity(activity)
+    const formatted = formatVaultActivity(activity);
 
-    expect(formatted.type).toBe('VAULT CREATED')
-    expect(formatted.token).toBe('N/A')
-    expect(formatted.amount).toBe('N/A')
-    expect(formatted.tx).toBe('N/A')
-  })
+    expect(formatted.type).toBe("VAULT CREATED");
+    expect(formatted.token).toBe("N/A");
+    expect(formatted.amount).toBe("N/A");
+    expect(formatted.tx).toBe("N/A");
+  });
 
-  it('formats DEPOSIT_MASTER event correctly', () => {
+  it("formats DEPOSIT_MASTER event correctly", () => {
     const activity: VaultActivity = {
-      id: '7',
-      type: 'DEPOSIT_MASTER',
-      vaultAddress: 'TestVault',
-      signature: 'MasterDepositSig123',
+      id: "7",
+      type: "DEPOSIT_MASTER",
+      vaultAddress: "TestVault",
+      signature: "MasterDepositSig123",
       timestamp: new Date().toISOString(),
-      data: { amount: '5000000000' },
+      data: { amount: "5000000000" },
       processed: true,
-    }
+    };
 
-    const formatted = formatVaultActivity(activity)
+    const formatted = formatVaultActivity(activity);
 
-    expect(formatted.type).toBe('DEPOSIT')
-    expect(formatted.token).toBe('SOL')
-    expect(formatted.amount).toBe('+5.00')
-  })
+    expect(formatted.type).toBe("DEPOSIT");
+    expect(formatted.token).toBe("SOL");
+    expect(formatted.amount).toBe("+5.00");
+  });
 
-  it('handles missing signature gracefully', () => {
+  it("handles missing signature gracefully", () => {
     const activity: VaultActivity = {
-      id: '5',
-      type: 'DEPOSIT',
-      vaultAddress: 'TestVault',
+      id: "5",
+      type: "DEPOSIT",
+      vaultAddress: "TestVault",
       signature: null,
       timestamp: new Date().toISOString(),
-      data: { amount: '1000000000' },
+      data: { amount: "1000000000" },
       processed: true,
-    }
+    };
 
-    const formatted = formatVaultActivity(activity)
+    const formatted = formatVaultActivity(activity);
 
-    expect(formatted.tx).toBe('N/A')
-  })
+    expect(formatted.tx).toBe("N/A");
+  });
 
-  it('handles invalid amount data', () => {
+  it("handles invalid amount data", () => {
     const activity: VaultActivity = {
-      id: '6',
-      type: 'DEPOSIT',
-      vaultAddress: 'TestVault',
-      signature: 'Sig123',
+      id: "6",
+      type: "DEPOSIT",
+      vaultAddress: "TestVault",
+      signature: "Sig123",
       timestamp: new Date().toISOString(),
-      data: { amount: 'invalid' },
+      data: { amount: "invalid" },
       processed: true,
-    }
+    };
 
-    const formatted = formatVaultActivity(activity)
+    const formatted = formatVaultActivity(activity);
 
-    expect(formatted.amount).toBe('+invalid')
-  })
-})
+    expect(formatted.amount).toBe("+invalid");
+  });
+});
 
-describe('Vault activity queue behavior', () => {
-  it('limit of 15 is enforced by the API', () => {
-    const limit = Math.min(20, 15)
-    expect(limit).toBe(15)
-  })
+describe("Vault activity queue behavior", () => {
+  it("limit of 15 is enforced by the API", () => {
+    const limit = Math.min(20, 15);
+    expect(limit).toBe(15);
+  });
 
-  it('limit of 5 respects user preference within bounds', () => {
-    const limit = Math.min(5, 15)
-    expect(limit).toBe(5)
-  })
-})
+  it("limit of 5 respects user preference within bounds", () => {
+    const limit = Math.min(5, 15);
+    expect(limit).toBe(5);
+  });
+});

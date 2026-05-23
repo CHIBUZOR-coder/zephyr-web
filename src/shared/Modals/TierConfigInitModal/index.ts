@@ -1,1 +1,1 @@
-export { TierConfigInitModal } from './TierConfigInitModal';
+export { TierConfigInitModal } from "./TierConfigInitModal";

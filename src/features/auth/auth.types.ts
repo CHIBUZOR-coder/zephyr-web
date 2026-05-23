@@ -8,7 +8,7 @@ export type AuthUser = {
   walletAddress: string;
   role: "user" | "admin";
   avatar: string;
-  displayName:string
+  displayName: string;
 };
 
 export type AuthSession = {

@@ -28,6 +28,6 @@ export const useDefaultRiskStore = create<DefaultRiskState>()(
     }),
     {
       name: "zephyr-default-risk",
-    }
-  )
+    },
+  ),
 );

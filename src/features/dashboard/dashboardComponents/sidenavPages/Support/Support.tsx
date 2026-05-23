@@ -1,8 +1,6 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import emailjs from '@emailjs/browser'
 import { BiChevronDown } from 'react-icons/bi'
-// import { FaWarehouse } from 'react-icons/fa'
-// import { GiCheckedShield } from 'react-icons/gi'
 import { LuMessagesSquare } from 'react-icons/lu'
 import { MdMessage } from 'react-icons/md'
 import { Link } from 'react-router-dom'
@@ -28,24 +26,6 @@ type FAQ = {
   question: string
   answer: string
 }
-
-// const knowledge = [
-//   {
-//     title: 'Vault Security',
-//     text: 'Multi-sig escrow and institutional custody',
-//     icon: <GiCheckedShield className='w-[32px] h-[48px] text-[#009883]' />
-//   },
-//   {
-//     title: 'Risk Management',
-//     text: 'Position sizing and drawdown controls',
-//     icon: <FaWarehouse className='w-[32px] h-[48px] text-[#009883]' />
-//   },
-//   {
-//     title: 'Performance Metrics',
-//     text: 'Understanding PNL and analytics',
-//     icon: <BiNetworkChart className='w-[32px] h-[48px] text-[#009883]' />
-//   }
-// ]
 
 const faqData: FAQ[] = [
   {
@@ -102,6 +82,13 @@ export default function Support () {
   const [sent, setSent] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  // Initialize EmailJS on mount
+  useEffect(() => {
+    if (EMAILJS_PUBLIC_KEY) {
+      emailjs.init(EMAILJS_PUBLIC_KEY)
+    }
+  }, [])
+
   const handleSendEmail = async () => {
     setError(null)
     if (!emailForm.from_name || !emailForm.reply_to || !emailForm.message)
@@ -112,23 +99,44 @@ export default function Support () {
       return
     }
 
+    if (!navigator.onLine) {
+      setError('No internet connection detected.')
+      return
+    }
+
     setSending(true)
     try {
-      await emailjs.send(
+      // In v4, we can call it without the public key if we used init()
+      // But passing it again doesn't hurt.
+      const result = await emailjs.send(
         EMAILJS_SERVICE_ID,
         EMAILJS_TEMPLATE_ID,
-        emailForm,
-        EMAILJS_PUBLIC_KEY
+        {
+          from_name: emailForm.from_name,
+          reply_to: emailForm.reply_to,
+          message: emailForm.message,
+        }
       )
-      setSent(true)
-      setTimeout(() => {
-        setEmailModal(false)
-        setSent(false)
-        setEmailForm({ from_name: '', reply_to: '', message: '' })
-      }, 2000)
-    } catch (err) {
+
+      if (result.status === 200) {
+        setSent(true)
+        setTimeout(() => {
+          setEmailModal(false)
+          setSent(false)
+          setEmailForm({ from_name: '', reply_to: '', message: '' })
+        }, 2000)
+      } else {
+        throw new Error(`EmailJS returned status ${result.status}`)
+      }
+    } catch (err: any) {
       console.error('EmailJS error:', err)
-      setError('Failed to send. Please check your connection and try again.')
+      
+      // Check for fetch failures (common with ad-blockers)
+      if (err instanceof TypeError || (err.message && err.message.includes('fetch'))) {
+        setError('Connection blocked. Please disable ad-blockers or check your firewall.')
+      } else {
+        setError('Failed to send. Please check your connection and try again.')
+      }
     } finally {
       setSending(false)
     }

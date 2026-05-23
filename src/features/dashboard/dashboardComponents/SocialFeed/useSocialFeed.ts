@@ -5,12 +5,16 @@ import type { SocialPost } from "./socialFeed.types";
 export function useSocialFeed() {
   const queryClient = useQueryClient();
 
-  const { data: feed, isLoading, error } = useQuery({
+  const {
+    data: feed,
+    isLoading,
+    error,
+  } = useQuery({
     queryKey: ["social-feed"],
     queryFn: async () => {
       try {
         const res = await authFetch<{ success: boolean; data: SocialPost[] }>(
-          "/api/social/feed"
+          "/api/social/feed",
         );
         return res.success ? res.data : [];
       } catch (err) {
@@ -28,7 +32,7 @@ export function useSocialFeed() {
         {
           method: "POST",
           body: JSON.stringify({ content }),
-        }
+        },
       );
       return res.data;
     },

@@ -758,6 +758,76 @@ export type Zephyr = {
       ]
     },
     {
+      "name": "emergencyCleanup",
+      "discriminator": [
+        120,
+        103,
+        221,
+        155,
+        97,
+        115,
+        16,
+        236
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "config",
+          "docs": [
+            "We verify it is the correct PDA and owned by our program."
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "riskConfig",
+          "docs": [
+            "We verify it is the correct PDA and owned by our program."
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  114,
+                  105,
+                  115,
+                  107,
+                  95,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "args": []
+    },
+    {
       "name": "emergencyOverride",
       "docs": [
         "Week 7: Emergency override (admin-only) - toggle emergency_risk_override flag."
@@ -1055,6 +1125,10 @@ export type Zephyr = {
         {
           "name": "protocolVersion",
           "type": "u8"
+        },
+        {
+          "name": "trustedExecutor",
+          "type": "pubkey"
         }
       ]
     },
@@ -1663,6 +1737,13 @@ export type Zephyr = {
         {
           "name": "authority",
           "docs": [
+            "The indexer backend executor — must match config.trusted_executor.",
+            "This is the same key used for trigger_profit_take and",
+            "trigger_stop_loss. One key, one backend service, one rotation path.",
+            "",
+            "To disable mirror_trade entirely during an incident:",
+            "update_config({ trustedExecutor: PublicKey.default() })",
+            "This blocks all three executor-gated instructions simultaneously.",
             "Authority that can trigger mirror trades (indexer service)",
             "todo: In production, we'll use a PDA or multisig for better security"
           ],
@@ -2150,6 +2231,11 @@ export type Zephyr = {
       "accounts": [
         {
           "name": "executor",
+          "docs": [
+            "Must match config.trusted_executor.",
+            "Set config.trusted_executor = Pubkey::default() to disable",
+            "this instruction entirely during an emergency key rotation"
+          ],
           "writable": true,
           "signer": true
         },
@@ -2216,10 +2302,7 @@ export type Zephyr = {
           }
         },
         {
-          "name": "config",
-          "docs": [
-            "← ADD THIS: Read fee configuration"
-          ]
+          "name": "config"
         },
         {
           "name": "systemProgram",
@@ -2252,8 +2335,9 @@ export type Zephyr = {
         {
           "name": "executor",
           "docs": [
-            "Account paying transaction fees (backend executor / keeper / copier).",
-            "Permissionless — program enforces rules via account constraints."
+            "Must match config.trusted_executor.",
+            "Set config.trusted_executor = Pubkey::default() to disable",
+            "this instruction entirely during an emergency key rotation."
           ],
           "writable": true,
           "signer": true
@@ -2323,7 +2407,7 @@ export type Zephyr = {
           }
         },
         {
-          "name": "riskConfig",
+          "name": "config",
           "docs": [
             "Protocol risk config — read to verify emergency override status."
           ],
@@ -2347,6 +2431,9 @@ export type Zephyr = {
               }
             ]
           }
+        },
+        {
+          "name": "riskConfig"
         },
         {
           "name": "systemProgram",
@@ -2460,6 +2547,12 @@ export type Zephyr = {
           "name": "protocolVersion",
           "type": {
             "option": "u8"
+          }
+        },
+        {
+          "name": "trustedExecutor",
+          "type": {
+            "option": "pubkey"
           }
         }
       ]
@@ -3983,6 +4076,11 @@ export type Zephyr = {
       "code": 6046,
       "name": "invalidVaultState",
       "msg": "Invalid vault state for this operation"
+    },
+    {
+      "code": 6047,
+      "name": "unauthorizedExecutor",
+      "msg": "Caller is not the trusted executor for oracle-gated instructions"
     }
   ],
   "types": [
@@ -4143,6 +4241,10 @@ export type Zephyr = {
               "Protocol version for upgrades"
             ],
             "type": "u8"
+          },
+          {
+            "name": "trustedExecutor",
+            "type": "pubkey"
           }
         ]
       }

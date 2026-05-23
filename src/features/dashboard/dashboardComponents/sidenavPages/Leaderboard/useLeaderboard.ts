@@ -123,7 +123,7 @@ export function useLeaderboard(
 
       const response = await authFetch<LeaderboardResponse>(url);
       if (!response?.success) throw new Error("Failed to fetch leaderboard");
-      
+
       return {
         traders: (response.data.traders ?? []).map(mapLeaderboardEntryToTrader),
         total: response.data.total,

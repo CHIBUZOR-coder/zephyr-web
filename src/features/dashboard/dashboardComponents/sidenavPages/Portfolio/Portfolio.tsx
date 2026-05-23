@@ -350,7 +350,6 @@ export default function Portfolio () {
   const totalBalance =
     strategiesWithMasterData.reduce((s, v) => s + v.balanceUsd, 0) +
     (pinnedVaults[0]?.totalBalanceUsd || 0)
-
   const solChange24h = solPrice?.change24h ?? 0
   const total24hChange = totalBalance * (solChange24h / 100)
   const changePositive = total24hChange >= 0

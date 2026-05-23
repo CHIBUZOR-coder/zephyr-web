@@ -23,7 +23,7 @@ export function useUserProfile(address?: string) {
       if (!address || address.length < 32) return null;
       try {
         const res = await authFetch<{ success: boolean; user: UserProfile }>(
-          `/api/users/${address}`
+          `/api/users/${address}`,
         );
         return res.success ? res.user : null;
       } catch (e) {

@@ -1,13 +1,14 @@
 // zephyr-web/src/features/trades/useTrades.ts
 
-import { useState, useEffect, useCallback } from 'react';
-const API_BASE_URL =  import.meta.env.VITE_API_BASE_URL || 'https://zephyr-np09.onrender.com';
+import { useState, useEffect, useCallback } from "react";
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || "https://zephyr-np09.onrender.com";
 
 export interface Trade {
   id: string;
   signature: string;
   vaultPda: string;
-  vaultType: 'MASTER' | 'COPIER';
+  vaultType: "MASTER" | "COPIER";
   tokenIn: string;
   tokenOut: string;
   tokenInSymbol?: string;
@@ -17,7 +18,7 @@ export interface Trade {
   amountInDecimal: number;
   amountOutDecimal: number;
   slippage: number;
-  status: 'PENDING' | 'CONFIRMED' | 'FAILED';
+  status: "PENDING" | "CONFIRMED" | "FAILED";
   executedAt: string;
   confirmedAt?: string;
   masterTradeId?: string;
@@ -46,16 +47,16 @@ export interface Trade {
 }
 
 export const TIER_LABELS: Record<number, string> = {
-  1: 'Community',
-  2: 'Verified',
-  3: 'Elite',
-  4: 'Alpha',
-  5: 'Institutional',
+  1: "Community",
+  2: "Verified",
+  3: "Elite",
+  4: "Alpha",
+  5: "Institutional",
 };
 
 export const getTierLabel = (tier: number | undefined): string => {
-  if (!tier || tier < 1 || tier > 5) return 'Community';
-  return TIER_LABELS[tier] || 'Community';
+  if (!tier || tier < 1 || tier > 5) return "Community";
+  return TIER_LABELS[tier] || "Community";
 };
 
 export interface TradeStats {
@@ -76,15 +77,17 @@ export const useRecentTrades = (limit = 20) => {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch(`${API_BASE_URL}/api/trades/recent?limit=${limit}`);
+      const response = await fetch(
+        `${API_BASE_URL}/api/trades/recent?limit=${limit}`,
+      );
       const data = await response.json();
       if (data.success) {
         setTrades(data.data ?? []);
       } else {
-        setError(data.message || 'Failed to fetch trades');
+        setError(data.message || "Failed to fetch trades");
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unknown error');
+      setError(err instanceof Error ? err.message : "Unknown error");
     } finally {
       setLoading(false);
     }
@@ -110,15 +113,17 @@ export const useVaultTrades = (vaultPda: string, limit = 50) => {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch(`${API_BASE_URL}/api/trades/vault/${vaultPda}?limit=${limit}`);
+      const response = await fetch(
+        `${API_BASE_URL}/api/trades/vault/${vaultPda}?limit=${limit}`,
+      );
       const data = await response.json();
       if (data.success) {
         setTrades(data.data ?? []);
       } else {
-        setError(data.message || 'Failed to fetch trades');
+        setError(data.message || "Failed to fetch trades");
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unknown error');
+      setError(err instanceof Error ? err.message : "Unknown error");
     } finally {
       setLoading(false);
     }
@@ -144,15 +149,17 @@ export const useMasterTrades = (masterWallet: string, limit = 50) => {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch(`${API_BASE_URL}/api/trades/master/${masterWallet}?limit=${limit}`);
+      const response = await fetch(
+        `${API_BASE_URL}/api/trades/master/${masterWallet}?limit=${limit}`,
+      );
       const data = await response.json();
       if (data.success) {
         setTrades(data.data ?? []);
       } else {
-        setError(data.message || 'Failed to fetch trades');
+        setError(data.message || "Failed to fetch trades");
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unknown error');
+      setError(err instanceof Error ? err.message : "Unknown error");
     } finally {
       setLoading(false);
     }
@@ -178,15 +185,17 @@ export const useCopierTrades = (copierWallet: string, limit = 50) => {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch(`${API_BASE_URL}/api/trades/copier/${copierWallet}?limit=${limit}`);
+      const response = await fetch(
+        `${API_BASE_URL}/api/trades/copier/${copierWallet}?limit=${limit}`,
+      );
       const data = await response.json();
       if (data.success) {
         setTrades(data.data ?? []);
       } else {
-        setError(data.message || 'Failed to fetch trades');
+        setError(data.message || "Failed to fetch trades");
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unknown error');
+      setError(err instanceof Error ? err.message : "Unknown error");
     } finally {
       setLoading(false);
     }
@@ -212,15 +221,17 @@ export const useVaultStats = (vaultPda: string) => {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch(`${API_BASE_URL}/api/trades/vault/${vaultPda}/stats`);
+      const response = await fetch(
+        `${API_BASE_URL}/api/trades/vault/${vaultPda}/stats`,
+      );
       const data = await response.json();
       if (data.success) {
         setStats(data.data);
       } else {
-        setError(data.message || 'Failed to fetch stats');
+        setError(data.message || "Failed to fetch stats");
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unknown error');
+      setError(err instanceof Error ? err.message : "Unknown error");
     } finally {
       setLoading(false);
     }
@@ -246,15 +257,17 @@ export const useCopiedTrades = (masterSignature: string) => {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch(`${API_BASE_URL}/api/trades/master/${masterSignature}/copiers`);
+      const response = await fetch(
+        `${API_BASE_URL}/api/trades/master/${masterSignature}/copiers`,
+      );
       const data = await response.json();
       if (data.success) {
         setCopiedTrades(data.data ?? []);
       } else {
-        setError(data.message || 'Failed to fetch copied trades');
+        setError(data.message || "Failed to fetch copied trades");
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unknown error');
+      setError(err instanceof Error ? err.message : "Unknown error");
     } finally {
       setLoading(false);
     }

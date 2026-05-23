@@ -1,5 +1,3 @@
-
-
 import { useQuery } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { authFetch } from "../../core/query/authClient";

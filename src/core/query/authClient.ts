@@ -1,6 +1,7 @@
 import { useAuthStore } from "../../features/auth/auth.store";
 
-export const API_BASE = import.meta.env.VITE_API_BASE_URL || "https://zephyr-np09.onrender.com";
+export const API_BASE =
+  import.meta.env.VITE_API_BASE_URL || "https://zephyr-np09.onrender.com";
 
 // This promise acts as a "wait room" for concurrent 401s
 let refreshPromise: Promise<string | null> | null = null;
@@ -47,7 +48,7 @@ async function refreshAccessToken(): Promise<string | null> {
 
 export async function authFetch<T>(
   path: string,
-  options: RequestInit = {}
+  options: RequestInit = {},
 ): Promise<T> {
   const { accessToken, logout } = useAuthStore.getState();
 
@@ -79,7 +80,7 @@ export async function authFetch<T>(
     }
 
     const newToken = await refreshPromise;
-    
+
     // Clear the promise once finished so the next cycle can start fresh
     if (refreshPromise) refreshPromise = null;
 
@@ -107,7 +108,7 @@ export async function authFetch<T>(
 
   // Safe JSON parsing
   try {
-    return await res.json() as T;
+    return (await res.json()) as T;
   } catch {
     throw new APIError("Server returned an invalid response.");
   }

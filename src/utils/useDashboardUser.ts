@@ -1,7 +1,7 @@
 // src/features/users/useUserProfile.ts
 import { useQuery } from "@tanstack/react-query";
-import { authFetch } from "../core/query/authClient"; 
-import type { UserProfile } from "../features/users/user.types"; 
+import { authFetch } from "../core/query/authClient";
+import type { UserProfile } from "../features/users/user.types";
 
 type UserProfileResponse = {
   success: boolean;

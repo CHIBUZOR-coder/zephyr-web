@@ -1,5 +1,5 @@
 export type NotificationSetting = {
-  id:number
+  id: number;
   title: string;
   description: string;
   enabled: boolean;

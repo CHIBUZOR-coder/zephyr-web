@@ -11,9 +11,10 @@ export function useSolPrice() {
   return useQuery({
     queryKey: ["sol-price"],
     queryFn: async () => {
-      const response = await authFetch<{ success: boolean; data: SolPriceData }>(
-        "/api/market/price/sol"
-      );
+      const response = await authFetch<{
+        success: boolean;
+        data: SolPriceData;
+      }>("/api/market/price/sol");
       if (!response.success) throw new Error("Failed to fetch price");
       return response.data;
     },

@@ -19,7 +19,9 @@ export function useAuthRefresh() {
 
       // If we have a user but no token, we need to try refreshing
       if (user && !accessToken) {
-        console.log("🔄 useAuthRefresh: Attempting silent session restoration...");
+        console.log(
+          "🔄 useAuthRefresh: Attempting silent session restoration...",
+        );
         try {
           // This will trigger the refreshAccessToken logic in authFetch
           await authFetch("/api/auth/me");

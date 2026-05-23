@@ -13,18 +13,20 @@ export function useAutoSignIn() {
   useEffect(() => {
     // 🛑 Critical: Wait for hydration AND session check to finish
     if (!hydrated || !authResolved) return;
-    
+
     // Check if wallet is connected and ready
     if (!connected || !publicKey || !signMessage) return;
-    
+
     // Already logged in? Nothing to do.
     if (authenticated) return;
-    
+
     // Don't double-prompt
     if (loginMutation.isPending || attemptedRef.current) return;
 
     attemptedRef.current = true;
-    console.log("🗝️ useAutoSignIn: Automatic session restoration failed, requesting signature...");
+    console.log(
+      "🗝️ useAutoSignIn: Automatic session restoration failed, requesting signature...",
+    );
 
     loginMutation.mutate({
       publicKey: publicKey.toBase58(),

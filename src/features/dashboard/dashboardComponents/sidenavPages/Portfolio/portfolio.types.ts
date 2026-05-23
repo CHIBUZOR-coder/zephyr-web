@@ -1,4 +1,4 @@
-import type { PositionData } from '../../../../master/useUserVaults'
+import type { PositionData } from "../../../../master/useUserVaults";
 
 export interface PinnedVault {
   currentPosition: PositionData | undefined;
@@ -19,7 +19,6 @@ export interface PinnedVault {
   historicalClaimedSol: number;
   tier: string;
 }
-
 
 interface RiskRules {
   tp: number;

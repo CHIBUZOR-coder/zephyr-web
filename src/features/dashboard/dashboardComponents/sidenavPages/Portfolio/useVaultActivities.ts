@@ -54,34 +54,32 @@ export function useVaultActivities(vaultAddress: string | null, limit = 15) {
   };
 }
 
-export function useAllVaultActivities(
-  vaultAddresses: string[],
-  limit = 15
-) {
+export function useAllVaultActivities(vaultAddresses: string[], limit = 15) {
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ["all-vault-activities", vaultAddresses, limit],
     queryFn: async () => {
       if (vaultAddresses.length === 0) return [];
-      
+
       try {
         const allActivities: VaultActivity[] = [];
-        
+
         await Promise.all(
           vaultAddresses.map(async (address) => {
             const res = await authFetch<VaultActivityResponse>(
-              `/api/vaults/${address}/activities?limit=${limit}`
+              `/api/vaults/${address}/activities?limit=${limit}`,
             );
             if (res.success && res.data) {
               allActivities.push(...res.data);
             }
-          })
+          }),
         );
-        
+
         // Sort by timestamp descending
-        allActivities.sort((a, b) => 
-          new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+        allActivities.sort(
+          (a, b) =>
+            new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
         );
-        
+
         return allActivities.slice(0, limit);
       } catch {
         return [];
@@ -114,10 +112,10 @@ export function formatVaultActivity(item: VaultActivity): {
   const relativeTime = formatRelativeDate(item.timestamp);
   const typeLabel = formatEventType(item.type);
   const { token, amount } = extractTokenAndAmount(item.type, data);
-  
+
   const sig = item.signature;
-  const hasSignature = sig && typeof sig === 'string' && sig.length > 0;
-  
+  const hasSignature = sig && typeof sig === "string" && sig.length > 0;
+
   return {
     id: item.id,
     type: typeLabel,
@@ -138,7 +136,8 @@ function formatRelativeDate(dateString: string): string {
   if (diffInSeconds < 60) return "JUST NOW";
   if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}M AGO`;
   if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}H AGO`;
-  if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)}D AGO`;
+  if (diffInSeconds < 604800)
+    return `${Math.floor(diffInSeconds / 86400)}D AGO`;
   return `${Math.floor(diffInSeconds / 604800)}W AGO`;
 }
 
@@ -172,19 +171,35 @@ function extractTokenAndAmount(
     }
     case "TRADE_EXECUTED": {
       const tokenOut = (data?.tokenOut as string) ?? "TOKEN";
-      const amountOut = (data?.minAmountOut as string) ?? (data?.amountOut as string) ?? "0";
+      const amountOut =
+        (data?.minAmountOut as string) ?? (data?.amountOut as string) ?? "0";
       const formattedAmount = formatAmount(amountOut, tokenOut);
-      return { token: formatTokenSymbol(tokenOut), amount: `+${formattedAmount}` };
+      return {
+        token: formatTokenSymbol(tokenOut),
+        amount: `+${formattedAmount}`,
+      };
     }
     case "TRADE_MIRRORED": {
-      const assetMint = (data?.assetMint as string) ?? (data?.tokenIn as string) ?? "TOKEN";
-      const copierAmount = (data?.copierAmount as string) ?? (data?.amountIn as string) ?? (data?.filledAmount as string) ?? "0";
+      const assetMint =
+        (data?.assetMint as string) ?? (data?.tokenIn as string) ?? "TOKEN";
+      const copierAmount =
+        (data?.copierAmount as string) ??
+        (data?.amountIn as string) ??
+        (data?.filledAmount as string) ??
+        "0";
       const formattedAmount = formatAmount(copierAmount, assetMint);
-      return { token: formatTokenSymbol(assetMint), amount: `+${formattedAmount}` };
+      return {
+        token: formatTokenSymbol(assetMint),
+        amount: `+${formattedAmount}`,
+      };
     }
     case "FEE_COLLECTED":
     case "FEE_CLAIMED": {
-      const totalFee = (data?.totalFee as string) ?? (data?.traderFee as string) ?? (data?.amount as string) ?? "0";
+      const totalFee =
+        (data?.totalFee as string) ??
+        (data?.traderFee as string) ??
+        (data?.amount as string) ??
+        "0";
       const formattedAmount = formatAmount(totalFee);
       const prefix = type === "FEE_CLAIMED" ? "-" : "+";
       return { token: "SOL", amount: `${prefix}${formattedAmount}` };
@@ -200,24 +215,31 @@ function extractTokenAndAmount(
 
 function formatAmount(raw: string, mint?: string): string {
   try {
-    const num = /^[0-9a-fA-F]+$/.test(raw) && /[a-fA-F]/.test(raw)
-      ? BigInt(`0x${raw}`)
-      : BigInt(raw);
+    const num =
+      /^[0-9a-fA-F]+$/.test(raw) && /[a-fA-F]/.test(raw)
+        ? BigInt(`0x${raw}`)
+        : BigInt(raw);
     if (num === 0n) return "0.00";
-    
+
     // Simple decimal handling: SOL = 9, USDC = 6, others default to 9
-    const isUSDC = mint === "Gh9ZwEmdLJ8DscKNTkTqPbNwLNNBjuSzaG9Vp2KGtKJr" || mint === "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v";
+    const isUSDC =
+      mint === "Gh9ZwEmdLJ8DscKNTkTqPbNwLNNBjuSzaG9Vp2KGtKJr" ||
+      mint === "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v";
     const decimals = isUSDC ? 6 : 9;
-    
+
     const divisor = BigInt(10 ** decimals);
     const wholePart = num / divisor;
     const fractionalPart = num % divisor;
-    const fractionalStr = fractionalPart.toString().padStart(decimals, "0").slice(0, 4);
-    
+    const fractionalStr = fractionalPart
+      .toString()
+      .padStart(decimals, "0")
+      .slice(0, 4);
+
     // Trim trailing zeros for cleaner display
     let trimmedFractional = fractionalStr.replace(/0+$/, "");
-    if (trimmedFractional.length < 2) trimmedFractional = fractionalStr.slice(0, 2);
-    
+    if (trimmedFractional.length < 2)
+      trimmedFractional = fractionalStr.slice(0, 2);
+
     return `${wholePart}.${trimmedFractional}`;
   } catch {
     return raw;
@@ -226,9 +248,17 @@ function formatAmount(raw: string, mint?: string): string {
 
 function formatTokenSymbol(mint: string): string {
   if (!mint) return "TOKEN";
-  if (mint === "11111111111111111111111111111111" || mint === "So11111111111111111111111111111111111111112") return "SOL";
-  if (mint === "Gh9ZwEmdLJ8DscKNTkTqPbNwLNNBjuSzaG9Vp2KGtKJr" || mint === "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v") return "USDC";
-  
+  if (
+    mint === "11111111111111111111111111111111" ||
+    mint === "So11111111111111111111111111111111111111112"
+  )
+    return "SOL";
+  if (
+    mint === "Gh9ZwEmdLJ8DscKNTkTqPbNwLNNBjuSzaG9Vp2KGtKJr" ||
+    mint === "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+  )
+    return "USDC";
+
   if (mint.length < 8) return mint;
   return mint.slice(0, 4).toUpperCase();
 }

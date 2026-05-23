@@ -30,7 +30,9 @@ export function useTopTrades(limit = 3) {
   return useQuery({
     queryKey: ["top-trades", limit],
     queryFn: async () => {
-      const response = await authFetch<TopTradesResponse>(`/api/trades/top-profitable?limit=${limit}`);
+      const response = await authFetch<TopTradesResponse>(
+        `/api/trades/top-profitable?limit=${limit}`,
+      );
       if (!response.success) throw new Error("Failed to fetch top trades");
       return response.data;
     },

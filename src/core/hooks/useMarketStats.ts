@@ -63,7 +63,9 @@ export function useMarketStats() {
 
   const rotationInterval = 6000;
   // Initialize with consistent time-based index
-  const [tick, setTick] = useState(() => Math.floor(Date.now() / rotationInterval));
+  const [tick, setTick] = useState(() =>
+    Math.floor(Date.now() / rotationInterval),
+  );
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -73,10 +75,10 @@ export function useMarketStats() {
   }, []);
 
   // DETERMINISTIC SYNC-ROTATION
-  // Every 6 seconds, we switch to the next token. 
+  // Every 6 seconds, we switch to the next token.
   // Using tick ensures all users see the same token at the same time and render is pure.
-  const currentIndex = trendingTokens?.length 
-    ? tick % trendingTokens.length 
+  const currentIndex = trendingTokens?.length
+    ? tick % trendingTokens.length
     : 0;
 
   const activeToken = trendingTokens?.[currentIndex];

@@ -14,7 +14,14 @@
 // }
 
 export type LeaderboardPeriod = "7d" | "30d" | "90d" | "all";
-export type LeaderboardSort = "pnl" | "roi" | "winRate" | "maxDrawdown" | "aum" | "copiers" | "volume";
+export type LeaderboardSort =
+  | "pnl"
+  | "roi"
+  | "winRate"
+  | "maxDrawdown"
+  | "aum"
+  | "copiers"
+  | "volume";
 
 export type Trader = {
   id: number;

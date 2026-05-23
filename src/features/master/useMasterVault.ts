@@ -51,14 +51,15 @@ export const useMasterVault = () => {
           masterVaultPda.toString(),
         );
 
-        tx = await (program.methods
-          .initializeMasterVault(
+        tx = await (
+          program.methods.initializeMasterVault(
             2000, // success_fee_percent
             50, // volume_fee_percent
             1000, // take_profit_trigger_bps (must be > 0)
             1000, // take_profit_sell_bps (must be > 0)
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          ) as any)
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          ) as any
+        )
           .accounts({
             master: publicKey,
             masterVault: masterVaultPda,
@@ -91,7 +92,9 @@ export const useMasterVault = () => {
       return { tx, vault: response?.data, address: response?.data?.vaultPda };
     } catch (err: unknown) {
       console.error("Error creating master vault:", err);
-      setError(err instanceof Error ? err.message : "An unknown error occurred");
+      setError(
+        err instanceof Error ? err.message : "An unknown error occurred",
+      );
       throw err;
     } finally {
       setLoading(false);
@@ -128,8 +131,8 @@ export const useMasterVault = () => {
         configPda.toString(),
       );
 
-      const tx = await (program.methods
-        .initializeConfig(
+      const tx = await (
+        program.methods.initializeConfig(
           500, // platform_fee_bps (5%)
           9500, // trader_fee_bps (95%) - Sum must be 10000
           2000, // max_success_fee_bps (20%)
@@ -139,8 +142,9 @@ export const useMasterVault = () => {
           1000, // atomic_threshold
           50, // slot_grace_window (20 seconds)
           1, // protocol_version
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        ) as any)
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        ) as any
+      )
         .accounts({
           authority: publicKey,
           config: configPda,
@@ -152,7 +156,9 @@ export const useMasterVault = () => {
       return tx;
     } catch (err: unknown) {
       console.error("Error initializing config:", err);
-      setError(err instanceof Error ? err.message : "An unknown error occurred");
+      setError(
+        err instanceof Error ? err.message : "An unknown error occurred",
+      );
       throw err;
     } finally {
       setLoading(false);

@@ -15,8 +15,6 @@ export const isMockNetwork: boolean =
   endpoint.includes("127.0.0.1");
 
 export const explorerClusterParam: string =
-  network === WalletAdapterNetwork.Mainnet
-    ? ""
-    : `?cluster=${network}`;
+  network === WalletAdapterNetwork.Mainnet ? "" : `?cluster=${network}`;
 
 export const wallets = [];
